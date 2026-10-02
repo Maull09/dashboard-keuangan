@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 
 import { TransactionForm } from "@/components/transaction-form"
+import { useLanguage } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,7 @@ const transactionColors: Record<TransactionType, string> = {
 }
 
 export function TransactionList() {
+  const { formatCurrency, formatDate, t } = useLanguage()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -38,7 +40,7 @@ export function TransactionList() {
     const [transactionsResponse, accountsResponse] = await Promise.all([fetch(`/api/transactions?page=${page}&limit=25`), fetch("/api/accounts")])
 
     if (!transactionsResponse.ok || !accountsResponse.ok) {
-      setError("Riwayat transaksi tidak dapat dimuat.")
+      setError(t("dataUnavailable"))
       return
     }
 
@@ -65,11 +67,11 @@ export function TransactionList() {
   const totalExpense = filteredTransactions.filter((transaction) => transaction.type === "expense").reduce((total, transaction) => total + transaction.amount, 0)
 
   async function deleteTransaction(id: number) {
-    if (!window.confirm("Hapus transaksi ini? Saldo dan laporan akan dihitung ulang.")) return
+    if (!window.confirm(t("deleteTransactionConfirm"))) return
 
     const response = await fetch(`/api/transactions/${id}`, { method: "DELETE" })
     if (!response.ok) {
-      setError("Transaksi tidak dapat dihapus.")
+      setError(t("transactionDeleteFailed"))
       return
     }
 
@@ -81,33 +83,33 @@ export function TransactionList() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Transaksi</h2>
-          <p className="text-muted-foreground">Catat, telusuri, dan koreksi arus uang Anda.</p>
+          <h2 className="text-3xl font-bold tracking-tight">{t("transactionTitle")}</h2>
+          <p className="text-muted-foreground">{t("transactionDescription")}</p>
         </div>
         <TransactionForm accounts={accounts} onSaved={fetchData} />
       </div>
-      {accounts.length === 0 && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Tambahkan akun terlebih dahulu sebelum mencatat transaksi.</p>}
+      {accounts.length === 0 && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{t("addAnAccountFirst")}</p>}
       {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{error}</p>}
       <div className="grid gap-3 md:grid-cols-3">
-        <SummaryCard label="Pemasukan terfilter" value={formatCurrency(totalIncome)} tone="text-emerald-700" />
-        <SummaryCard label="Pengeluaran terfilter" value={formatCurrency(totalExpense)} tone="text-rose-700" />
-        <SummaryCard label="Selisih terfilter" value={formatCurrency(totalIncome - totalExpense)} tone={totalIncome - totalExpense >= 0 ? "text-emerald-700" : "text-rose-700"} />
+        <SummaryCard label={t("filteredIncome")} value={formatCurrency(totalIncome)} tone="text-emerald-700" />
+        <SummaryCard label={t("filteredExpense")} value={formatCurrency(totalExpense)} tone="text-rose-700" />
+        <SummaryCard label={t("filteredDifference")} value={formatCurrency(totalIncome - totalExpense)} tone={totalIncome - totalExpense >= 0 ? "text-emerald-700" : "text-rose-700"} />
       </div>
       <Card>
-        <CardHeader><CardTitle>Riwayat transaksi</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("transactionHistory")}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <Input placeholder="Cari kategori atau catatan" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
+            <Input placeholder={t("searchTransactions")} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
             <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as "all" | TransactionType)}>
-              <SelectTrigger><SelectValue placeholder="Semua jenis" /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Semua jenis</SelectItem><SelectItem value="income">Pemasukan</SelectItem><SelectItem value="expense">Pengeluaran</SelectItem><SelectItem value="transfer">Transfer</SelectItem></SelectContent>
+              <SelectTrigger><SelectValue placeholder={t("allTypes")} /></SelectTrigger>
+              <SelectContent><SelectItem value="all">{t("allTypes")}</SelectItem><SelectItem value="income">{t("income")}</SelectItem><SelectItem value="expense">{t("expense")}</SelectItem><SelectItem value="transfer">{t("transfer")}</SelectItem></SelectContent>
             </Select>
             <Select value={accountFilter} onValueChange={setAccountFilter}>
-              <SelectTrigger><SelectValue placeholder="Semua akun" /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Semua akun</SelectItem>{accounts.map((account) => <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>)}</SelectContent>
+              <SelectTrigger><SelectValue placeholder={t("allAccounts")} /></SelectTrigger>
+              <SelectContent><SelectItem value="all">{t("allAccounts")}</SelectItem>{accounts.map((account) => <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>)}</SelectContent>
             </Select>
-            <Input type="date" aria-label="Dari tanggal" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
-            <Input type="date" aria-label="Sampai tanggal" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+            <Input type="date" aria-label={t("fromDate")} value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+            <Input type="date" aria-label={t("toDate")} value={toDate} onChange={(event) => setToDate(event.target.value)} />
           </div>
           <div className="overflow-x-auto rounded-lg border">
             <table className="min-w-full text-sm">

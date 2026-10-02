@@ -5,15 +5,12 @@ export const expenseCategories = ["Makanan", "Transportasi", "Hiburan", "Belanja
 
 export type AccountType = (typeof accountTypes)[number]
 export type TransactionType = (typeof transactionTypes)[number]
+export type Locale = "en" | "id"
 
-const indonesiaFormatter = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
-  minimumFractionDigits: 0,
-})
+const localeCodes: Record<Locale, string> = { en: "en-US", id: "id-ID" }
 
-export function formatCurrency(amount: number) {
-  return indonesiaFormatter.format(amount)
+export function formatCurrency(amount: number, locale: Locale = "id") {
+  return new Intl.NumberFormat(localeCodes[locale], { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)
 }
 
 export function getToday() {
@@ -55,16 +52,16 @@ export function getRecentMonths(count: number) {
   return months
 }
 
-export function formatMonth(month: string) {
-  return new Intl.DateTimeFormat("id-ID", {
+export function formatMonth(month: string, locale: Locale = "id") {
+  return new Intl.DateTimeFormat(localeCodes[locale], {
     month: "short",
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${month}-01T00:00:00Z`))
 }
 
-export function formatDate(date: string) {
-  return new Intl.DateTimeFormat("id-ID", {
+export function formatDate(date: string, locale: Locale = "id") {
+  return new Intl.DateTimeFormat(localeCodes[locale], {
     year: "numeric",
     month: "short",
     day: "numeric",

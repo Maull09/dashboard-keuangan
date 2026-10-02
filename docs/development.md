@@ -1,44 +1,40 @@
-# Panduan Pengembangan
+# Development guide
 
-## Prasyarat
+## Prerequisites
 
-- Node.js dan npm.
-- Project database Supabase.
+- Node.js 20 or later and npm.
+- A Supabase project.
 
-## Konfigurasi
+## Environment
 
-Buat project di Supabase Dashboard. Pada menu **Connect**, salin URL connection yang sesuai dan buat `.env` pada root proyek:
+Create `.env` in the repository root. In Supabase, open **Connect** and copy the connection string that matches your use case.
 
 ```env
 DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=require
 ```
 
-`DATABASE_URL` digunakan oleh `src/db/index.ts` untuk membuat koneksi database. Gunakan URL **Transaction pooler** untuk aplikasi yang berjalan secara serverless dan URL **Direct connection** untuk migrasi. Salin URL apa adanya dari Supabaseâ€”host dan username pooler tidak dapat ditebak dari region. Jangan commit file `.env` atau kredensial database, serta jangan gunakan prefix `NEXT_PUBLIC_` untuk variabel ini.
+Use the **Transaction pooler** URL for serverless deployments. Use the **Direct connection** URL temporarily when running database migrations. Copy the URL exactly from Supabase; pooler hosts and usernames are project-specific. Do not commit `.env` or expose it with a `NEXT_PUBLIC_` prefix.
 
-## Perintah Utama
+## Commands
 
 ```bash
 npm install
 npm run dev
 npm run build
+npm test
 npm run db:generate
 npm run db:migrate
 ```
 
-`npm run dev` menjalankan aplikasi pengembangan di port yang ditampilkan Next.js. `npm run build` memverifikasi build produksi. `npm run db:generate` membuat migrasi dari perubahan skema, sedangkan `npm run db:migrate` menerapkan migrasi yang sudah ada.
+`db:generate` creates a Drizzle migration after a schema change. `db:migrate` applies existing migrations. Back up financial data before applying a migration.
 
 ## Database
 
-Skema Drizzle berada di `src/db/schema.ts`, sedangkan berkas migrasi berada di `drizzle/`. Tinjau setiap perubahan skema dan migrasi sebelum menerapkannya ke database yang berisi data pengguna. Saat menjalankan `npm run db:migrate`, gunakan sementara URL **Direct connection** dari dialog Supabase Connect (port `5432`), lalu kembalikan URL transaction pooler untuk aplikasi.
-
-Migrasi `0001_rare_blackheart.sql` menambahkan akun, saldo awal, transaksi transfer, serta periode anggaran. Untuk mempertahankan transaksi lama yang belum memiliki akun, migrasi membuat akun `Akun belum dikategorikan` dan menempatkan transaksi lama di sana. Setelah migrasi, pindahkan transaksi tersebut ke akun yang sebenarnya melalui fitur ubah transaksi.
-
-Migrasi `0002_uneven_killer_shrike.sql` menambahkan jadwal rutin, kontribusi tujuan, cicilan utang/piutang, rekonsiliasi akun, dan pengaturan rollover anggaran. Backup database sebelum menjalankan kedua migrasi pada data yang sudah digunakan.
+Drizzle schema definitions are in `src/db/schema.ts`; generated migrations are in `drizzle/`. The first migration preserves legacy transactions by assigning them to an `Uncategorized account`. Move them to their real account after migrating.
 
 ## Troubleshooting
 
-- **Aplikasi gagal terhubung ke database:** pastikan `DATABASE_URL` tersedia di `.env`, URL tersebut berasal dari Supabase Connect, password telah di-URL-encode, dan koneksi memakai SSL.
-- **Perubahan UI tidak terlihat:** pastikan server `npm run dev` berjalan, lalu muat ulang halaman. Hapus direktori `.next` hanya bila cache build terbukti menjadi penyebabnya.
-- **Build gagal:** jalankan `npm install` untuk menyelaraskan dependensi dengan `package-lock.json`, kemudian ulangi `npm run build`.
-- **Tes gagal:** jalankan `npm test` untuk melihat skenario perhitungan yang gagal.
-- **Migrasi gagal:** pastikan `DATABASE_URL` sementara mengarah ke URL Direct connection Supabase dan database yang benar. Buat backup sebelum menjalankan migrasi pada database yang berisi data finansial.
+- **Cannot connect to the database:** verify that `DATABASE_URL` comes from Supabase Connect, is URL-encoded where required, and uses SSL.
+- **Migration fails:** make sure `DATABASE_URL` temporarily uses Supabase Direct connection and targets the intended database.
+- **Build fails:** run `npm install`, then retry `npm run build`.
+- **Tests fail:** run `npm test` to identify the failed financial scenario.

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { accountTypes, type AccountType } from "@/lib/finance"
+import { useLanguage } from "@/components/language-provider"
 
 const accountLabels: Record<AccountType, string> = {
   cash: "Tunai",
@@ -15,6 +16,7 @@ const accountLabels: Record<AccountType, string> = {
 }
 
 export function AddAccountForm({ onAdded }: { onAdded?: () => void }) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [type, setType] = useState<AccountType | "">("")
@@ -36,7 +38,7 @@ export function AddAccountForm({ onAdded }: { onAdded?: () => void }) {
 
     if (!response.ok) {
       const result = await response.json().catch(() => null)
-      setError(result?.error ?? "Akun tidak dapat disimpan.")
+      setError(result?.error ?? t("accountSaveFailed"))
       return
     }
 
@@ -51,19 +53,19 @@ export function AddAccountForm({ onAdded }: { onAdded?: () => void }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button>Tambah akun</Button></DialogTrigger>
+      <DialogTrigger asChild><Button>{t("addAccount")}</Button></DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Tambah akun</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("addAccount")}</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input placeholder="Nama akun, misalnya BCA" value={name} onChange={(event) => setName(event.target.value)} required />
+          <Input placeholder={t("accountName")} value={name} onChange={(event) => setName(event.target.value)} required />
           <Select value={type} onValueChange={(value) => setType(value as AccountType)} required>
-            <SelectTrigger><SelectValue placeholder="Pilih tipe akun" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t("chooseAccountType")} /></SelectTrigger>
             <SelectContent>{accountTypes.map((item) => <SelectItem key={item} value={item}>{accountLabels[item]}</SelectItem>)}</SelectContent>
           </Select>
-          <Input type="number" step="1" inputMode="numeric" placeholder="Saldo awal (opsional)" value={initialBalance} onChange={(event) => setInitialBalance(event.target.value)} />
-          <Input placeholder="Catatan (opsional)" value={description} onChange={(event) => setDescription(event.target.value)} />
+          <Input type="number" step="1" inputMode="numeric" placeholder={t("openingBalance")} value={initialBalance} onChange={(event) => setInitialBalance(event.target.value)} />
+          <Input placeholder={t("noteOptional")} value={description} onChange={(event) => setDescription(event.target.value)} />
           {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-          <DialogFooter><Button type="submit" disabled={loading}>{loading ? "Menyimpan..." : "Simpan akun"}</Button></DialogFooter>
+          <DialogFooter><Button type="submit" disabled={loading}>{loading ? t("saving") : t("saveAccount")}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

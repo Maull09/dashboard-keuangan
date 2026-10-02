@@ -10,16 +10,18 @@ import { DebtManager } from "@/components/debt-manager"
 import { GoalsManager } from "@/components/goals-manager"
 import { PlanningManager } from "@/components/planning-manager"
 import { Sidebar } from "@/components/sidebar"
+import { useLanguage } from "@/components/language-provider"
 import { TransactionList } from "@/components/transaction-list"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { formatCurrency, getCurrentMonth } from "@/lib/finance"
+import { getCurrentMonth } from "@/lib/finance"
 import type { DashboardData } from "@/lib/types"
 
 const chartColors = ["#0f766e", "#2563eb", "#d97706", "#be123c", "#7c3aed", "#475569"]
 
 export default function FinanceTracker() {
+  const { locale, t } = useLanguage()
   const [tab, setTab] = useState("dashboard")
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<DashboardData | null>(null)
@@ -31,7 +33,7 @@ export default function FinanceTracker() {
     const response = await fetch("/api/dashboard")
 
     if (!response.ok) {
-      setError("Ringkasan keuangan tidak dapat dimuat. Coba muat ulang halaman.")
+      setError(t("summaryUnavailable"))
       setLoading(false)
       return
     }
@@ -39,7 +41,7 @@ export default function FinanceTracker() {
     setData(await response.json())
     setError("")
     setLoading(false)
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void loadDashboard()
@@ -53,10 +55,10 @@ export default function FinanceTracker() {
       <Sidebar activeTab={tab} setActiveTab={setTab} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
-          <button className="rounded-md p-2 hover:bg-muted md:hidden" onClick={() => setSidebarOpen(true)} aria-label="Buka menu">
+          <button className="rounded-md p-2 hover:bg-muted md:hidden" onClick={() => setSidebarOpen(true)} aria-label={t("openMenu")}>
             <Menu className="h-5 w-5" />
           </button>
-          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="h-4 w-4" /><span>{new Intl.DateTimeFormat("id-ID", { year: "numeric", month: "long" }).format(new Date())}</span></div>
+          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="h-4 w-4" /><span>{new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", { year: "numeric", month: "long" }).format(new Date())}</span></div>
         </header>
         <main className="flex-1 p-4 md:p-6">
           <Tabs value={tab} onValueChange={setTab} className="w-full">
@@ -75,17 +77,18 @@ export default function FinanceTracker() {
 }
 
 function Dashboard({ data, loading, error }: { data: DashboardData | null; loading: boolean; error: string }) {
+  const { formatCurrency, t } = useLanguage()
   if (loading) return <LoadingPanel />
   if (!data || error) return <ErrorPanel message={error} />
 
   return (
     <div className="space-y-6">
-      <div className="max-w-2xl"><p className="text-sm font-medium text-primary">Kondisi keuangan saat ini</p><h1 className="mt-1 text-3xl font-bold tracking-tight">Uang Anda, dalam satu pandangan.</h1><p className="mt-2 text-muted-foreground">Saldo dihitung dari saldo awal setiap akun dan seluruh transaksi yang tercatat.</p></div>
+      <div className="max-w-2xl"><p className="text-sm font-medium text-primary">{t("currentFinancialPosition")}</p><h1 className="mt-1 text-3xl font-bold tracking-tight">{t("moneyAtAGlance")}</h1><p className="mt-2 text-muted-foreground">{t("dashboardDescription")}</p></div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Saldo seluruh akun" value={formatCurrency(data.runningBalance)} icon={<DollarSign className="h-5 w-5" />} tone={data.runningBalance < 0 ? "text-rose-700" : "text-primary"} />
-        <MetricCard label="Pemasukan bulan ini" value={formatCurrency(data.income)} icon={<ArrowUpRight className="h-5 w-5" />} tone="text-emerald-700" />
-        <MetricCard label="Pengeluaran bulan ini" value={formatCurrency(data.expense)} icon={<ArrowDownRight className="h-5 w-5" />} tone="text-rose-700" />
-        <MetricCard label="Rasio tabungan bulan ini" value={`${data.savingRate}%`} icon={<TrendingUp className="h-5 w-5" />} tone={data.savingRate < 0 ? "text-rose-700" : "text-primary"} />
+        <MetricCard label={t("totalBalance")} value={formatCurrency(data.runningBalance)} icon={<DollarSign className="h-5 w-5" />} tone={data.runningBalance < 0 ? "text-rose-700" : "text-primary"} />
+        <MetricCard label={t("monthlyIncome")} value={formatCurrency(data.income)} icon={<ArrowUpRight className="h-5 w-5" />} tone="text-emerald-700" />
+        <MetricCard label={t("monthlyExpense")} value={formatCurrency(data.expense)} icon={<ArrowDownRight className="h-5 w-5" />} tone="text-rose-700" />
+        <MetricCard label={t("monthlySavingRate")} value={`${data.savingRate}%`} icon={<TrendingUp className="h-5 w-5" />} tone={data.savingRate < 0 ? "text-rose-700" : "text-primary"} />
       </div>
       <AccountSummary />
       <div className="grid gap-4 xl:grid-cols-2">
@@ -97,6 +100,7 @@ function Dashboard({ data, loading, error }: { data: DashboardData | null; loadi
 }
 
 function Reports({ data, loading, error }: { data: DashboardData | null; loading: boolean; error: string }) {
+  const { formatCurrency, t } = useLanguage()
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth())
   const [reportData, setReportData] = useState<DashboardData | null>(data)
 
@@ -119,6 +123,7 @@ function Reports({ data, loading, error }: { data: DashboardData | null; loading
 }
 
 function DistributionCard({ title, description, data, emptyMessage }: { title: string; description: string; data: Array<{ name: string; value: number; color: string }>; emptyMessage: string }) {
+  const { formatCurrency } = useLanguage()
   return <Card><CardHeader><CardTitle>{title}</CardTitle><CardDescription>{description}</CardDescription></CardHeader><CardContent>{data.length === 0 ? <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">{emptyMessage}</div> : <ResponsiveContainer width="100%" height={300}><PieChart><Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={92}>{data.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip formatter={(value: number) => formatCurrency(value)} /></PieChart></ResponsiveContainer>}</CardContent></Card>
 }
 
@@ -127,9 +132,11 @@ function MetricCard({ label, value, icon, tone }: { label: string; value: string
 }
 
 function LoadingPanel() {
-  return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">Memuat ringkasan keuangan...</div>
+  const { t } = useLanguage()
+  return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">{t("loadingSummary")}</div>
 }
 
 function ErrorPanel({ message }: { message: string }) {
-  return <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-destructive">{message || "Data tidak dapat dimuat."}</div>
+  const { t } = useLanguage()
+  return <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-destructive">{message || t("dataUnavailable")}</div>
 }

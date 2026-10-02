@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { expenseCategories, getToday, incomeCategories, type TransactionType } from "@/lib/finance"
+import { useLanguage } from "@/components/language-provider"
 import type { Account, Transaction } from "@/lib/types"
 
 type TransactionFormProps = {
@@ -20,6 +21,7 @@ const categories: Record<TransactionType, readonly string[]> = {
 }
 
 export function TransactionForm({ accounts, transaction, onSaved }: TransactionFormProps) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense")
   const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : "")
@@ -72,7 +74,7 @@ export function TransactionForm({ accounts, transaction, onSaved }: TransactionF
 
     if (!response.ok) {
       const result = await response.json().catch(() => null)
-      setError(result?.error ?? "Transaksi tidak dapat disimpan.")
+      setError(result?.error ?? t("transactionSaveFailed"))
       return
     }
 
@@ -84,37 +86,37 @@ export function TransactionForm({ accounts, transaction, onSaved }: TransactionF
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={transaction ? "outline" : "default"}>{transaction ? "Ubah" : "Tambah transaksi"}</Button>
+        <Button variant={transaction ? "outline" : "default"}>{transaction ? t("edit") : t("addTransaction")}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{transaction ? "Ubah transaksi" : "Catat transaksi"}</DialogTitle>
+          <DialogTitle>{transaction ? t("editTransaction") : t("recordTransaction")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Select value={type} onValueChange={(value) => handleTypeChange(value as TransactionType)} required>
-            <SelectTrigger><SelectValue placeholder="Jenis transaksi" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t("transactionType")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="income">Pemasukan</SelectItem>
-              <SelectItem value="expense">Pengeluaran</SelectItem>
-              <SelectItem value="transfer">Transfer</SelectItem>
+              <SelectItem value="income">{t("income")}</SelectItem>
+              <SelectItem value="expense">{t("expense")}</SelectItem>
+              <SelectItem value="transfer">{t("transfer")}</SelectItem>
             </SelectContent>
           </Select>
-          <Input type="number" min="1" step="1" inputMode="numeric" placeholder="Jumlah" value={amount} onChange={(event) => setAmount(event.target.value)} required />
+          <Input type="number" min="1" step="1" inputMode="numeric" placeholder={t("amount")} value={amount} onChange={(event) => setAmount(event.target.value)} required />
           <Select value={category} onValueChange={setCategory} required>
-            <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t("chooseCategory")} /></SelectTrigger>
             <SelectContent>
               {categories[type].map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={accountId} onValueChange={setAccountId} required>
-            <SelectTrigger><SelectValue placeholder={type === "transfer" ? "Akun asal" : "Pilih akun"} /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={type === "transfer" ? t("sourceAccount") : t("chooseAccount")} /></SelectTrigger>
             <SelectContent>
               {accounts.map((account) => <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>)}
             </SelectContent>
           </Select>
           {type === "transfer" && (
             <Select value={destinationAccountId} onValueChange={setDestinationAccountId} required>
-              <SelectTrigger><SelectValue placeholder="Akun tujuan" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t("destinationAccount")} /></SelectTrigger>
               <SelectContent>
                 {accounts.filter((account) => String(account.id) !== accountId).map((account) => (
                   <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>
@@ -123,10 +125,10 @@ export function TransactionForm({ accounts, transaction, onSaved }: TransactionF
             </Select>
           )}
           <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
-          <Input placeholder="Catatan (opsional)" value={description} onChange={(event) => setDescription(event.target.value)} />
+          <Input placeholder={t("note")} value={description} onChange={(event) => setDescription(event.target.value)} />
           {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
           <DialogFooter>
-            <Button type="submit" disabled={loading || accounts.length === 0}>{loading ? "Menyimpan..." : "Simpan transaksi"}</Button>
+            <Button type="submit" disabled={loading || accounts.length === 0}>{loading ? t("saving") : t("saveTransaction")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

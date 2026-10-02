@@ -43,7 +43,7 @@ Read the selected skill's instructions before acting. If skills conflict, follow
 
 This section is intentionally project-specific. Replace or remove it when copying this file to another repository.
 
-### Dashboard Keuangan
+### Finance Tracker
 
 - This repository is a personal finance dashboard for recording accounts, transactions, budgets, financial goals, and debts or receivables.
 - The application uses Next.js, React, TypeScript, Tailwind CSS, Drizzle ORM, and PostgreSQL through Supabase.

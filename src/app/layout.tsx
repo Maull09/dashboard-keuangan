@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { LanguageProvider } from "@/components/language-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard Keuangan",
-  description: "Catat dan pantau keuangan pribadi Anda.",
+  title: "Finance Tracker",
+  description: "Record and monitor your personal finances.",
 };
 
 export default function RootLayout({
@@ -23,11 +24,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

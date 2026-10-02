@@ -6,10 +6,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { useLanguage } from "@/components/language-provider"
 import { formatCurrency, getToday } from "@/lib/finance"
 import type { AccountSummary as AccountSummaryData } from "@/lib/types"
 
 export function AccountSummary() {
+  const { formatCurrency, t } = useLanguage()
   const [accounts, setAccounts] = useState<AccountSummaryData[]>([])
 
   async function fetchAccounts() {
@@ -27,7 +29,7 @@ export function AccountSummary() {
 
   return (
     <section aria-labelledby="account-summary-title">
-      <div className="mb-3 flex items-baseline justify-between"><h3 id="account-summary-title" className="font-semibold">Saldo per akun</h3><span className="text-sm text-muted-foreground">Dihitung dari saldo awal dan transaksi</span></div>
+      <div className="mb-3 flex items-baseline justify-between"><h3 id="account-summary-title" className="font-semibold">{t("accountBalance")}</h3><span className="text-sm text-muted-foreground">{t("accountBalanceDescription")}</span></div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {accounts.map((account) => <Card key={account.id} className="border-l-4 border-l-primary/60"><CardContent className="p-4"><p className="text-xs text-muted-foreground">{account.type}</p><p className="mt-1 font-semibold">{account.name}</p><p className={`mt-2 text-lg font-bold ${account.balance < 0 ? "text-rose-700" : "text-foreground"}`}>{formatCurrency(account.balance)}</p><ReconcileAccount account={account} /></CardContent></Card>)}
       </div>
