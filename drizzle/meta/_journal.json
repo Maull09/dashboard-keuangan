@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1752400737789,
+      "tag": "0000_large_shooting_star",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790887045168,
+      "tag": "0001_rare_blackheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790888206548,
+      "tag": "0002_uneven_killer_shrike",
+      "breakpoints": true
+    }
+  ]
+}
