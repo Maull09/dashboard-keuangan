@@ -16,10 +16,12 @@
 - [x] Menambah tes otomatis perhitungan finansial dan validasi.
 - [x] Menambah CHANGELOG untuk catatan perubahan.
 - [x] Menulis ulang README dengan tujuan, fitur, alur penggunaan, setup, dan batasan proyek.
+- [x] Memindahkan konektor database dari Neon ke Supabase.
 
 ## Berikutnya
 
 - [ ] Backup database lalu jalankan `npm run db:migrate`.
+- [ ] Buat project Supabase dan isi `DATABASE_URL` dari Supabase Connect.
 - [ ] Pindahkan transaksi lama dari akun `Akun belum dikategorikan` ke akun yang benar.
 - [ ] Tambahkan autentikasi dan isolasi data pengguna sebelum aplikasi dipublikasikan.
 - [ ] Tambahkan impor/ekspor CSV sebagai backup data pengguna.

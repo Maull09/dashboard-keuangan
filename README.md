@@ -33,7 +33,7 @@ Fokus aplikasi adalah satu sumber data yang konsisten: saldo, anggaran, laporan,
 - [Next.js 15](https://nextjs.org/) dan React 19
 - TypeScript
 - Tailwind CSS dan komponen Radix UI
-- PostgreSQL atau Neon PostgreSQL
+- PostgreSQL di Supabase
 - Drizzle ORM dan Drizzle Kit
 - Recharts untuk visualisasi
 - Vitest untuk tes perhitungan finansial
@@ -42,7 +42,7 @@ Fokus aplikasi adalah satu sumber data yang konsisten: saldo, anggaran, laporan,
 
 - Node.js 20 atau lebih baru
 - npm
-- Database PostgreSQL yang dapat diakses dari komputer lokal
+- Project database Supabase
 
 ## Menjalankan secara lokal
 
@@ -59,11 +59,13 @@ Fokus aplikasi adalah satu sumber data yang konsisten: saldo, anggaran, laporan,
    npm install
    ```
 
-3. Buat file `.env` pada root proyek.
+3. Buat project di [Supabase](https://supabase.com/dashboard), lalu salin connection string dari **Connect**. Buat file `.env` pada root proyek dengan URL **Transaction pooler**. Pilihan ini direkomendasikan ketika aplikasi berjalan sebagai serverless function.
 
    ```env
-   DATABASE_URL=postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE
+   DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=require
    ```
+
+   Gunakan nilai persis dari dashboardâ€”host dan username pooler tidak dapat disusun sendiri. Pastikan karakter khusus pada password telah di-URL-encode. Jangan pernah gunakan prefix `NEXT_PUBLIC_` untuk URL ini.
 
 4. Terapkan migrasi database.
 
@@ -71,7 +73,7 @@ Fokus aplikasi adalah satu sumber data yang konsisten: saldo, anggaran, laporan,
    npm run db:migrate
    ```
 
-   Backup database terlebih dahulu jika database tersebut sudah berisi data. Migrasi awal mempertahankan transaksi lama dengan menempatkannya pada akun `Akun belum dikategorikan`; pindahkan transaksi itu ke akun yang benar melalui halaman Transaksi.
+   Untuk migrasi, ganti sementara `DATABASE_URL` dengan URL **Direct connection** dari Supabase Connect (port `5432`), lalu kembalikan URL transaction pooler setelah selesai. Backup database terlebih dahulu jika database tersebut sudah berisi data. Migrasi awal mempertahankan transaksi lama dengan menempatkannya pada akun `Akun belum dikategorikan`; pindahkan transaksi itu ke akun yang benar melalui halaman Transaksi.
 
 5. Jalankan aplikasi.
 
@@ -144,4 +146,4 @@ Tes saat ini melindungi perhitungan saldo termasuk transfer, rollover anggaran, 
 
 - Aplikasi belum memiliki autentikasi atau pemisahan data per pengguna; jangan publikasikan aplikasi ke pengguna lain sebelum fitur tersebut tersedia.
 - Integrasi bank otomatis dan impor/ekspor CSV belum tersedia.
-- Migrasi database harus ditinjau dan dibackup sebelum diterapkan pada data finansial aktif.
+- Migrasi database harus ditinjau dan dibackup sebelum diterapkan pada data finansial aktif. Gunakan URL direct connection Supabase untuk proses migrasi.

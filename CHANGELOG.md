@@ -18,6 +18,7 @@ Format changelog mengikuti prinsip perubahan yang mudah dipahami pengguna. Tangg
 
 ### Changed
 
+- Konektor database dipindahkan dari Neon serverless ke driver PostgreSQL standar untuk Supabase.
 - Saldo dashboard dan akun dihitung dari saldo awal serta seluruh riwayat transaksi.
 - Anggaran memakai total transaksi pengeluaran untuk periode yang dipilih.
 - Validasi server diperketat untuk data finansial yang baru dibuat atau diperbarui.
