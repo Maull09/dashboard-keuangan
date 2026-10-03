@@ -6,12 +6,14 @@ The investment, net-worth, simulation, calendar, and sinking-fund views share th
 
 1. Back up the intended Supabase database and stop the app while updating its schema.
 2. Use the Supabase Direct connection URL or Session pooler (port 5432) in `DATABASE_URL` temporarily.
-3. Run `npm run db:migrate` to apply pending migrations, including `0003_wild_ultimo.sql`.
+3. Run `npm run db:migrate` to apply pending migrations, including `0003_wild_ultimo.sql` and `0004_clumsy_jane_foster.sql`.
 4. Run `npm run db:migrate -- --check`, restore the runtime pooler URL, and restart the app.
 
 Existing tables with empty migration history need explicit, verified legacy adoption rather than replaying the initial migration. See the [database migration and recovery guide](database-migrations.md).
 
 The new migration adds six tables: instruments, trades, prices, watchlist entries, sinking funds, and fund entries. It does not reinterpret existing balances or insert sample financial records. Migration generation is not database migration. Without these tables, the new ledger queries, including the dashboard's cash balance, will fail.
+
+Migration 0004 removes the whole-lot restriction and converts trade quantities/prices to fixed-precision PostgreSQL numeric columns without changing their existing values. Apply it before recording decimal trades.
 
 Review legacy investment accounts before recording stock trades. Their opening balance must represent cash, not holdings. Do not leave a previous portfolio valuation in opening cash and then record the same holdings again. Enter actual trade history and the cash funding that existed before those purchases; backdated buys are checked against cash and earlier holdings. Back up and reconcile existing data before making manual corrections.
 
@@ -19,14 +21,15 @@ Review legacy investment accounts before recording stock trades. Their opening b
 
 - Create an **Investment** account for brokerage cash. Record transfers into it using Transactions.
 - Record actual buys and sells in Investments. These records do not send orders to a broker.
-- Use a four-letter IDX ticker, a trade date no later than today, whole lots, price per share, and total fees/taxes. One lot represents 100 shares in this version.
+- Use a four-letter IDX ticker, a trade date no later than today, lots, price per share, and total fees/taxes. One lot represents 100 shares. Lots allow up to six decimal places; shares allow four; prices allow two. For example, 1.25 lots equals 125 shares, and 0.012345 lots equals 1.2345 shares.
+- Decimal quantities are bookkeeping inputs, not a guarantee that a broker or exchange can execute them. Fees remain whole-rupiah inputs. The table localizes decimal separators and calculates average cost from trades and fees; it is not an independently editable balance.
 - Positions are calculated separately for each account and ticker, in date order. Same-day trades use record order.
-- Weighted-average cost includes buy fees. A partial sale releases a proportional cost basis, rounded to whole rupiah; the final sale releases the remaining basis exactly. Sale fees reduce proceeds.
+- Trade gross values are rounded half-up to 0.01 IDR, using scaled integer arithmetic; trades whose gross rounds to zero are rejected. Weighted-average cost includes buy fees. A partial sale releases proportional cost basis rounded to 0.01 IDR rather than whole rupiah; the final sale releases the remaining basis exactly. Sale fees reduce proceeds. Average cost is computed from the remaining cost basis and displayed with up to two decimal places.
 - Buying reduces brokerage cash; selling increases it. Neither creates an ordinary consumption expense or income record, so the same trade must not also be entered in Transactions.
 - Sales exceeding holdings, cash-short purchases, and purchases using money already allocated to goals/funds are rejected. Removing a trade is rejected when it would invalidate subsequent holdings or cash history.
 - Add a stock to the Watchlist to follow its daily close without owning it. Removing a watchlist entry leaves trade history and prices intact.
 
-Stock splits, dividends, rights issues, fractional shares, short selling, non-IDR securities, and corporate-action adjustments are not automatically handled. Returns are rupiah gains/losses, not annualized or time-weighted performance. Do not treat the portfolio as an execution system or investment recommendation.
+Stock splits, dividends, rights issues, short selling, non-IDR securities, and corporate-action adjustments are not automatically handled. Returns are rupiah gains/losses, not annualized or time-weighted performance. Do not treat the portfolio as an execution system or investment recommendation.
 
 ## Configure daily prices
 

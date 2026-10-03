@@ -35,6 +35,8 @@ Drizzle schema definitions are in `src/db/schema.ts`; generated migrations are i
 
 Migration `0003_wild_ultimo.sql` adds stock portfolios, price history, watchlists, and sinking funds. Apply it before running this version, since cash queries now include the stock ledger. Optional daily pricing uses `TWELVE_DATA_API_KEY` and `CRON_SECRET`; see [investment and planning setup](investments-and-planning.md).
 
+Migration `0004_clumsy_jane_foster.sql` enables decimal trade quantities/prices and removes the whole-lot constraint. Existing trade values are preserved. Cash and partial-sale cost allocations now use cent precision; API validation rejects excess input precision instead of silently truncating it.
+
 ## Troubleshooting
 
 - **Cannot connect to the database:** verify that `DATABASE_URL` comes from Supabase Connect, is URL-encoded where required, and uses SSL.

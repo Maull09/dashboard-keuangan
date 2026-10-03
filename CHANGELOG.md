@@ -4,6 +4,16 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
 ## 2026-10-03
 
+### Decimal stock quantities and prices
+
+- Removed the whole-lot restriction from stock forms, API validation, and database constraints. Lots support six decimal places, shares four, and prices two; existing integer inputs remain valid.
+- Added migration `0004_clumsy_jane_foster.sql` with fixed-precision numeric trade columns and numeric precision/scale verification in the migration runner.
+- Localized fractional quantities, added English/Indonesian precision hints, and explicitly enabled currency fractions so browsers do not round average cost to whole IDR. Invalid or incomplete forms no longer enter decimal arithmetic or enable submission.
+- Rounded stock gross values and proportional sale cost allocations half-up to 0.01 IDR, replacing whole-rupiah partial-sale rounding. Used scaled integers for quantities and cent sums for stock cash, portfolio totals, and cash-history validation; final sales leave no quantity/cost residue.
+- Created and archive-validated a private pre-migration backup, applied migration 0004 to Supabase, and verified unchanged values and row counts across all 15 application tables. No sample stock trades were written to the live database.
+
+Verification: 125 automated tests, TypeScript checking, and a production build passed. Isolated PostgreSQL checks covered all five migrations, preservation of legacy trades, numeric schema checks, decimal API round trips, full-position sales, oversell rollback, excess-precision rejection, and 100 one-cent buys ending at exactly zero cash. Mocked browser checks covered English/Indonesian quantity and average-cost formatting, decimal form steps, excess-precision prevention, failed-submission input retention, and 375 px dialog bounds. Real investment, account-summary, dashboard, and net-worth GET endpoints returned HTTP 200; Supabase readiness checks passed with all 15 tables and five migrations.
+
 ### Database migration recovery (17:55 Asia/Jakarta)
 
 - Replaced the migration CLI wrapper with a plain Node.js runner using the official Drizzle migrator, explicit progress/success reporting, and post-migration schema verification.

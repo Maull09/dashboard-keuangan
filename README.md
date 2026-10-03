@@ -11,6 +11,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 - Debts and receivables with partial payments and repayment history.
 - Recurring transactions, payday cash-flow forecasts, and account reconciliation.
 - IDX stock portfolios with buy/sell records, fees, weighted-average cost, realized/unrealized gains, and a watchlist.
+- Decimal stock quantities and purchase/sale prices: fractional lots and shares are supported, with localized average cost and cent-precision cash accounting.
 - Daily stock closes from Twelve Data, with manual refresh and a protected scheduled job; provider configuration and IDX entitlement are required.
 - Net worth combining cash, stock valuations, receivables, and unpaid debts without counting allocations twice.
 - Read-only simulations comparing scheduled cash flow with an extra monthly installment.
@@ -55,7 +56,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Existing installations also need migration `0003_wild_ultimo.sql` before starting this version. It adds the investment and sinking-fund tables; generating it does not apply it to Supabase.
+Existing installations also need migrations `0003_wild_ultimo.sql` and `0004_clumsy_jane_foster.sql` before starting this version. They add investment/sinking-fund tables and decimal stock quantities/prices; generating migrations does not apply them to Supabase.
 
 If application tables already exist but migration history is empty, normal migration stops without replaying old SQL. Follow the [database migration and recovery guide](docs/database-migrations.md) to back up and adopt the verified legacy schema. The runner reports pending migrations and verifies the resulting schema instead of treating a silent exit as success.
 

@@ -2,6 +2,9 @@
 
 ## Completed
 
+- [x] Support fractional stock lots/shares and decimal trade prices, with strict precision validation and localized formatting.
+- [x] Keep stock cash totals, full-position sales, and partial-sale cost allocations stable with scaled integer/cent arithmetic.
+- [x] Back up Supabase and apply migration 0004, verifying unchanged financial row counts and values.
 - [x] Align the database schema and baseline migrations.
 - [x] Calculate balances and budgets from transactions.
 - [x] Add server-side validation for financial records.
