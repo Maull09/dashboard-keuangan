@@ -4,6 +4,16 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
 ## 2026-10-03
 
+### Database migration recovery (17:55 Asia/Jakarta)
+
+- Replaced the migration CLI wrapper with a plain Node.js runner using the official Drizzle migrator, explicit progress/success reporting, and post-migration schema verification.
+- Added a read-only `npm run db:migrate -- --check` command and guarded adoption of the verified nine-table legacy schema when migration history is empty. Normal migration refuses to replay initial SQL over existing application tables.
+- Required a custom-format backup for explicit legacy adoption, locked affected tables/history during verification, and recorded exact migration hashes/timestamps without replaying legacy SQL. Baseline adoption and pending migration application are separate transactions.
+- Added schema-verification tests and recovery documentation covering connection methods, PostgreSQL backup-tool versions, verified TLS, and safe retry behavior. Ignored local backup archives in Git.
+- With the user's approval, created and archive-validated a private backup, adopted migrations 0000–0002, and applied migration 0003 to Supabase. All 15 application tables and four migration records passed verification; row counts, data digests, and serial sequence values were unchanged across all nine legacy tables.
+
+Verification: 107 automated tests, TypeScript checking, and a production build passed. Isolated PostgreSQL checks covered fresh migration, no-op reruns, successful legacy adoption, repeat-adoption rejection, and mismatched-schema rollback. Normal migration and read-only checks passed on Supabase. Seven real application GET endpoints returned HTTP 200, including dashboard, accounts, investments, net worth, sinking funds, and calendar. Backup tooling used the official Supabase CA with certificate and hostname verification; archive listing was checked, but a full restore rehearsal was not performed.
+
 ### Investments and planning expansion
 
 - Added IDX stock portfolios, buy/sell records, brokerage cash accounts, whole-lot quantities, fees, weighted-average cost, realized/unrealized gains, and watchlists.

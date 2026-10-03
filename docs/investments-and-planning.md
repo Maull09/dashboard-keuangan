@@ -5,9 +5,11 @@ The investment, net-worth, simulation, calendar, and sinking-fund views share th
 ## Apply the database migration
 
 1. Back up the intended Supabase database and stop the app while updating its schema.
-2. Use the Supabase Direct connection URL in `DATABASE_URL` temporarily.
+2. Use the Supabase Direct connection URL or Session pooler (port 5432) in `DATABASE_URL` temporarily.
 3. Run `npm run db:migrate` to apply pending migrations, including `0003_wild_ultimo.sql`.
-4. Restore the runtime pooler URL and restart the app.
+4. Run `npm run db:migrate -- --check`, restore the runtime pooler URL, and restart the app.
+
+Existing tables with empty migration history need explicit, verified legacy adoption rather than replaying the initial migration. See the [database migration and recovery guide](database-migrations.md).
 
 The new migration adds six tables: instruments, trades, prices, watchlist entries, sinking funds, and fund entries. It does not reinterpret existing balances or insert sample financial records. Migration generation is not database migration. Without these tables, the new ledger queries, including the dashboard's cash balance, will fail.
 

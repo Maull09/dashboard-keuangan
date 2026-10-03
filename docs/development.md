@@ -13,7 +13,7 @@ Create `.env` in the repository root. In Supabase, open **Connect** and copy the
 DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=require
 ```
 
-Use the **Transaction pooler** URL for serverless deployments. Use the **Direct connection** URL temporarily when running database migrations. Copy the URL exactly from Supabase; pooler hosts and usernames are project-specific. Do not commit `.env` or expose it with a `NEXT_PUBLIC_` prefix.
+Use the **Transaction pooler** URL for serverless deployments. Use the **Direct connection** URL or **Session pooler** (port 5432) for migrations and backups. The Session pooler supports IPv4-only networks. Copy the URL from Supabase; pooler hosts and usernames are project-specific. Do not commit `.env` or expose it with a `NEXT_PUBLIC_` prefix.
 
 ## Commands
 
@@ -24,9 +24,10 @@ npm run build
 npm test
 npm run db:generate
 npm run db:migrate
+npm run db:migrate -- --check
 ```
 
-`db:generate` creates a Drizzle migration after a schema change. `db:migrate` applies existing migrations. Back up financial data before applying a migration.
+`db:generate` creates a Drizzle migration after a schema change. `db:migrate` applies existing migrations and verifies required schema objects. `--check` is read-only. Back up financial data before applying a migration; see the [migration and recovery guide](database-migrations.md) if existing tables have no migration history.
 
 ## Database
 
@@ -37,6 +38,7 @@ Migration `0003_wild_ultimo.sql` adds stock portfolios, price history, watchlist
 ## Troubleshooting
 
 - **Cannot connect to the database:** verify that `DATABASE_URL` comes from Supabase Connect, is URL-encoded where required, and uses SSL.
-- **Migration fails:** make sure `DATABASE_URL` temporarily uses Supabase Direct connection and targets the intended database.
+- **Missing `stock_trades`:** run `npm run db:migrate -- --check`, then follow the [migration and recovery guide](database-migrations.md). Successful account queries do not prove that all feature tables exist.
+- **Migration fails:** make sure the connection targets the intended database. Use Direct connection or the Session pooler for migration work. Do not force schema pushes, drop application tables, or invent migration history to suppress an error.
 - **Build fails:** run `npm install`, then retry `npm run build`.
 - **Tests fail:** run `npm test` to identify the failed financial scenario.

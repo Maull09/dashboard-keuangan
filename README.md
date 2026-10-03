@@ -40,10 +40,11 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
    DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=require
    ```
 
-4. Back up your database. Temporarily set `DATABASE_URL` to Supabase **Direct connection**, then run:
+4. Back up any existing database. Temporarily use Supabase **Direct connection** or the **Session pooler** (port 5432, useful on IPv4-only networks), then run:
 
    ```bash
    npm run db:migrate
+   npm run db:migrate -- --check
    ```
 
 5. Restore the Transaction pooler URL and start the app:
@@ -55,6 +56,8 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 Open [http://localhost:3000](http://localhost:3000).
 
 Existing installations also need migration `0003_wild_ultimo.sql` before starting this version. It adds the investment and sinking-fund tables; generating it does not apply it to Supabase.
+
+If application tables already exist but migration history is empty, normal migration stops without replaying old SQL. Follow the [database migration and recovery guide](docs/database-migrations.md) to back up and adopt the verified legacy schema. The runner reports pending migrations and verifies the resulting schema instead of treating a silent exit as success.
 
 ### Optional daily stock prices
 
@@ -79,6 +82,7 @@ See [investment and planning setup](docs/investments-and-planning.md) for provid
 | `npm test`            | Run calculation, validation, localization, and request-feedback tests. |
 | `npm run db:generate` | Generate a migration after a schema change.                            |
 | `npm run db:migrate`  | Apply existing Drizzle migrations.                                     |
+| `npm run db:migrate -- --check` | Check schema readiness and latest migration history without writes. |
 
 ## Data rules
 
@@ -112,6 +116,7 @@ src/components/   User interface components
 src/db/           Drizzle database connection and schema
 src/lib/          Financial calculations, validation, and shared types
 drizzle/          Database migrations
+scripts/          Verified migration runner and schema checks
 docs/             Development documentation
 ```
 

@@ -26,11 +26,15 @@
 - [x] Expand forecast schedule occurrences through payday and exclude already-recorded payments.
 - [x] Add investment/planning calculation, strict input, provider-payload, and bilingual message tests.
 - [x] Verify migrations and financial API workflows in an isolated PostgreSQL database without changing Supabase data.
+- [x] Add explicit migration progress, read-only schema readiness checks, and guarded legacy adoption with a backup prerequisite.
+- [x] Test schema verification and isolated migration recovery, rejection, rollback, and rerun behavior.
+- [x] Create a Supabase project and configure `DATABASE_URL`.
+- [x] Back up the existing database, adopt verified legacy migration history, and apply the investment/planning migration with user approval.
+- [x] Verify all 15 Supabase application tables, unchanged legacy data/sequences, and real dashboard/investment/planning GET endpoints.
 
 ## Next
 
-- [ ] Create a Supabase project and add its connection URL to `DATABASE_URL`.
-- [ ] Back up the database and run `npm run db:migrate`.
+- [ ] Rehearse restoring the private backup into a separate database and configure protected off-device backups.
 - [ ] Move legacy transactions from the `Uncategorized account` to the correct account.
 - [ ] Add authentication and per-user data isolation before publishing the app.
 - [ ] Add CSV import and export for user backups.
