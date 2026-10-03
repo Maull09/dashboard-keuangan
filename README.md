@@ -23,13 +23,13 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
 ## Stack
 
-- Next.js, React 19, TypeScript, Tailwind CSS, and Radix UI.
+- Next.js 16, React 19, TypeScript, Tailwind CSS, and Radix UI.
 - PostgreSQL on Supabase, Drizzle ORM, and Drizzle Kit.
-- Recharts and Vitest.
+- Recharts and Vitest 5.
 
 ## Run locally
 
-1. Install Node.js 20 or later and create a Supabase project.
+1. Install Node.js 22.12+ (22.x) or Node.js 24.x and create a Supabase project. These versions support both the application and its Vitest 5 tests.
 2. Install dependencies:
 
    ```bash

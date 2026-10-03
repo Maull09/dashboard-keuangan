@@ -4,6 +4,14 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
 ## 2026-10-03
 
+### Dependency and TypeScript updates
+
+- Committed the existing upgrades to Next.js 16.3.8, Drizzle ORM 0.45.3, Drizzle Kit 0.31.11, and Vitest 5.0.3, with their matching npm lockfile.
+- Committed the existing Next.js TypeScript configuration updates: `react-jsx` and generated development types in the include paths.
+- Updated setup documentation for Node.js 22.12+ (22.x) or 24.x, reflecting Vitest 5's runtime requirements, and documented lockfile-based installation.
+
+Verification: the lockfile's root dependencies matched `package.json`; 157 automated tests, TypeScript checking, and the production build passed on Node.js 22.17.1. No application behavior, database schema, or financial records were changed by this dependency commit.
+
 ### Record CRUD and repository-wide usability review
 
 - Completed stock-trade editing and watchlist metadata editing. Added visible Edit/Delete controls, a portfolio-to-history management shortcut, per-share prices, record-specific confirmations, and previous/new/projected cash previews.

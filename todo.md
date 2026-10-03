@@ -2,6 +2,9 @@
 
 ## Completed
 
+- [x] Publish the private GitHub repository and push the verified dependency, lockfile, and TypeScript updates.
+- [x] Update Node.js development/test prerequisites for the checked-in Next.js 16 and Vitest 5 versions.
+
 - [x] Complete investment trade and watchlist CRUD with discoverable Edit/Delete actions and cash-impact previews.
 - [x] Add account, budget, goal, debt/receivable, and recurring-schedule edit/delete UI with bilingual feedback.
 - [x] Protect linked contribution/payment history, recorded totals, brokerage cash/holdings, and allocated cash during edits.

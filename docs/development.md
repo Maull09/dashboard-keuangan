@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 20 or later and npm.
+- Node.js 22.12+ (22.x) or Node.js 24.x, with npm. Next.js 16 supports Node.js 20.9+, but the checked-in Vitest 5 dependency requires a newer runtime for development and tests.
 - A Supabase project.
 
 ## Environment
@@ -16,6 +16,8 @@ DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/p
 Use the **Transaction pooler** URL for serverless deployments. Use the **Direct connection** URL or **Session pooler** (port 5432) for migrations and backups. The Session pooler supports IPv4-only networks. Copy the URL from Supabase; pooler hosts and usernames are project-specific. Do not commit `.env` or expose it with a `NEXT_PUBLIC_` prefix.
 
 ## Commands
+
+Use `npm ci` to install the exact versions in the committed lockfile. Use `npm install` when intentionally updating dependencies, and commit the manifest and lockfile together.
 
 ```bash
 npm install
