@@ -41,6 +41,11 @@ export function QuickGuide() {
             "Goals",
             "Planning",
             "Reconcile",
+            "Investments",
+            "NetWorth",
+            "Simulation",
+            "Calendar",
+            "Funds",
           ].map((topic) => (
             <section key={topic}>
               <h2 className="text-sm font-semibold">{t("help" + topic)}</h2>

@@ -9,6 +9,11 @@ import {
   Target,
   TrendingUp,
   Wallet,
+  ChartCandlestick,
+  CalendarDays,
+  FlaskConical,
+  PiggyBank,
+  Scale,
 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { AddAccountForm } from "./accounts-form"
@@ -37,6 +42,11 @@ export const navigationItems = [
   { key: "reports", icon: PieChartIcon },
   { key: "planning", icon: CalendarClock },
   { key: "debts", icon: Wallet },
+  { key: "investments", icon: ChartCandlestick },
+  { key: "netWorth", icon: Scale },
+  { key: "calendar", icon: CalendarDays },
+  { key: "simulation", icon: FlaskConical },
+  { key: "funds", icon: PiggyBank },
 ]
 
 export function Sidebar({

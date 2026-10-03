@@ -27,6 +27,11 @@ import { BudgetManager } from "@/components/budget-manager"
 import { DebtManager } from "@/components/debt-manager"
 import { GoalsManager } from "@/components/goals-manager"
 import { PlanningManager } from "@/components/planning-manager"
+import { InvestmentsManager } from "@/components/investments-manager"
+import { NetWorth } from "@/components/net-worth"
+import { FinancialCalendar } from "@/components/financial-calendar"
+import { FinancialSimulation } from "@/components/financial-simulation"
+import { SinkingFunds } from "@/components/sinking-funds"
 import { Sidebar, navigationItems } from "@/components/sidebar"
 import { QuickGuide } from "@/components/quick-guide"
 import { useLanguage } from "@/components/language-provider"
@@ -131,6 +136,11 @@ export default function FinanceTracker() {
           {tab === "debts" && <DebtManager />}
           {tab === "reports" && <Reports />}
           {tab === "planning" && <PlanningManager />}
+          {tab === "investments" && <InvestmentsManager />}
+          {tab === "netWorth" && <NetWorth />}
+          {tab === "calendar" && <FinancialCalendar />}
+          {tab === "simulation" && <FinancialSimulation />}
+          {tab === "funds" && <SinkingFunds />}
         </main>
       </div>
     </div>
@@ -221,6 +231,9 @@ function Dashboard() {
               </Button>
             </div>
             <AccountSummary />
+            <Button asChild variant="outline">
+              <a href="#netWorth">{t("viewNetWorth")}</a>
+            </Button>
             <div className="grid gap-5 xl:grid-cols-2">
               <Card>
                 <CardHeader>

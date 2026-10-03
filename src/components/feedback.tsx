@@ -102,8 +102,8 @@ export function PageHeading({
   children?: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-      <div>
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="min-w-0 flex-1 basis-64">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {title}
         </h1>
@@ -112,7 +112,7 @@ export function PageHeading({
         </p>
       </div>
       {children && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
           {children}
         </div>
       )}
