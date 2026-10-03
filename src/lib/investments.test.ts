@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { formatCurrency, formatStockQuantity } from "./finance"
+import {
+  formatCurrency,
+  formatStockPrice,
+  formatStockQuantity,
+} from "./finance"
 import {
   calculateHoldings,
   investmentTotals,
@@ -21,6 +25,51 @@ const buy: StockTrade = {
 }
 
 describe("stock portfolio accounting", () => {
+  it("preserves four-decimal prices before rounding the total trade cash", () => {
+    const trade = { ...buy, shares: 125, price: 1000.1234, fees: 1 }
+    expect(tradeCashChange(trade)).toBe(-125016.43)
+    expect(tradeCashChange({ ...trade, side: "sell" })).toBe(125014.43)
+    expect(calculateHoldings([trade])[0]).toMatchObject({
+      costBasis: 125016.43,
+      averageCost: 1000.13144,
+    })
+  })
+  it.each([
+    [1, 1.0049, -1],
+    [1, 1.005, -1.01],
+    [0.5, 1.0099, -0.5],
+    [0.5, 1.01, -0.51],
+    [100, 0.0001, -0.01],
+    [0.0001, 50, -0.01],
+  ])(
+    "rounds four-decimal products half-up to cash cents: %s × %s",
+    (shares, price, amount) => {
+      expect(tradeCashChange({ ...buy, shares, price, fees: 0 })).toBe(amount)
+      expect(
+        tradeCashChange({ ...buy, side: "sell", shares, price, fees: 0 }),
+      ).toBe(-amount)
+    },
+  )
+  it("does not change legacy two-decimal cash values", () => {
+    const trade = { ...buy, shares: 1.2345, price: 8500.75, fees: 100 }
+    expect(tradeCashChange(trade)).toBe(-10594.18)
+  })
+  it.each(["id", "en"] as const)(
+    "shows exactly four price decimals without changing cash formatting: %s",
+    (locale) => {
+      const separator = locale === "id" ? "," : "."
+      expect(formatStockPrice(8500.1234, locale)).toContain(
+        "8" + (locale === "id" ? "." : ",") + "500" + separator + "1234",
+      )
+      expect(formatStockPrice(8500, locale)).toContain(
+        "500" + separator + "0000",
+      )
+      expect(formatStockPrice(1.12345, locale)).toContain(
+        "1" + separator + "1235",
+      )
+      expect(formatCurrency(1.1234, locale)).toContain("1" + separator + "12")
+    },
+  )
   it("validates edited trade cash and protected allocations", () => {
     expect(() =>
       validateInvestmentAccount(

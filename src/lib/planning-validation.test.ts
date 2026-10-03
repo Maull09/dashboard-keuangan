@@ -139,7 +139,9 @@ describe("financial planning validation", () => {
     { lots: "1e2" },
     { lots: true },
     { price: 0 },
-    { price: 1.001 },
+    { price: 1.00001 },
+    { price: "8500.12345" },
+    { price: 0.00001 },
     { price: NaN },
     { fees: -1 },
     { accountId: true },
@@ -157,6 +159,11 @@ describe("financial planning validation", () => {
     [0.003, 10.25, 0.3],
     [0.000001, 100, 0.0001],
     ["1.2500000", "8500.750", 125],
+    [1.25, "8500.1234", 125],
+    [1, "1.0001", 100],
+    [1, "0.0001", 100],
+    [1, "1000000000.0000", 100],
+    [1, "8500.123400", 100],
   ])("accepts decimal lots and prices: %s, %s", (lots, price, shares) => {
     expect(parseStockTrade({ ...trade, lots, price })).toMatchObject({
       shares,

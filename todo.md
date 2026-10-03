@@ -2,6 +2,10 @@
 
 ## Completed
 
+- [x] Support four-decimal per-share trade prices in forms, validation, calculations, and localized investment displays while keeping cash totals at cent precision.
+- [x] Generate migration 0005 and verify legacy-value preservation, four-decimal API persistence, bilingual browser behavior, and automated regression tests without live database changes.
+- [x] Back up Supabase and apply migration 0005 for four-decimal trade prices with user approval, verifying schema readiness and unchanged financial values.
+
 - [x] Publish the private GitHub repository and push the verified dependency, lockfile, and TypeScript updates.
 - [x] Update Node.js development/test prerequisites for the checked-in Next.js 16 and Vitest 5 versions.
 

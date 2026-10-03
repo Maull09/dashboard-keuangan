@@ -36,9 +36,9 @@ export function tradeCashChange(
   trade: Pick<StockTrade, "side" | "shares" | "price" | "fees">,
 ) {
   const shareUnits = BigInt(Math.round(trade.shares * 10_000))
-  const priceCents = BigInt(Math.round(trade.price * 100))
+  const priceUnits = BigInt(Math.round(trade.price * 10_000))
   const grossCents = Number(
-    (shareUnits * priceCents + BigInt(5_000)) / BigInt(10_000),
+    (shareUnits * priceUnits + BigInt(500_000)) / BigInt(1_000_000),
   )
   const feeCents = Math.round(trade.fees * 100)
   return (

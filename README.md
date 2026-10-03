@@ -12,7 +12,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 - Debts and receivables with partial payments and a readable repayment history.
 - Recurring transactions with optional end dates, transfers, guarded manual recording, payday forecasts, and account reconciliation.
 - IDX stock portfolios with editable buy/sell records, fees, weighted-average cost, realized/unrealized gains, and an editable watchlist.
-- Decimal stock quantities and purchase/sale prices: fractional lots and shares are supported, with localized average cost and cent-precision cash accounting.
+- Decimal stock quantities and purchase/sale prices: fractional lots and shares are supported, with four-decimal per-share prices and average cost, and cent-precision cash accounting.
 - Daily stock closes from Twelve Data, with manual refresh and a protected scheduled job; provider configuration and IDX entitlement are required.
 - Net worth combining cash, stock valuations, receivables, and unpaid debts without counting allocations twice.
 - Read-only simulations comparing scheduled cash flow with an extra monthly installment.
@@ -57,7 +57,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Existing installations also need migrations `0003_wild_ultimo.sql` and `0004_clumsy_jane_foster.sql` before starting this version. They add investment/sinking-fund tables and decimal stock quantities/prices; generating migrations does not apply them to Supabase.
+Existing installations also need migrations `0003_wild_ultimo.sql`, `0004_clumsy_jane_foster.sql`, and `0005_concerned_ego.sql` before starting this version. They add investment/sinking-fund tables, decimal stock quantities/prices, and four-decimal trade prices; generating migrations does not apply them to Supabase.
 
 If application tables already exist but migration history is empty, normal migration stops without replaying old SQL. Follow the [database migration and recovery guide](docs/database-migrations.md) to back up and adopt the verified legacy schema. The runner reports pending migrations and verifies the resulting schema instead of treating a silent exit as success.
 
@@ -108,7 +108,7 @@ Use **Edit** and **Delete** on individual financial records. In Investments, **M
 
 Goals and debts offer **Contribution history** and **Payment history**. Those histories and their linked cash transactions are protected from independent edits/deletion. Targets/totals cannot fall below recorded progress. Accounts linked to financial records cannot be deleted. Sinking-fund history is also protected. Deletion of an eligible record is permanent; there is no undo. Derived views such as net worth, reports, forecasts, and calendar events are managed through their source records rather than edited directly.
 
-Background refreshes keep the last loaded records and in-progress forms visible while displaying update status; failed refreshes show an error and retry control. There is no new database migration for this CRUD/usability iteration.
+Background refreshes keep the last loaded records and in-progress forms visible while displaying update status; failed refreshes show an error and retry control. Four-decimal trade prices require migration 0005; back up and migrate the database before recording them.
 
 The transaction filters search all matching records, not just the current page. **This month** selects the current period; **Clear filters** returns to the complete history. Reports and budgets have their own month selectors.
 

@@ -12,7 +12,7 @@
 
 The read-only check validates required tables, columns, types, nullability, defaults, serial sequences, primary/foreign keys, enum values, and the presence of required named checks/indexes. It also requires the latest migration timestamp in history. It does not compare every catalog property, check expression, index expression, RLS policy, or permission.
 
-Generating migrations is not applying them. An account endpoint can succeed while the dashboard fails because `stock_trades` has not been created. This version expects 15 application tables and migration `0004_clumsy_jane_foster`, including numeric trade quantities/prices with their declared precision and scale.
+Generating migrations is not applying them. An account endpoint can succeed while the dashboard fails because `stock_trades` has not been created. This version expects 15 application tables and migration `0005_concerned_ego`, including four-decimal numeric trade quantities/prices with their declared precision and scale. Migration 0005 widens only the trade price column from `numeric(14, 2)` to `numeric(16, 4)`; back up before applying it.
 
 ## Existing legacy tables with empty migration history
 
