@@ -37,28 +37,27 @@ Stock splits, dividends, rights issues, short selling, non-IDR securities, and c
 
 ## Configure daily prices
 
-Use a Twelve Data key with **Indonesia Stock Exchange / XIDX** access. The provider lists IDX data as end-of-day with plan-specific access, so a generic free key is not enough to assume coverage. Confirm entitlement and usage rights before subscribing or deploying. See [official IDX coverage](https://twelvedata.com/exchanges/xidx?group=regulatory), [provider stock coverage](https://twelvedata.com/stocks), and [IDX market-data services](https://www.idx.id/id/produk/layanan-data-bei/).
+Daily closes now use Yahoo Finance through the server-side [`yahoo-finance2`](https://github.com/gadicc/yahoo-finance2) library. IDX tickers map to `.JK`, for example [`BNBR.JK`](https://finance.yahoo.com/quote/BNBR.JK/). No market-data API key is needed. This is an unofficial integration, not a Yahoo-supported developer API; availability and compatibility are not guaranteed. Review [Yahoo's terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html) and relevant data-use rights before public/commercial deployment or redistribution. Personal deployment does not automatically grant unrestricted data rights.
 
-Set server-only environment variables:
+Install updated dependencies and restart the application. `TWELVE_DATA_API_KEY` is no longer used; old prices and financial records are not deleted, and the provider switch needs no database migration. For scheduled updates only, set this server-only environment variable:
 
 ```env
-TWELVE_DATA_API_KEY=your_provider_key_with_IDX_access
 CRON_SECRET=your_generated_long_random_secret
 ```
 
 Do not use a `NEXT_PUBLIC_` prefix or commit real keys. Restart the local server after changing `.env`; add the same variables to the deployment environment.
 
-The server requests the latest daily `time_series` close for active holdings and watchlist tickers using `mic_code=XIDX`, `interval=1day`, and `outputsize=1`. It validates the returned ticker, exchange, currency, date, and positive whole-rupiah price before saving it. See [official request guidance](https://support.twelvedata.com/en/articles/5620512-how-to-create-a-request) and [EOD data semantics and licensing](https://support.twelvedata.com/en/articles/12682324-end-of-day-eod-pricing-market-data).
+The server requests a 30-day window of daily chart bars for active holdings and watchlist tickers. It validates the `.JK` ticker, Jakarta exchange/timezone, equity type, IDR currency, daily interval, quote timestamps, and positive whole-rupiah close. It uses `close`, not adjusted close or the current market-price field. The newest non-null completed close is saved with its actual Asia/Jakarta date. Today's bar is excluded until 15 minutes after Yahoo's reported regular session end; missing/invalid same-day session metadata also excludes it. This buffer avoids treating an intraday/delayed bar as a completed close but does not certify exchange-final data. Weekends and holidays can legitimately retain an earlier price date.
 
 Prices update in three ways:
 
-- Opening Investments automatically makes one refresh request when a key is configured.
+- Opening Investments automatically makes one refresh request after records load; no API key is required.
 - **Update daily prices** requests a refresh on demand.
 - On Vercel, `vercel.json` schedules `/api/jobs/stock-prices` at `30 13 * * *`: daily at 13:30 UTC / 20:30 Asia/Jakarta. The job requires `Authorization: Bearer <CRON_SECRET>`. Configure the deployment secret before enabling the job. On another host, configure your own scheduler to call that endpoint with the authorization header.
 
-A successful fetch is cached for 15 minutes. Requests are sequential, stop on access/quota errors, and stop starting new provider calls after a 40-second processing window. Each fetch has a 15-second timeout; the routes request a 60-second hosting limit. Responses distinguish updated, cached, failed, and pending tickers. Retry pending tickers after quota resets or the previous request finishes; large watchlists may require multiple runs and an appropriate hosting/provider plan.
+A successful Yahoo fetch is cached for 15 minutes. Recently saved quotes from the previous provider do not skip the first Yahoo fetch. Requests are sequential, stop on access/rate-limit errors, and stop starting new provider calls after a 40-second processing window. Each chart request has a 15-second abort signal; the routes request a 60-second hosting limit. Responses distinguish updated, cached, failed, and pending tickers. Retry pending tickers after limits recover or the previous request finishes; large watchlists may require multiple runs and sufficient hosting time. Yahoo does not guarantee this access or a fixed request quota.
 
-The UI shows the **actual price date**, not the fetch date. Holidays, EOD availability, entitlement, network errors, and quota limits can leave older closes visible. Failed updates never overwrite a saved price with zero or a fabricated value. Daily scheduling is not a guarantee of same-day confirmed data. Live provider access still needs verification with your own key and entitlement.
+The UI shows the **actual price date and source**, not the fetch date. Holidays, delayed data, network errors, access rejection, and rate limits can leave older closes visible. Failed updates never overwrite a saved price with zero or a fabricated value. Provider failures have separate recovery messages from database failures; neither exposes raw responses or credentials. Existing quotes keep their original source, including Twelve Data, unless that ticker/date is successfully refreshed. Daily scheduling is not a guarantee of same-day confirmed data. Verify provider access in your deployment environment; successful local access does not guarantee access from a hosting platform.
 
 ## Net worth
 
@@ -102,4 +101,4 @@ Run `npm test`, `npx tsc --noEmit`, and `npm run build`. Automated tests cover f
 
 Isolated in-memory PostgreSQL checks exercised actual API handlers for buys/sales, oversell/backdate rollback, dependent-trade deletion, cash/valuation consistency, reservations, linked fund spending, empty-fund editing/deletion, calendar aggregation, simulation non-mutation, invalid requests, and the cron guard. A subsequent six-migration check verified four-decimal price persistence, unchanged legacy values across all 15 tables, edit/rejection behavior, and cent-precision cash accounting. These were not Supabase production migrations or concurrency/load tests.
 
-The application currently has no authentication or per-user isolation. Keep it private; the cron secret protects the scheduled endpoint only, not the rest of the application. Live quote retrieval and deployment scheduling need verification after environment setup.
+The application currently has no authentication or per-user isolation. Keep it private; the cron secret protects the scheduled endpoint only, not the rest of the application. Local Yahoo reads for BNBR/BBCA and an application BNBR quote refresh were verified on 2026-10-04 without altering the financial ledger. Provider access and scheduling on the deployment host still need environment-specific verification.

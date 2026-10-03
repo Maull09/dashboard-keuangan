@@ -2,6 +2,9 @@
 
 ## Completed
 
+- [x] Replace Twelve Data with server-side Yahoo Finance daily IDX closes without a market-data API key, preserving trade history and saved prices on failure.
+- [x] Validate .JK/IDR/Jakarta quote metadata, exclude unfinished daily bars, show price sources, and distinguish provider errors from database errors in both languages.
+- [x] Verify direct Yahoo BNBR/BBCA reads, real BNBR quote refresh with unchanged financial ledger, automated provider/refresh tests, and mocked bilingual desktop/mobile recovery flows.
 - [x] Support four-decimal per-share trade prices in forms, validation, calculations, and localized investment displays while keeping cash totals at cent precision.
 - [x] Generate migration 0005 and verify legacy-value preservation, four-decimal API persistence, bilingual browser behavior, and automated regression tests without live database changes.
 - [x] Back up Supabase and apply migration 0005 for four-decimal trade prices with user approval, verifying schema readiness and unchanged financial values.
@@ -66,7 +69,7 @@
 - [ ] Test the workflows with representative users and assistive technologies.
 - [ ] Add recoverable deletion or undo for financial records.
 - [ ] Persist transaction filters when navigating away or sharing a view.
-- [ ] Configure an IDX-entitled `TWELVE_DATA_API_KEY` and verify actual daily prices.
+- [ ] Verify Yahoo Finance access and permitted data usage in the intended deployment environment.
 - [ ] Set `CRON_SECRET`, deploy the price schedule, and verify authenticated daily execution.
 - [ ] Review legacy investment opening balances so they represent cash rather than stock value.
 - [ ] Add dividend, stock-split, and other corporate-action handling.
