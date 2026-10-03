@@ -1,7 +1,7 @@
 "use client"
 
 import { useId, useState } from "react"
-import { Plus } from "lucide-react"
+import { Pencil, Plus } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { ErrorNotice, Field, SubmitButton, useFeedback } from "./feedback"
 import { Button } from "./ui/button"
@@ -24,13 +24,16 @@ import {
 } from "./ui/select"
 import { accountTypes, type AccountType } from "@/lib/finance"
 import { jsonBody, requestJson } from "@/lib/client-api"
+import type { Account } from "@/lib/types"
 
 export function AddAccountForm({
   onAdded,
   defaultType = "bank",
+  account,
 }: {
   onAdded?: () => void
   defaultType?: AccountType
+  account?: Account
 }) {
   const { t } = useLanguage()
   const notify = useFeedback()
@@ -50,14 +53,19 @@ export function AddAccountForm({
     setError("")
     try {
       await requestJson(
-        "/api/accounts",
-        jsonBody("POST", { name, type, initialBalance, description }),
+        account ? "/api/accounts/" + account.id : "/api/accounts",
+        jsonBody(account ? "PATCH" : "POST", {
+          name,
+          type,
+          initialBalance,
+          description,
+        }),
       )
       setOpen(false)
       setName("")
       setInitialBalance("")
       setDescription("")
-      notify("accountSaved")
+      notify(account ? "accountUpdated" : "accountSaved")
       onAdded?.()
       window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
@@ -74,19 +82,35 @@ export function AddAccountForm({
         if (!loading) {
           setOpen(value)
           setError("")
+          if (value && account) {
+            setName(account.name)
+            setType(account.type)
+            setInitialBalance(String(account.initialBalance))
+            setDescription(account.description ?? "")
+          }
         }
       }}
     >
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4" />
-          {t("addAccount")}
+        <Button
+          variant={account ? "ghost" : "default"}
+          size={account ? "sm" : "default"}
+          aria-label={account ? t("edit") + " " + account.name : undefined}
+        >
+          {account ? (
+            <Pencil className="h-4 w-4" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          {t(account ? "edit" : "addAccount")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!loading}>
         <DialogHeader>
-          <DialogTitle>{t("addAccount")}</DialogTitle>
-          <DialogDescription>{t("requiredHint")}</DialogDescription>
+          <DialogTitle>{t(account ? "editAccount" : "addAccount")}</DialogTitle>
+          <DialogDescription>
+            {t(account ? "editAccountHint" : "requiredHint")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <fieldset disabled={loading} className="space-y-4">
@@ -156,7 +180,7 @@ export function AddAccountForm({
               {t("cancel")}
             </Button>
             <SubmitButton busy={loading} disabled={!name.trim()}>
-              {t("saveAccount")}
+              {t(account ? "saveChanges" : "saveAccount")}
             </SubmitButton>
           </DialogFooter>
         </form>

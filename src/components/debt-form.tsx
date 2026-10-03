@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus } from "lucide-react"
+import { Pencil, Plus } from "lucide-react"
 import { ErrorNotice, Field, SubmitButton, useFeedback } from "./feedback"
 import { useLanguage } from "./language-provider"
 import { Button } from "./ui/button"
@@ -24,7 +24,24 @@ import {
 } from "./ui/select"
 import { requestJson, jsonBody } from "@/lib/client-api"
 
-export function AddDebtForm({ onAdded }: { onAdded?: () => void }) {
+export type Debt = {
+  id: number
+  type: "utang" | "piutang"
+  name: string
+  amount: number
+  paidAmount: number
+  description: string | null
+  status: "unpaid" | "paid"
+  dueDate: string | null
+}
+
+export function AddDebtForm({
+  onAdded,
+  debt,
+}: {
+  onAdded?: () => void
+  debt?: Debt
+}) {
   const { t } = useLanguage()
   const notify = useFeedback()
   const [open, setOpen] = useState(false)
@@ -42,15 +59,21 @@ export function AddDebtForm({ onAdded }: { onAdded?: () => void }) {
     setError("")
     try {
       await requestJson(
-        "/api/debts",
-        jsonBody("POST", { type, name, amount, description, dueDate }),
+        "/api/debts" + (debt ? "/" + debt.id : ""),
+        jsonBody(debt ? "PATCH" : "POST", {
+          type,
+          name,
+          amount,
+          description,
+          dueDate,
+        }),
       )
       setOpen(false)
       setName("")
       setAmount("")
       setDescription("")
       setDueDate("")
-      notify("debtSaved")
+      notify(debt ? "debtUpdated" : "debtSaved")
       onAdded?.()
       window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
@@ -66,25 +89,39 @@ export function AddDebtForm({ onAdded }: { onAdded?: () => void }) {
         if (!busy) {
           setOpen(value)
           setError("")
+          if (value && debt) {
+            setType(debt.type)
+            setName(debt.name)
+            setAmount(String(debt.amount))
+            setDescription(debt.description ?? "")
+            setDueDate(debt.dueDate ?? "")
+          }
         }
       }}
     >
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4" />
-          {t("addDebt")}
+        <Button
+          variant={debt ? "ghost" : "default"}
+          size={debt ? "sm" : "default"}
+          aria-label={debt ? t("edit") + " " + debt.name : undefined}
+        >
+          {debt ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {t(debt ? "edit" : "addDebt")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
-          <DialogTitle>{t("addDebt")}</DialogTitle>
-          <DialogDescription>{t("requiredHint")}</DialogDescription>
+          <DialogTitle>{t(debt ? "editDebt" : "addDebt")}</DialogTitle>
+          <DialogDescription>
+            {t(debt ? "editDebtHint" : "requiredHint")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <fieldset disabled={busy} className="space-y-4">
             <Field id="debt-type" label={t("type")} required>
               <Select
                 value={type}
+                disabled={Boolean(debt?.paidAmount)}
                 onValueChange={(value) => setType(value as "utang" | "piutang")}
               >
                 <SelectTrigger id="debt-type">
@@ -99,6 +136,7 @@ export function AddDebtForm({ onAdded }: { onAdded?: () => void }) {
             <Field id="debt-name" label={t("counterparty")} required>
               <Input
                 id="debt-name"
+                maxLength={120}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 required
@@ -108,7 +146,8 @@ export function AddDebtForm({ onAdded }: { onAdded?: () => void }) {
               <Input
                 id="debt-amount"
                 type="number"
-                min="1"
+                min={Math.max(1, debt?.paidAmount ?? 0)}
+                max="2147483647"
                 step="1"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
@@ -118,6 +157,7 @@ export function AddDebtForm({ onAdded }: { onAdded?: () => void }) {
             <Field id="debt-note" label={t("note")}>
               <Input
                 id="debt-note"
+                maxLength={500}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
@@ -148,7 +188,7 @@ export function AddDebtForm({ onAdded }: { onAdded?: () => void }) {
               busy={busy}
               disabled={!name.trim() || Number(amount) <= 0}
             >
-              {t("save")}
+              {t(debt ? "saveChanges" : "save")}
             </SubmitButton>
           </DialogFooter>
         </form>

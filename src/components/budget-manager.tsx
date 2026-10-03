@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Plus } from "lucide-react"
+import { Pencil, Plus } from "lucide-react"
+import { RecordDeleteButton } from "./record-delete-button"
 import { useLanguage } from "./language-provider"
 import {
   EmptyState,
@@ -44,6 +45,7 @@ export function BudgetManager() {
   const records = useRemoteData<Budget[]>("/api/budgets?month=" + month)
   const budgets = records.data ?? []
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<Budget | null>(null)
   const [category, setCategory] = useState("")
   const [amount, setAmount] = useState("")
   const [rollover, setRollover] = useState(false)
@@ -62,8 +64,8 @@ export function BudgetManager() {
     setError("")
     try {
       await requestJson(
-        "/api/budgets",
-        jsonBody("POST", {
+        "/api/budgets" + (editing ? "/" + editing.id : ""),
+        jsonBody(editing ? "PATCH" : "POST", {
           category,
           budget: amount,
           periodStart: month,
@@ -74,8 +76,9 @@ export function BudgetManager() {
       setCategory("")
       setAmount("")
       setRollover(false)
-      notify("budgetSaved")
-      records.reload()
+      notify(editing ? "budgetUpdated" : "budgetSaved")
+      setEditing(null)
+      window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
       setError((reason as Error).message)
     } finally {
@@ -90,6 +93,12 @@ export function BudgetManager() {
         if (!busy) {
           setOpen(value)
           setError("")
+          if (!value) setEditing(null)
+          if (value && !editing) {
+            setCategory("")
+            setAmount("")
+            setRollover(false)
+          }
         }
       }}
     >
@@ -99,12 +108,14 @@ export function BudgetManager() {
           {t("addBudget")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
           <DialogTitle>
-            {t("addBudget")} · {formatMonth(month)}
+            {t(editing ? "editBudget" : "addBudget")} · {formatMonth(month)}
           </DialogTitle>
-          <DialogDescription>{t("noBudgetHint")}</DialogDescription>
+          <DialogDescription>
+            {t(editing ? "editBudgetHint" : "noBudgetHint")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={saveBudget} className="space-y-4">
           <fieldset disabled={busy} className="space-y-4">
@@ -117,7 +128,11 @@ export function BudgetManager() {
                   {expenseCategories
                     .filter(
                       (item) =>
-                        !budgets.some((budget) => budget.category === item),
+                        !budgets.some(
+                          (budget) =>
+                            budget.category === item &&
+                            budget.id !== editing?.id,
+                        ),
                     )
                     .map((item) => (
                       <SelectItem key={item} value={item}>
@@ -138,6 +153,7 @@ export function BudgetManager() {
                 aria-describedby="budget-amount-hint"
                 type="number"
                 min="1"
+                max="2147483647"
                 step="1"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
@@ -160,7 +176,10 @@ export function BudgetManager() {
               type="button"
               variant="outline"
               disabled={busy}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false)
+                setEditing(null)
+              }}
             >
               {t("cancel")}
             </Button>
@@ -168,7 +187,7 @@ export function BudgetManager() {
               busy={busy}
               disabled={!category || Number(amount) <= 0}
             >
-              {t("saveBudget")}
+              {t(editing ? "saveChanges" : "saveBudget")}
             </SubmitButton>
           </DialogFooter>
         </form>
@@ -194,9 +213,13 @@ export function BudgetManager() {
         </Field>
         {add}
       </PageHeading>
-      {records.error ? (
-        <ErrorNotice message={records.error} onRetry={records.reload} />
-      ) : records.loading ? (
+      <ErrorNotice message={records.error} onRetry={records.reload} />
+      {records.refreshing && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
+      {records.error && !records.data ? null : records.loading ? (
         <LoadingState />
       ) : (
         <>
@@ -232,7 +255,18 @@ export function BudgetManager() {
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {budgets.map((budget) => (
-                <BudgetCard key={budget.id} budget={budget} />
+                <BudgetCard
+                  key={budget.id}
+                  budget={budget}
+                  onEdit={() => {
+                    setEditing(budget)
+                    setCategory(budget.category)
+                    setAmount(String(budget.budget))
+                    setRollover(Boolean(budget.rolloverEnabled))
+                    setError("")
+                    setOpen(true)
+                  }}
+                />
               ))}
             </div>
           )}
@@ -242,7 +276,13 @@ export function BudgetManager() {
   )
 }
 
-function BudgetCard({ budget }: { budget: Budget }) {
+function BudgetCard({
+  budget,
+  onEdit,
+}: {
+  budget: Budget
+  onEdit: () => void
+}) {
   const { t, formatCurrency } = useLanguage()
   const effective = budget.effectiveBudget ?? budget.budget
   const percentage =
@@ -296,6 +336,23 @@ function BudgetCard({ budget }: { budget: Budget }) {
             amount: formatCurrency(Math.abs(effective - budget.spent)),
           })}
         </p>
+        <div className="flex flex-wrap gap-1 border-t pt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onEdit}
+            aria-label={t("edit") + " " + t(budget.category)}
+          >
+            <Pencil className="h-4 w-4" />
+            {t("edit")}
+          </Button>
+          <RecordDeleteButton
+            url={"/api/budgets/" + budget.id}
+            detail={t(budget.category)}
+            description="deleteBudgetHint"
+            success="budgetDeleted"
+          />
+        </div>
       </CardContent>
     </Card>
   )

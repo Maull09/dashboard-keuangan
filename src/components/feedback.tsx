@@ -226,6 +226,7 @@ export function ConfirmDelete({
       }}
     >
       <DialogContent
+        showCloseButton={!busy}
         onEscapeKeyDown={(event) => {
           if (busy) event.preventDefault()
         }}
@@ -237,7 +238,7 @@ export function ConfirmDelete({
           <DialogTitle>{t("confirmDelete")}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <p className="rounded-lg border bg-muted p-3 text-sm font-medium">
+        <p className="break-words rounded-lg border bg-muted p-3 text-sm font-medium">
           {detail}
         </p>
         <ErrorNotice message={error} />

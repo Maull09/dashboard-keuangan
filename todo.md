@@ -2,6 +2,14 @@
 
 ## Completed
 
+- [x] Complete investment trade and watchlist CRUD with discoverable Edit/Delete actions and cash-impact previews.
+- [x] Add account, budget, goal, debt/receivable, and recurring-schedule edit/delete UI with bilingual feedback.
+- [x] Protect linked contribution/payment history, recorded totals, brokerage cash/holdings, and allocated cash during edits.
+- [x] Display contribution/payment history and reject repeated or inactive recurring execution atomically.
+- [x] Preserve form drafts through successful/failed background data refreshes and expose refresh status.
+- [x] Review all twelve views against Nielsen's ten heuristics and document source-record versus derived-view management.
+- [x] Verify CRUD/rollback flows in isolated PostgreSQL-compatible fixtures and bilingual desktop/tablet/mobile interaction/accessibility checks without live data mutations.
+
 - [x] Support fractional stock lots/shares and decimal trade prices, with strict precision validation and localized formatting.
 - [x] Keep stock cash totals, full-position sales, and partial-sale cost allocations stable with scaled integer/cent arithmetic.
 - [x] Back up Supabase and apply migration 0004, verifying unchanged financial row counts and values.
@@ -36,6 +44,13 @@
 - [x] Verify all 15 Supabase application tables, unchanged legacy data/sequences, and real dashboard/investment/planning GET endpoints.
 
 ## Next
+
+- [ ] Add safe correction/reversal workflows for goal contributions and debt payments without breaking linked cash history.
+- [ ] Add a complete reconciliation-history browser to the interface.
+- [ ] Decide and enforce the desired overdraft/allocated-cash policy consistently for ordinary transactions and trade-funding edits.
+- [ ] Standardize remaining GET handlers on safe structured API errors.
+- [ ] Replace the unsupported `next lint` script with a configured lint command.
+- [ ] Make the isolated API and mocked browser regression fixtures reproducible in CI.
 
 - [ ] Rehearse restoring the private backup into a separate database and configure protected off-device backups.
 - [ ] Move legacy transactions from the `Uncategorized account` to the correct account.

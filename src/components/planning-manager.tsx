@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { CalendarClock, Plus, Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import {
   ConfirmDelete,
@@ -46,12 +46,15 @@ import type { Account } from "@/lib/types"
 type Recurring = {
   id: number
   name: string
-  type: "income" | "expense"
+  type: "income" | "expense" | "transfer"
   amount: number
   category: string
   accountId: number
   frequency: "weekly" | "monthly"
   startDate: string
+  endDate: string | null
+  destinationAccountId: number | null
+  description: string | null
   lastExecutedDate: string | null
 }
 type Forecast = {
@@ -75,6 +78,12 @@ export function PlanningManager() {
   const [recording, setRecording] = useState<Recurring | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    const invalidate = () => setForecast(null)
+    window.addEventListener("finance-data-changed", invalidate)
+    return () => window.removeEventListener("finance-data-changed", invalidate)
+  }, [])
 
   async function calculate(event: React.FormEvent) {
     event.preventDefault()
@@ -178,7 +187,7 @@ export function PlanningManager() {
           )}
         </CardContent>
       </Card>
-      {records.error || accountData.error ? (
+      {(records.error || accountData.error) && (
         <ErrorNotice
           message={records.error || accountData.error}
           onRetry={() => {
@@ -186,7 +195,15 @@ export function PlanningManager() {
             accountData.reload()
           }}
         />
-      ) : records.loading || accountData.loading ? (
+      )}
+      {(records.refreshing || accountData.refreshing) && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
+      {(records.error && !records.data) ||
+      (accountData.error && !accountData.data) ? null : records.loading ||
+        accountData.loading ? (
         <LoadingState />
       ) : !records.data?.length ? (
         <EmptyState
@@ -230,11 +247,13 @@ export function PlanningManager() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <AddSchedule accounts={accounts} schedule={item} />
                     <Button
                       variant="outline"
                       disabled={
                         item.startDate > getToday() ||
+                        Boolean(item.endDate && item.endDate < getToday()) ||
                         item.lastExecutedDate === getToday()
                       }
                       onClick={() => {
@@ -325,17 +344,26 @@ export function PlanningManager() {
   )
 }
 
-function AddSchedule({ accounts }: { accounts: Account[] }) {
+function AddSchedule({
+  accounts,
+  schedule,
+}: {
+  accounts: Account[]
+  schedule?: Recurring
+}) {
   const { t } = useLanguage()
   const notify = useFeedback()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
-  const [type, setType] = useState<"income" | "expense">("expense")
+  const [type, setType] = useState<Recurring["type"]>("expense")
   const [amount, setAmount] = useState("")
   const [category, setCategory] = useState("")
   const [accountId, setAccountId] = useState("")
   const [frequency, setFrequency] = useState<"weekly" | "monthly">("monthly")
   const [startDate, setStartDate] = useState(getToday())
+  const [endDate, setEndDate] = useState("")
+  const [destinationAccountId, setDestinationAccountId] = useState("")
+  const [description, setDescription] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   async function save(event: React.FormEvent) {
@@ -345,8 +373,8 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
     setError("")
     try {
       await requestJson(
-        "/api/recurring",
-        jsonBody("POST", {
+        "/api/recurring" + (schedule ? "/" + schedule.id : ""),
+        jsonBody(schedule ? "PATCH" : "POST", {
           name,
           type,
           amount,
@@ -354,6 +382,10 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
           accountId,
           frequency,
           startDate,
+          endDate,
+          destinationAccountId:
+            type === "transfer" ? destinationAccountId : null,
+          description,
         }),
       )
       setOpen(false)
@@ -361,7 +393,10 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
       setAmount("")
       setCategory("")
       setAccountId("")
-      notify("scheduleSaved")
+      setDescription("")
+      setEndDate("")
+      setDestinationAccountId("")
+      notify(schedule ? "scheduleUpdated" : "scheduleSaved")
       window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
       setError((reason as Error).message)
@@ -376,19 +411,48 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
         if (!busy) {
           setOpen(value)
           setError("")
+          if (value && schedule) {
+            setName(schedule.name)
+            setType(schedule.type)
+            setAmount(String(schedule.amount))
+            setCategory(schedule.category)
+            setAccountId(String(schedule.accountId))
+            setFrequency(schedule.frequency)
+            setStartDate(schedule.startDate)
+            setEndDate(schedule.endDate ?? "")
+            setDestinationAccountId(
+              schedule.destinationAccountId
+                ? String(schedule.destinationAccountId)
+                : "",
+            )
+            setDescription(schedule.description ?? "")
+          }
         }
       }}
     >
       <DialogTrigger asChild>
-        <Button disabled={accounts.length === 0}>
-          <Plus className="h-4 w-4" />
-          {t("addRecurring")}
+        <Button
+          disabled={accounts.length === 0}
+          variant={schedule ? "ghost" : "default"}
+          size={schedule ? "sm" : "default"}
+          aria-label={schedule ? t("edit") + " " + schedule.name : undefined}
+        >
+          {schedule ? (
+            <Pencil className="h-4 w-4" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          {t(schedule ? "edit" : "addRecurring")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
-          <DialogTitle>{t("addRecurring")}</DialogTitle>
-          <DialogDescription>{t("recurringDescription")}</DialogDescription>
+          <DialogTitle>
+            {t(schedule ? "editSchedule" : "addRecurring")}
+          </DialogTitle>
+          <DialogDescription>
+            {t(schedule ? "editScheduleHint" : "recurringDescription")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="space-y-4">
           <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
@@ -396,6 +460,7 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
               <Input
                 id="schedule-name"
                 placeholder={t("scheduleName")}
+                maxLength={120}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 required
@@ -406,6 +471,7 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
                 id="schedule-amount"
                 type="number"
                 min="1"
+                max="2147483647"
                 step="1"
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
@@ -416,8 +482,8 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
               <Select
                 value={type}
                 onValueChange={(value) => {
-                  setType(value as "income" | "expense")
-                  setCategory("")
+                  setType(value as Recurring["type"])
+                  setCategory(value === "transfer" ? "Transfer" : "")
                 }}
               >
                 <SelectTrigger id="schedule-type">
@@ -426,26 +492,29 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
                 <SelectContent>
                   <SelectItem value="income">{t("income")}</SelectItem>
                   <SelectItem value="expense">{t("expense")}</SelectItem>
+                  <SelectItem value="transfer">{t("transfer")}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
-            <Field id="schedule-category" label={t("category")} required>
-              <Select value={category} onValueChange={setCategory} required>
-                <SelectTrigger id="schedule-category">
-                  <SelectValue placeholder={t("chooseCategory")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(type === "income"
-                    ? incomeCategories
-                    : expenseCategories
-                  ).map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {t(item)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+            {type !== "transfer" && (
+              <Field id="schedule-category" label={t("category")} required>
+                <Select value={category} onValueChange={setCategory} required>
+                  <SelectTrigger id="schedule-category">
+                    <SelectValue placeholder={t("chooseCategory")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(type === "income"
+                      ? incomeCategories
+                      : expenseCategories
+                    ).map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {t(item)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
             <Field id="schedule-account" label={t("account")} required>
               <Select value={accountId} onValueChange={setAccountId} required>
                 <SelectTrigger id="schedule-account">
@@ -460,6 +529,32 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
                 </SelectContent>
               </Select>
             </Field>
+            {type === "transfer" && (
+              <Field
+                id="schedule-destination"
+                label={t("destinationAccount")}
+                required
+              >
+                <Select
+                  value={destinationAccountId}
+                  onValueChange={setDestinationAccountId}
+                  required
+                >
+                  <SelectTrigger id="schedule-destination">
+                    <SelectValue placeholder={t("chooseAccount")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts
+                      .filter((item) => String(item.id) !== accountId)
+                      .map((item) => (
+                        <SelectItem key={item.id} value={String(item.id)}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
             <Field id="schedule-frequency" label={t("frequency")} required>
               <Select
                 value={frequency}
@@ -485,6 +580,26 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
                 required
               />
             </Field>
+            <Field
+              id="schedule-end"
+              label={t("endDate") + " (" + t("optional") + ")"}
+            >
+              <Input
+                id="schedule-end"
+                type="date"
+                min={startDate}
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+              />
+            </Field>
+            <Field id="schedule-note" label={t("note")}>
+              <Input
+                id="schedule-note"
+                maxLength={500}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </Field>
           </fieldset>
           <ErrorNotice message={error} />
           <DialogFooter>
@@ -499,10 +614,17 @@ function AddSchedule({ accounts }: { accounts: Account[] }) {
             <SubmitButton
               busy={busy}
               disabled={
-                !name.trim() || !category || !accountId || Number(amount) <= 0
+                !name.trim() ||
+                !category ||
+                !accountId ||
+                Number(amount) <= 0 ||
+                (type === "transfer" &&
+                  (!destinationAccountId ||
+                    destinationAccountId === accountId)) ||
+                Boolean(endDate && endDate < startDate)
               }
             >
-              {t("saveSchedule")}
+              {t(schedule ? "saveChanges" : "saveSchedule")}
             </SubmitButton>
           </DialogFooter>
         </form>

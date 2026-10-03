@@ -4,6 +4,18 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
 ## 2026-10-03
 
+### Record CRUD and repository-wide usability review
+
+- Completed stock-trade editing and watchlist metadata editing. Added visible Edit/Delete controls, a portfolio-to-history management shortcut, per-share prices, record-specific confirmations, and previous/new/projected cash previews.
+- Added account, budget, goal, debt/receivable, and recurring-schedule edit/delete controls. Account editing uses the real opening balance; changing metadata never overwrites current calculated cash or invents progress/payments.
+- Added contribution/payment history dialogs, strict metadata validation, PostgreSQL integer limits, duplicate-record feedback, and guards against deleting linked history or lowering recorded totals. Preserved legacy settled debt semantics without fabricating payment history.
+- Validated edited trades across both affected accounts, chronological holdings/cash, and current allocations. Consolidated trade cash/history validation; invalid changes roll back without leaving orphan instruments.
+- Made recurring execution atomic with date bounds and same-day duplicate protection; exposed optional end dates and transfers in recurring forms.
+- Kept editing drafts mounted during background data refreshes and retained loaded records on refresh failure, with visible status/errors. Extended bilingual management guidance and permanent-deletion explanations.
+- Reviewed all twelve views against Nielsen's ten heuristics and documented implemented behavior, intentionally read-only summaries/histories, and remaining gaps in `docs/usability.md`. No new migration or live financial-data mutation was needed.
+
+Verification: 157 automated tests, TypeScript checking, and a production build passed. Isolated PostgreSQL-compatible API checks covered nine CRUD/protection scenario groups plus existing investment/planning regression flows. Mocked browser checks covered all twelve views in both languages at 1440/768/375 px and CRUD/recovery/history workflows; 86 targeted axe view/dialog scans reported no violations after animations settled, with no uncaught browser errors. These are targeted checks, not complete usability or accessibility certification. Existing package/lockfile/TypeScript configuration changes were left untouched.
+
 ### Decimal stock quantities and prices
 
 - Removed the whole-lot restriction from stock forms, API validation, and database constraints. Lots support six decimal places, shares four, and prices two; existing integer inputs remain valid.

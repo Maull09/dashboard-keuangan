@@ -16,11 +16,16 @@ export function NetWorth() {
         <Button
           variant="outline"
           onClick={records.reload}
-          disabled={records.loading}
+          disabled={records.loading || records.refreshing}
         >
           {t("refresh")}
         </Button>
       </PageHeading>
+      {records.refreshing && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
       {records.error ? (
         <ErrorNotice message={records.error} onRetry={records.reload} />
       ) : records.loading ? (

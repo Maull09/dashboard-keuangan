@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState, useId } from "react"
-import { Plus, RefreshCw, Trash2 } from "lucide-react"
+import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { AddAccountForm } from "./accounts-form"
+import { RecordDeleteButton } from "./record-delete-button"
 import {
   ConfirmDelete,
   EmptyState,
@@ -52,6 +53,7 @@ export function InvestmentsManager() {
   const notify = useFeedback()
   const records = useRemoteData<PortfolioData>("/api/investments")
   const data = records.data
+  const [activeTab, setActiveTab] = useState("portfolio")
   const priceAttempted = useRef(false)
   const [priceBusy, setPriceBusy] = useState(false)
   const [priceError, setPriceError] = useState("")
@@ -132,9 +134,13 @@ export function InvestmentsManager() {
         </Button>
         <StockTradeForm accounts={data?.accounts ?? []} />
       </PageHeading>
-      {records.error ? (
-        <ErrorNotice message={records.error} onRetry={records.reload} />
-      ) : records.loading ? (
+      <ErrorNotice message={records.error} onRetry={records.reload} />
+      {records.refreshing && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
+      {records.loading ? (
         <LoadingState />
       ) : (
         data && (
@@ -188,13 +194,24 @@ export function InvestmentsManager() {
             <p className="text-xs leading-relaxed text-muted-foreground">
               {t("eodHint")}
             </p>
-            <Tabs defaultValue="portfolio">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="max-w-full">
                 <TabsTrigger value="portfolio">{t("portfolio")}</TabsTrigger>
                 <TabsTrigger value="watchlist">{t("watchlist")}</TabsTrigger>
                 <TabsTrigger value="history">{t("tradeHistory")}</TabsTrigger>
               </TabsList>
               <TabsContent value="portfolio" className="space-y-5 pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    {t("manageTradesHint")}
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("history")}
+                  >
+                    {t("manageTrades")}
+                  </Button>
+                </div>
                 {data.accounts.length === 0 ? (
                   <EmptyState
                     title={t("noHoldings")}
@@ -219,6 +236,15 @@ export function InvestmentsManager() {
                             {t("availableCash")}:{" "}
                             {formatCurrency(account.availableCash)}
                           </p>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            <AddAccountForm account={account} />
+                            <RecordDeleteButton
+                              url={"/api/accounts/" + account.id}
+                              detail={account.name}
+                              description="deleteAccountHint"
+                              success="accountDeleted"
+                            />
+                          </div>
                         </div>
                       ))}
                       <div className="flex items-center">
@@ -356,7 +382,7 @@ export function InvestmentsManager() {
                             </p>
                           )}
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="text-right">
                             <p className="font-semibold tabular-nums">
                               {item.quote
@@ -370,9 +396,10 @@ export function InvestmentsManager() {
                               </p>
                             )}
                           </div>
+                          <WatchlistForm item={item} />
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             aria-label={t("removeWatch") + " " + item.symbol}
                             onClick={() =>
                               askDelete(
@@ -383,6 +410,7 @@ export function InvestmentsManager() {
                             }
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
+                            {t("delete")}
                           </Button>
                         </div>
                       </li>
@@ -412,6 +440,7 @@ export function InvestmentsManager() {
                             "stockSymbol",
                             "type",
                             "lots",
+                            "pricePerShare",
                             "tradingFees",
                             "tradeTotal",
                             "actions",
@@ -419,7 +448,17 @@ export function InvestmentsManager() {
                             <th
                               scope="col"
                               key={key}
-                              className="p-3 text-left font-medium text-muted-foreground"
+                              className={
+                                "p-3 font-medium text-muted-foreground " +
+                                ([
+                                  "lots",
+                                  "pricePerShare",
+                                  "tradingFees",
+                                  "tradeTotal",
+                                ].includes(key)
+                                  ? "text-right"
+                                  : "text-left")
+                              }
                             >
                               {t(key)}
                             </th>
@@ -448,12 +487,15 @@ export function InvestmentsManager() {
                               )}
                             </td>
                             <td className="p-3">{t(trade.side)}</td>
-                            <td className="p-3 tabular-nums">
+                            <td className="p-3 text-right tabular-nums">
                               {formatStockQuantity(
                                 trade.shares / 100,
                                 locale,
                                 6,
                               )}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {formatCurrency(trade.price)}
                             </td>
                             <td className="p-3 text-right tabular-nums">
                               {formatCurrency(trade.fees)}
@@ -469,26 +511,33 @@ export function InvestmentsManager() {
                               {formatCurrency(tradeCashChange(trade))}
                             </td>
                             <td className="p-3">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={
-                                  t("delete") +
-                                  " " +
-                                  trade.symbol +
-                                  " " +
-                                  formatDate(trade.date)
-                                }
-                                onClick={() =>
-                                  askDelete(
-                                    "/api/investments/trades/" + trade.id,
-                                    `${trade.symbol} / ${t(trade.side)} / ${trade.shares} / ${formatDate(trade.date)}`,
-                                    "trade",
-                                  )
-                                }
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <StockTradeForm
+                                  accounts={data.accounts}
+                                  trade={trade}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-label={
+                                    t("delete") +
+                                    " " +
+                                    trade.symbol +
+                                    " " +
+                                    formatDate(trade.date)
+                                  }
+                                  onClick={() =>
+                                    askDelete(
+                                      "/api/investments/trades/" + trade.id,
+                                      `${trade.symbol} / ${t(trade.side)} / ${formatStockQuantity(trade.shares, locale)} ${t("shares")} / ${formatDate(trade.date)} / ${data.accounts.find((account) => account.id === trade.accountId)?.name ?? ""} / ${formatCurrency(tradeCashChange(trade))}`,
+                                      "trade",
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                  {t("delete")}
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -518,7 +567,13 @@ export function InvestmentsManager() {
   )
 }
 
-function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
+function StockTradeForm({
+  accounts,
+  trade,
+}: {
+  accounts: CashAccount[]
+  trade?: PortfolioData["trades"][number]
+}) {
   const { t, formatCurrency } = useLanguage()
   const notify = useFeedback()
   const id = useId()
@@ -550,6 +605,19 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
   }
   const valid = preview !== null
   const cashChange = preview ? tradeCashChange(preview) : 0
+  const selectedAccount = accounts.find(
+    (account) => String(account.id) === accountId,
+  )
+  const projectedAvailable = selectedAccount
+    ? Math.round(
+        (selectedAccount.availableCash +
+          cashChange -
+          (trade?.accountId === selectedAccount.id
+            ? tradeCashChange(trade)
+            : 0)) *
+          100,
+      ) / 100
+    : null
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (busy) return
@@ -557,8 +625,8 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
     setError("")
     try {
       await requestJson(
-        "/api/investments/trades",
-        jsonBody("POST", {
+        "/api/investments/trades" + (trade ? "/" + trade.id : ""),
+        jsonBody(trade ? "PATCH" : "POST", {
           symbol,
           side,
           accountId,
@@ -575,7 +643,7 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
       setPrice("")
       setFees("0")
       setNote("")
-      notify("tradeSaved")
+      notify(trade ? "tradeUpdated" : "tradeSaved")
       window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
       setError((reason as Error).message)
@@ -590,21 +658,41 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
         if (!busy) {
           setOpen(value)
           setError("")
-          if (value && accounts.length === 1 && !accountId)
+          if (value && trade) {
+            setSymbol(trade.symbol)
+            setSide(trade.side)
+            setAccountId(String(trade.accountId))
+            setLots((trade.shares / 100).toFixed(6).replace(/\.?0+$/, ""))
+            setPrice(String(trade.price))
+            setFees(String(trade.fees))
+            setDate(trade.date)
+            setNote(trade.note)
+          } else if (value && accounts.length === 1 && !accountId)
             setAccountId(String(accounts[0].id))
         }
       }}
     >
       <DialogTrigger asChild>
-        <Button disabled={!accounts.length}>
-          <Plus className="h-4 w-4" />
-          {t("recordTrade")}
+        <Button
+          disabled={!accounts.length}
+          variant={trade ? "ghost" : "default"}
+          size={trade ? "sm" : "default"}
+          aria-label={trade ? t("edit") + " " + trade.symbol : undefined}
+        >
+          {trade ? (
+            <Pencil className="h-4 w-4" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          {t(trade ? "edit" : "recordTrade")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
-          <DialogTitle>{t("recordTrade")}</DialogTitle>
-          <DialogDescription>{t("stockSymbolHint")}</DialogDescription>
+          <DialogTitle>{t(trade ? "editTrade" : "recordTrade")}</DialogTitle>
+          <DialogDescription>
+            {t(trade ? "tradeEditHint" : "stockSymbolHint")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
@@ -736,9 +824,26 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
             </div>
           </fieldset>
           {valid && (
-            <p className="rounded-lg bg-muted p-3 text-sm font-medium tabular-nums">
-              {t("tradeTotal")}: {formatCurrency(cashChange)}
-            </p>
+            <div
+              className="rounded-lg bg-muted p-3 text-sm font-medium tabular-nums"
+              role="status"
+            >
+              {trade && (
+                <p>
+                  {t("previousCashImpact")}:{" "}
+                  {formatCurrency(tradeCashChange(trade))}
+                </p>
+              )}
+              <p>
+                {t("tradeTotal")}: {formatCurrency(cashChange)}
+              </p>
+              {trade && projectedAvailable !== null && (
+                <p className={projectedAvailable < 0 ? "text-rose-700" : ""}>
+                  {t("cashAfterEdit", { account: selectedAccount!.name })}:{" "}
+                  {formatCurrency(projectedAvailable)}
+                </p>
+              )}
+            </div>
           )}
           <ErrorNotice message={error} />
           <DialogFooter>
@@ -751,7 +856,7 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
               {t("cancel")}
             </Button>
             <SubmitButton busy={busy} disabled={!valid}>
-              {t("recordTrade")}
+              {t(trade ? "saveChanges" : "recordTrade")}
             </SubmitButton>
           </DialogFooter>
         </form>
@@ -760,7 +865,9 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
   )
 }
 
-function WatchlistForm() {
+function WatchlistForm({
+  item,
+}: { item?: PortfolioData["watchlist"][number] } = {}) {
   const { t } = useLanguage()
   const notify = useFeedback()
   const id = useId()
@@ -777,14 +884,18 @@ function WatchlistForm() {
     setError("")
     try {
       await requestJson(
-        "/api/investments/watchlist",
-        jsonBody("POST", { symbol, name: name.trim() || symbol, note }),
+        "/api/investments/watchlist" + (item ? "/" + item.symbol : ""),
+        jsonBody(item ? "PATCH" : "POST", {
+          symbol,
+          name: name.trim() || symbol,
+          note,
+        }),
       )
       setOpen(false)
       setSymbol("")
       setName("")
       setNote("")
-      notify("watchAdded")
+      notify(item ? "watchUpdated" : "watchAdded")
       window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
       setError((reason as Error).message)
@@ -799,25 +910,37 @@ function WatchlistForm() {
         if (!busy) {
           setOpen(value)
           setError("")
+          if (value && item) {
+            setSymbol(item.symbol)
+            setName(item.name)
+            setNote(item.note)
+          }
         }
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Plus className="h-4 w-4" />
-          {t("addWatch")}
+        <Button
+          variant={item ? "ghost" : "outline"}
+          size={item ? "sm" : "default"}
+          aria-label={item ? t("edit") + " " + item.symbol : undefined}
+        >
+          {item ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {t(item ? "edit" : "addWatch")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
-          <DialogTitle>{t("addWatch")}</DialogTitle>
-          <DialogDescription>{t("noWatchlistHint")}</DialogDescription>
+          <DialogTitle>{t(item ? "editWatch" : "addWatch")}</DialogTitle>
+          <DialogDescription>
+            {t(item ? "watchEditHint" : "noWatchlistHint")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <fieldset disabled={busy} className="space-y-4">
             <Field id={id + "-symbol"} label={t("stockSymbol")} required>
               <Input
                 id={id + "-symbol"}
+                readOnly={Boolean(item)}
                 value={symbol}
                 onChange={(event) =>
                   setSymbol(event.target.value.toUpperCase())
@@ -859,7 +982,7 @@ function WatchlistForm() {
               {t("cancel")}
             </Button>
             <SubmitButton busy={busy} disabled={!/^[A-Z]{4}$/.test(symbol)}>
-              {t("addWatch")}
+              {t(item ? "saveChanges" : "addWatch")}
             </SubmitButton>
           </DialogFooter>
         </form>

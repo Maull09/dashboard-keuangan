@@ -47,9 +47,13 @@ export function SinkingFunds() {
       <PageHeading title={t("funds")} description={t("fundsDescription")}>
         <FundForm accounts={data?.accounts ?? []} />
       </PageHeading>
-      {records.error ? (
-        <ErrorNotice message={records.error} onRetry={records.reload} />
-      ) : records.loading ? (
+      <ErrorNotice message={records.error} onRetry={records.reload} />
+      {records.refreshing && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
+      {records.loading ? (
         <LoadingState />
       ) : (
         data && (

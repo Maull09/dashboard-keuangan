@@ -108,6 +108,11 @@ export function FinancialCalendar() {
       <p className="text-sm leading-relaxed text-muted-foreground">
         {t("calendarHint")}
       </p>
+      {records.refreshing && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
       {records.error ? (
         <ErrorNotice message={records.error} onRetry={records.reload} />
       ) : records.loading ? (

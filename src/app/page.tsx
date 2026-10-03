@@ -162,20 +162,27 @@ function Dashboard() {
         <Button
           variant="outline"
           onClick={records.reload}
-          disabled={records.loading}
+          disabled={records.loading || records.refreshing}
         >
           <RefreshCw
-            className={"h-4 w-4 " + (records.loading ? "animate-spin" : "")}
+            className={
+              "h-4 w-4 " +
+              (records.loading || records.refreshing ? "animate-spin" : "")
+            }
           />
-          {t(records.loading ? "refreshing" : "refresh")}
+          {t(records.loading || records.refreshing ? "refreshing" : "refresh")}
         </Button>
         <Button asChild>
           <a href="#transactions">{t("addTransaction")}</a>
         </Button>
       </PageHeading>
-      {records.error ? (
-        <ErrorNotice message={records.error} onRetry={records.reload} />
-      ) : records.loading ? (
+      <ErrorNotice message={records.error} onRetry={records.reload} />
+      {records.refreshing && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
+      {records.loading ? (
         <LoadingState />
       ) : (
         data && (

@@ -3,6 +3,7 @@
 import { useId, useState } from "react"
 import { CheckCircle2, Landmark } from "lucide-react"
 import { AddAccountForm } from "./accounts-form"
+import { RecordDeleteButton } from "./record-delete-button"
 import { TransactionForm } from "./transaction-form"
 import {
   EmptyState,
@@ -32,7 +33,7 @@ import type { Account, AccountSummary as Summary } from "@/lib/types"
 export function AccountSummary() {
   const { t, formatCurrency } = useLanguage()
   const records = useRemoteData<Summary[]>("/api/accounts/summary")
-  if (records.error)
+  if (records.error && !records.data)
     return <ErrorNotice message={records.error} onRetry={records.reload} />
   if (records.loading) return <LoadingState />
   if (!records.data?.length)
@@ -47,11 +48,20 @@ export function AccountSummary() {
   }))
   return (
     <section aria-labelledby="account-summary-title" className="space-y-3">
+      <ErrorNotice message={records.error} onRetry={records.reload} />
+      {records.refreshing && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="account-summary-title" className="text-base font-semibold">
           {t("accountBalance")}
         </h2>
-        <TransactionForm accounts={accounts} onSaved={() => {}} />
+        <div className="flex flex-wrap gap-2">
+          <AddAccountForm />
+          <TransactionForm accounts={accounts} onSaved={() => {}} />
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {records.data.map((account) => (
@@ -59,8 +69,8 @@ export function AccountSummary() {
             <CardContent className="pt-5">
               <div className="flex items-center gap-3">
                 <Landmark className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">{account.name}</p>
+                <div className="min-w-0">
+                  <p className="break-words font-medium">{account.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {t(account.type)}
                   </p>
@@ -74,7 +84,16 @@ export function AccountSummary() {
               >
                 {formatCurrency(account.balance)}
               </p>
-              <ReconcileAccount account={account} />
+              <div className="mt-3 flex flex-wrap items-center gap-1">
+                <ReconcileAccount account={account} />
+                <AddAccountForm account={account} />
+                <RecordDeleteButton
+                  url={"/api/accounts/" + account.id}
+                  detail={account.name}
+                  description="deleteAccountHint"
+                  success="accountDeleted"
+                />
+              </div>
             </CardContent>
           </Card>
         ))}

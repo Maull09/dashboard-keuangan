@@ -24,7 +24,12 @@ export function useRemoteData<T>(url: string) {
       })
       .catch((reason: Error) => {
         if (!controller.signal.aborted)
-          setResult({ url, revision, data: null, error: reason.message })
+          setResult((previous) => ({
+            url,
+            revision,
+            data: previous?.url === url ? previous.data : null,
+            error: reason.message,
+          }))
       })
     return () => controller.abort()
   }, [url, revision])
@@ -35,9 +40,11 @@ export function useRemoteData<T>(url: string) {
   }, [reload])
 
   const isCurrent = result?.url === url && result.revision === revision
+  const sameResource = result?.url === url
   return {
-    data: isCurrent ? result.data : null,
-    loading: !isCurrent,
+    data: sameResource ? result.data : null,
+    loading: !isCurrent && !(sameResource && result.data !== null),
+    refreshing: !isCurrent && sameResource && result.data !== null,
     error: isCurrent ? result.error : "",
     reload,
   }

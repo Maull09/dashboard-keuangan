@@ -1,7 +1,9 @@
 "use client"
 
 import { useId, useState } from "react"
-import { AddDebtForm } from "./debt-form"
+import { AddDebtForm, type Debt } from "./debt-form"
+import { RecordDeleteButton } from "./record-delete-button"
+import { FinancialHistory } from "./financial-history"
 import {
   EmptyState,
   ErrorNotice,
@@ -42,17 +44,6 @@ import { requestJson, jsonBody } from "@/lib/client-api"
 import { useRemoteData } from "@/lib/use-remote-data"
 import type { Account } from "@/lib/types"
 
-type Debt = {
-  id: number
-  type: "utang" | "piutang"
-  name: string
-  amount: number
-  paidAmount: number
-  description: string | null
-  status: "unpaid" | "paid"
-  dueDate: string | null
-}
-
 export function DebtManager() {
   const { t } = useLanguage()
   const records = useRemoteData<Debt[]>("/api/debts")
@@ -62,7 +53,7 @@ export function DebtManager() {
       <PageHeading title={t("debtsTitle")} description={t("debtsDescription")}>
         <AddDebtForm />
       </PageHeading>
-      {records.error || accounts.error ? (
+      {(records.error || accounts.error) && (
         <ErrorNotice
           message={records.error || accounts.error}
           onRetry={() => {
@@ -70,7 +61,15 @@ export function DebtManager() {
             accounts.reload()
           }}
         />
-      ) : records.loading || accounts.loading ? (
+      )}
+      {(records.refreshing || accounts.refreshing) && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
+      {(records.error && !records.data) ||
+      (accounts.error && !accounts.data) ? null : records.loading ||
+        accounts.loading ? (
         <LoadingState />
       ) : !records.data?.length ? (
         <EmptyState title={t("noDebts")} description={t("noDebtsHint")} />
@@ -124,8 +123,8 @@ function DebtCard({ debt, accounts }: { debt: Debt; accounts: Account[] }) {
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="break-words">
               {t(debt.type === "utang" ? "debtTo" : "receivableFrom")}{" "}
               {debt.name}
             </CardTitle>
@@ -137,7 +136,7 @@ function DebtCard({ debt, accounts }: { debt: Debt; accounts: Account[] }) {
           </div>
           <span
             className={
-              "rounded-md px-2 py-1 text-xs font-medium " +
+              "shrink-0 rounded-md px-2 py-1 text-xs font-medium " +
               (debt.status === "paid"
                 ? "bg-teal-50 text-teal-800"
                 : "bg-amber-50 text-amber-800")
@@ -239,6 +238,7 @@ function DebtCard({ debt, accounts }: { debt: Debt; accounts: Account[] }) {
                   <Input
                     id={id + "-date"}
                     type="date"
+                    max={getToday()}
                     value={date}
                     onChange={(event) => setDate(event.target.value)}
                     disabled={busy}
@@ -273,6 +273,21 @@ function DebtCard({ debt, accounts }: { debt: Debt; accounts: Account[] }) {
         {remaining > 0 && accounts.length === 0 && (
           <p className="text-xs text-amber-800">{t("addAnAccountFirst")}</p>
         )}
+        <div className="flex flex-wrap gap-1 border-t pt-3">
+          <AddDebtForm debt={debt} />
+          <FinancialHistory
+            url={"/api/debts/" + debt.id + "/payments"}
+            title="paymentHistory"
+            detail={debt.name}
+            accounts={accounts}
+          />
+          <RecordDeleteButton
+            url={"/api/debts/" + debt.id}
+            detail={debt.name}
+            description="deleteDebtHint"
+            success="debtDeleted"
+          />
+        </div>
       </CardContent>
     </Card>
   )

@@ -1,7 +1,9 @@
 "use client"
 
 import { useId, useState } from "react"
-import { Plus, Target } from "lucide-react"
+import { Pencil, Plus, Target } from "lucide-react"
+import { RecordDeleteButton } from "./record-delete-button"
+import { FinancialHistory } from "./financial-history"
 import { useLanguage } from "./language-provider"
 import {
   EmptyState,
@@ -51,6 +53,7 @@ type Goal = {
   targetAmount: number
   currentAmount: number
   targetDate: string
+  category: string
 }
 
 export function GoalsManager() {
@@ -84,7 +87,7 @@ export function GoalsManager() {
       <PageHeading title={t("goalsTitle")} description={t("goalsDescription")}>
         <AddGoal />
       </PageHeading>
-      {goals.error || accounts.error ? (
+      {(goals.error || accounts.error) && (
         <ErrorNotice
           message={goals.error || accounts.error}
           onRetry={() => {
@@ -92,7 +95,15 @@ export function GoalsManager() {
             accounts.reload()
           }}
         />
-      ) : goals.loading || accounts.loading ? (
+      )}
+      {(goals.refreshing || accounts.refreshing) && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("refreshing")}
+        </p>
+      )}
+      {(goals.error && !goals.data) ||
+      (accounts.error && !accounts.data) ? null : goals.loading ||
+        accounts.loading ? (
         <LoadingState />
       ) : !items.length ? (
         <EmptyState title={t("noGoals")} description={t("noGoalsHint")} />
@@ -125,7 +136,7 @@ export function GoalsManager() {
   )
 }
 
-function AddGoal() {
+function AddGoal({ goal }: { goal?: Goal } = {}) {
   const { t } = useLanguage()
   const notify = useFeedback()
   const [open, setOpen] = useState(false)
@@ -142,13 +153,13 @@ function AddGoal() {
     setError("")
     try {
       await requestJson(
-        "/api/goals",
-        jsonBody("POST", {
+        "/api/goals" + (goal ? "/" + goal.id : ""),
+        jsonBody(goal ? "PATCH" : "POST", {
           title,
           description,
           targetAmount: Number(target),
           targetDate: date,
-          category: "other",
+          category: goal?.category ?? "other",
         }),
       )
       setOpen(false)
@@ -156,7 +167,7 @@ function AddGoal() {
       setDescription("")
       setTarget("")
       setDate("")
-      notify("goalSaved")
+      notify(goal ? "goalUpdated" : "goalSaved")
       window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
       setError((reason as Error).message)
@@ -171,19 +182,31 @@ function AddGoal() {
         if (!busy) {
           setOpen(value)
           setError("")
+          if (value && goal) {
+            setTitle(goal.title)
+            setDescription(goal.description ?? "")
+            setTarget(String(goal.targetAmount))
+            setDate(goal.targetDate)
+          }
         }
       }}
     >
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4" />
-          {t("addGoal")}
+        <Button
+          variant={goal ? "ghost" : "default"}
+          size={goal ? "sm" : "default"}
+          aria-label={goal ? t("edit") + " " + goal.title : undefined}
+        >
+          {goal ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {t(goal ? "edit" : "addGoal")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
-          <DialogTitle>{t("addGoal")}</DialogTitle>
-          <DialogDescription>{t("requiredHint")}</DialogDescription>
+          <DialogTitle>{t(goal ? "editGoal" : "addGoal")}</DialogTitle>
+          <DialogDescription>
+            {t(goal ? "editGoalHint" : "requiredHint")}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <fieldset disabled={busy} className="space-y-4">
@@ -191,6 +214,7 @@ function AddGoal() {
               <Input
                 id="goal-title"
                 placeholder={t("goalExample")}
+                maxLength={120}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 required
@@ -202,6 +226,7 @@ function AddGoal() {
             >
               <Textarea
                 id="goal-description"
+                maxLength={500}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
@@ -214,7 +239,8 @@ function AddGoal() {
               <Input
                 id="goal-target"
                 type="number"
-                min="1"
+                min={Math.max(1, goal?.currentAmount ?? 0)}
+                max="2147483647"
                 step="1"
                 value={target}
                 onChange={(event) => setTarget(event.target.value)}
@@ -245,7 +271,7 @@ function AddGoal() {
               busy={busy}
               disabled={!title.trim() || Number(target) <= 0 || !date}
             >
-              {t("save")}
+              {t(goal ? "saveChanges" : "save")}
             </SubmitButton>
           </DialogFooter>
         </form>
@@ -303,9 +329,9 @@ function GoalCard({ goal, accounts }: { goal: Goal; accounts: Account[] }) {
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
+          <div className="min-w-0 flex-1">
+            <CardTitle className="break-words">
+              <Target className="mr-2 inline h-4 w-4 text-primary" />
               {goal.title}
             </CardTitle>
             {goal.description && (
@@ -316,7 +342,7 @@ function GoalCard({ goal, accounts }: { goal: Goal; accounts: Account[] }) {
           </div>
           <span
             className={
-              "rounded-md px-2 py-1 text-xs font-medium " +
+              "shrink-0 rounded-md px-2 py-1 text-xs font-medium " +
               (status === "overdue"
                 ? "bg-rose-50 text-rose-800"
                 : status === "urgent"
@@ -464,6 +490,21 @@ function GoalCard({ goal, accounts }: { goal: Goal; accounts: Account[] }) {
         {remaining > 0 && accounts.length === 0 && (
           <p className="text-xs text-amber-800">{t("addAnAccountFirst")}</p>
         )}
+        <div className="flex flex-wrap gap-1 border-t pt-3">
+          <AddGoal goal={goal} />
+          <FinancialHistory
+            url={"/api/goals/" + goal.id + "/contributions"}
+            title="contributionHistory"
+            detail={goal.title}
+            accounts={accounts}
+          />
+          <RecordDeleteButton
+            url={"/api/goals/" + goal.id}
+            detail={goal.title}
+            description="deleteGoalHint"
+            success="goalDeleted"
+          />
+        </div>
       </CardContent>
     </Card>
   )

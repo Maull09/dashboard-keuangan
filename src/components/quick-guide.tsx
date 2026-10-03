@@ -36,6 +36,7 @@ export function QuickGuide() {
         <div className="space-y-5">
           {[
             "Accounts",
+            "Manage",
             "Transactions",
             "Budget",
             "Goals",
