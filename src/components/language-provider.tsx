@@ -9,6 +9,7 @@ import {
   type Locale,
 } from "@/lib/finance"
 import { usabilityMessages } from "@/lib/usability-messages"
+import { planningMessages } from "@/lib/planning-messages"
 
 type Dictionary = Record<string, string>
 
@@ -439,7 +440,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       t: (key: string, values: Record<string, string | number> = {}) =>
         Object.entries(values).reduce(
           (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
-          usabilityMessages[locale][key] ?? dictionaries[locale][key] ?? key,
+          planningMessages[locale][key] ??
+            usabilityMessages[locale][key] ??
+            dictionaries[locale][key] ??
+            key,
         ),
       formatCurrency: (amount: number) => formatCurrency(amount, locale),
       formatDate: (date: string) => formatDate(date, locale),

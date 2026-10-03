@@ -25,13 +25,19 @@ import {
 import { accountTypes, type AccountType } from "@/lib/finance"
 import { jsonBody, requestJson } from "@/lib/client-api"
 
-export function AddAccountForm({ onAdded }: { onAdded?: () => void }) {
+export function AddAccountForm({
+  onAdded,
+  defaultType = "bank",
+}: {
+  onAdded?: () => void
+  defaultType?: AccountType
+}) {
   const { t } = useLanguage()
   const notify = useFeedback()
   const id = useId()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
-  const [type, setType] = useState<AccountType>("bank")
+  const [type, setType] = useState<AccountType>(defaultType)
   const [initialBalance, setInitialBalance] = useState("")
   const [description, setDescription] = useState("")
   const [error, setError] = useState("")
@@ -114,7 +120,11 @@ export function AddAccountForm({ onAdded }: { onAdded?: () => void }) {
             <Field
               id={id + "-balance"}
               label={t("openingBalance")}
-              hint={t("openingBalanceHint")}
+              hint={t(
+                type === "investment"
+                  ? "investmentOpeningHint"
+                  : "openingBalanceHint",
+              )}
             >
               <Input
                 id={id + "-balance"}
