@@ -1,41 +1,168 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { CalendarClock, Home, PieChartIcon, Plus, Target, TrendingUp, Wallet, X } from "lucide-react"
-
-import { AddAccountForm } from "./accounts-form"
+import {
+  CalendarClock,
+  Home,
+  Landmark,
+  PieChartIcon,
+  ReceiptText,
+  Target,
+  TrendingUp,
+  Wallet,
+} from "lucide-react"
 import { useLanguage } from "./language-provider"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { AddAccountForm } from "./accounts-form"
+import { ErrorNotice } from "./feedback"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "./ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select"
+import { useRemoteData } from "@/lib/use-remote-data"
+import type { Account } from "@/lib/types"
 
-const menuItems = [
-  { key: "dashboard", label: "dashboard", icon: Home },
-  { key: "transactions", label: "transactions", icon: Plus },
-  { key: "budget", label: "budget", icon: TrendingUp },
-  { key: "goals", label: "goals", icon: Target },
-  { key: "reports", label: "reports", icon: PieChartIcon },
-  { key: "planning", label: "planning", icon: CalendarClock },
-  { key: "debts", label: "debts", icon: Wallet },
+export const navigationItems = [
+  { key: "dashboard", icon: Home },
+  { key: "transactions", icon: ReceiptText },
+  { key: "budget", icon: TrendingUp },
+  { key: "goals", icon: Target },
+  { key: "reports", icon: PieChartIcon },
+  { key: "planning", icon: CalendarClock },
+  { key: "debts", icon: Wallet },
 ]
 
-export function Sidebar({ activeTab, setActiveTab, open = true, onClose }: { activeTab: string; setActiveTab: (tab: string) => void; open?: boolean; onClose?: () => void }) {
-  const [accounts, setAccounts] = useState<Array<{ id: number; name: string; type: string }>>([])
+export function Sidebar({
+  activeTab,
+  open,
+  onClose,
+}: {
+  activeTab: string
+  open: boolean
+  onClose: () => void
+}) {
   const { locale, setLocale, t } = useLanguage()
-
-  async function fetchAccounts() {
-    const response = await fetch("/api/accounts")
-    if (response.ok) setAccounts(await response.json())
+  const accounts = useRemoteData<Account[]>("/api/accounts")
+  function content(mobile: boolean) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex items-center gap-3 border-b px-5 py-5">
+          <div className="rounded-lg bg-teal-700 p-2 text-white">
+            <Landmark className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-base font-semibold">Finance Tracker</p>
+            <p className="text-xs text-muted-foreground">
+              {t("personalFinance")}
+            </p>
+          </div>
+        </div>
+        <nav
+          aria-label={t("navigate")}
+          className="min-h-0 flex-1 overflow-y-auto px-3 py-5"
+        >
+          <ul className="space-y-1">
+            {navigationItems.map(({ key, icon: Icon }) => (
+              <li key={key}>
+                <a
+                  href={"#" + key}
+                  aria-current={activeTab === key ? "page" : undefined}
+                  onClick={onClose}
+                  className={
+                    "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors " +
+                    (activeTab === key
+                      ? "bg-teal-50 font-semibold text-teal-800"
+                      : "text-slate-600 hover:bg-muted hover:text-foreground")
+                  }
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                  {t(key)}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-7 border-t pt-5">
+            <p className="mb-3 px-3 text-xs font-medium text-muted-foreground">
+              {t("accounts")}
+            </p>
+            {accounts.error ? (
+              <ErrorNotice message={accounts.error} onRetry={accounts.reload} />
+            ) : accounts.loading ? (
+              <p role="status" className="px-3 text-xs text-muted-foreground">
+                {t("loading")}
+              </p>
+            ) : (
+              <ul className="mb-4 space-y-2 px-3">
+                {accounts.data?.map((account) => (
+                  <li
+                    key={account.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="truncate">{account.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {t(account.type)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="px-3">
+              <AddAccountForm />
+            </div>
+          </div>
+        </nav>
+        <div className="border-t p-5">
+          <label
+            className="mb-2 block text-xs font-medium text-muted-foreground"
+            htmlFor={mobile ? "mobile-language" : "desktop-language"}
+          >
+            {t("language")}
+          </label>
+          <Select
+            value={locale}
+            onValueChange={(value) => setLocale(value as "en" | "id")}
+          >
+            <SelectTrigger
+              id={mobile ? "mobile-language" : "desktop-language"}
+              className="w-full"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="id">Bahasa Indonesia</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    )
   }
-
-  useEffect(() => { void fetchAccounts() }, [])
-
   return (
     <>
-      {open && <button type="button" className="fixed inset-0 z-30 bg-black/30 md:hidden" aria-label={t("closeMenu")} onClick={onClose} />}
-      <aside className={`fixed z-40 flex min-h-screen w-64 flex-col border-r bg-background transition-transform duration-200 md:static md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="flex items-center gap-2 border-b px-4 py-4"><Wallet className="h-6 w-6 text-primary" /><span className="text-lg font-semibold">Finance Tracker</span><button type="button" className="ml-auto rounded p-1 hover:bg-muted md:hidden" onClick={onClose} aria-label={t("closeMenu")}><X className="h-5 w-5" /></button></div>
-        <nav className="flex-1 py-4"><ul className="space-y-1 px-2">{menuItems.map(({ key, label, icon: Icon }) => <li key={key}><button type="button" className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left transition ${activeTab === key ? "bg-muted font-semibold text-primary" : "hover:bg-muted"}`} onClick={() => { setActiveTab(key); onClose?.() }}><Icon className="h-4 w-4" />{t(label)}</button></li>)}</ul><div className="mt-8 px-4"><p className="mb-2 text-xs text-muted-foreground">{t("accounts")}</p><ul className="mb-3 space-y-1 text-sm">{accounts.map((account) => <li key={account.id}>{account.name} <span className="text-xs text-muted-foreground">({account.type})</span></li>)}</ul><AddAccountForm onAdded={fetchAccounts} /></div></nav>
-        <div className="border-t p-4"><label className="mb-2 block text-xs text-muted-foreground" htmlFor="language">{t("language")}</label><Select value={locale} onValueChange={(value) => setLocale(value as "en" | "id")}><SelectTrigger id="language"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="en">English</SelectItem><SelectItem value="id">Bahasa Indonesia</SelectItem></SelectContent></Select></div>
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r bg-white md:block">
+        {content(false)}
       </aside>
+      <Dialog
+        open={open}
+        onOpenChange={(value) => {
+          if (!value) onClose()
+        }}
+      >
+        <DialogContent className="!left-0 !top-0 !h-dvh !max-h-dvh !w-[min(300px,90vw)] !max-w-none !translate-x-0 !translate-y-0 !rounded-none !p-0">
+          <DialogTitle className="sr-only">{t("navigate")}</DialogTitle>
+          <DialogDescription className="sr-only">
+            {t("personalFinance")}
+          </DialogDescription>
+          {content(true)}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
