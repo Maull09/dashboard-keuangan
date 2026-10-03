@@ -76,8 +76,8 @@ const en = {
   eodHint:
     "End-of-day prices, not real-time quotes. Check the price date; older prices remain visible when updates fail.",
   refreshPrices: "Update daily prices",
-  pricesSetupHint:
-    "Automatic prices need a server-side TWELVE_DATA_API_KEY with IDX access. Manual trade recording works without it.",
+  pricesSourceHint:
+    "Daily prices use Yahoo Finance through an unofficial integration, without an API key. Availability is not guaranteed; quotes may be delayed.",
   priceUpdateResult:
     "{updated} updated, {cached} cached, {failed} failed, {pending} pending.",
   tradeSaved: "Stock trade recorded. Cash and holdings updated.",
@@ -110,14 +110,14 @@ const en = {
     "The allocation exceeds the target, or the target is below the existing allocation.",
   linkedFundTransaction:
     "This expense belongs to a sinking fund and cannot be changed independently of its fund history.",
-  pricesNotConfigured:
-    "Daily prices are not configured. Add TWELVE_DATA_API_KEY to the server environment.",
+  marketDataUnavailable:
+    "Yahoo Finance could not be reached or returned unreadable data. Your saved prices were kept. Try again later; this is a market-data error, not a database connection error.",
   priceAccessRequired:
-    "The market-data provider rejected access. Check the API key and its IDX data entitlement.",
+    "Yahoo Finance temporarily rejected access. Saved prices were kept. Wait and retry; this integration does not require an API key.",
   pricesRateLimited:
     "The market-data limit was reached. Existing prices were kept; wait for your provider quota to reset, then retry.",
   invalidMarketPrice:
-    "No valid daily IDR price was returned for this IDX symbol. Check the ticker and provider coverage.",
+    "Yahoo Finance returned no valid completed daily IDR close for this IDX ticker. Check its .JK listing and price date; saved prices were kept.",
   knownNetWorth: "Known subtotal",
   cashAssets: "Cash assets",
   stockAssets: "Valued stocks",
@@ -274,8 +274,8 @@ const id: Record<keyof typeof en, string> = {
   eodHint:
     "Harga akhir hari, bukan real-time. Periksa tanggalnya; harga lama tetap ditampilkan bila pembaruan gagal.",
   refreshPrices: "Perbarui harga harian",
-  pricesSetupHint:
-    "Harga otomatis membutuhkan TWELVE_DATA_API_KEY di server dengan akses BEI. Pencatatan transaksi manual tetap bisa digunakan.",
+  pricesSourceHint:
+    "Harga harian berasal dari Yahoo Finance melalui integrasi tidak resmi, tanpa API key. Ketersediaan tidak dijamin; harga dapat tertunda.",
   priceUpdateResult:
     "{updated} diperbarui, {cached} tersimpan, {failed} gagal, {pending} tertunda.",
   tradeSaved: "Transaksi saham dicatat. Kas dan kepemilikan diperbarui.",
@@ -309,14 +309,14 @@ const id: Record<keyof typeof en, string> = {
     "Alokasi melebihi target, atau target lebih kecil daripada alokasi yang sudah ada.",
   linkedFundTransaction:
     "Pengeluaran ini terkait sinking fund dan tidak dapat diubah terpisah dari riwayat dananya.",
-  pricesNotConfigured:
-    "Harga harian belum dikonfigurasi. Tambahkan TWELVE_DATA_API_KEY ke environment server.",
+  marketDataUnavailable:
+    "Yahoo Finance tidak dapat dihubungi atau mengirim data yang tidak terbaca. Harga tersimpan tetap dipertahankan. Coba lagi nanti; ini kesalahan layanan harga, bukan koneksi database.",
   priceAccessRequired:
-    "Penyedia data menolak akses. Periksa API key dan izin data BEI pada paketnya.",
+    "Yahoo Finance menolak akses sementara. Harga tersimpan tetap dipertahankan. Tunggu lalu coba lagi; integrasi ini tidak memerlukan API key.",
   pricesRateLimited:
     "Batas data pasar tercapai. Harga sebelumnya tetap disimpan; tunggu kuota penyedia pulih, lalu coba lagi.",
   invalidMarketPrice:
-    "Tidak ada harga harian IDR yang valid untuk kode BEI ini. Periksa kode dan cakupan penyedia data.",
+    "Yahoo Finance tidak mengirim harga penutupan harian IDR yang valid untuk kode BEI ini. Periksa listing .JK dan tanggal harganya; harga tersimpan tetap dipertahankan.",
   knownNetWorth: "Subtotal yang diketahui",
   cashAssets: "Aset kas",
   stockAssets: "Saham yang sudah dinilai",

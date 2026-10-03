@@ -3,12 +3,9 @@ import { db } from "@/db"
 import { stockPrices, stockTrades, stockWatchlist } from "@/db/schema"
 import { calculateHoldings } from "../investments"
 import { FinanceError, type FinanceErrorCode } from "../finance-errors"
-import { getToday } from "../finance"
-import { parseDailyStockPrice } from "../stock-price-parser"
+import { readYahooDailyPrice } from "./yahoo-prices"
 
 export async function refreshDailyStockPrices() {
-  const key = process.env.TWELVE_DATA_API_KEY
-  if (!key) throw new FinanceError("pricesNotConfigured", 503)
   const [trades, watchlist, prices] = await Promise.all([
     db.select().from(stockTrades),
     db.select().from(stockWatchlist),
@@ -38,34 +35,14 @@ export async function refreshDailyStockPrices() {
     const previous = latest.get(symbol)
     if (
       previous &&
+      previous.source === "Yahoo Finance" &&
       new Date(previous.fetchedAt).getTime() > Date.now() - 15 * 60 * 1000
     ) {
       cached++
       continue
     }
     try {
-      const url = new URL("https://api.twelvedata.com/time_series")
-      url.search = new URLSearchParams({
-        symbol,
-        mic_code: "XIDX",
-        interval: "1day",
-        outputsize: "1",
-        apikey: key,
-      }).toString()
-      const response = await fetch(url, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(15000),
-      })
-      if (response.status === 429)
-        throw new FinanceError("pricesRateLimited", 429)
-      if (response.status === 401 || response.status === 403)
-        throw new FinanceError("priceAccessRequired", 503)
-      if (!response.ok) throw new FinanceError("serviceUnavailable", 502)
-      const quote = parseDailyStockPrice(
-        await response.json(),
-        symbol,
-        getToday(),
-      )
+      const quote = await readYahooDailyPrice(symbol)
       await db
         .insert(stockPrices)
         .values(quote)
