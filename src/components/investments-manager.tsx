@@ -36,7 +36,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useRemoteData } from "@/lib/use-remote-data"
 import { requestJson, jsonBody } from "@/lib/client-api"
-import { formatStockQuantity, getToday } from "@/lib/finance"
+import { formatStockPrice, formatStockQuantity, getToday } from "@/lib/finance"
 import { tradeCashChange } from "@/lib/investments"
 import { parseStockTrade } from "@/lib/planning-validation"
 import type { PortfolioData, CashAccount } from "@/lib/planning-types"
@@ -316,10 +316,18 @@ export function InvestmentsManager() {
                                     )}
                                   </td>
                                   <td className="p-4 text-right tabular-nums">
-                                    {formatCurrency(holding.averageCost)}
+                                    {formatStockPrice(
+                                      holding.averageCost,
+                                      locale,
+                                    )}
                                   </td>
                                   <td className="p-4 text-right tabular-nums">
-                                    {showMoney(holding.marketPrice)}
+                                    {holding.marketPrice === null
+                                      ? t("unpriced")
+                                      : formatStockPrice(
+                                          holding.marketPrice,
+                                          locale,
+                                        )}
                                     {holding.priceDate && (
                                       <p className="mt-1 text-xs text-muted-foreground">
                                         {formatDate(holding.priceDate)}
@@ -386,7 +394,7 @@ export function InvestmentsManager() {
                           <div className="text-right">
                             <p className="font-semibold tabular-nums">
                               {item.quote
-                                ? formatCurrency(item.quote.price)
+                                ? formatStockPrice(item.quote.price, locale)
                                 : t("unpriced")}
                             </p>
                             {item.quote && (
@@ -495,7 +503,7 @@ export function InvestmentsManager() {
                               )}
                             </td>
                             <td className="p-3 text-right tabular-nums">
-                              {formatCurrency(trade.price)}
+                              {formatStockPrice(trade.price, locale)}
                             </td>
                             <td className="p-3 text-right tabular-nums">
                               {formatCurrency(trade.fees)}
@@ -781,9 +789,9 @@ function StockTradeForm({
                 id={id + "-price"}
                 type="number"
                 aria-describedby={id + "-price-hint"}
-                min="0.01"
+                min="0.0001"
                 max="1000000000"
-                step="0.01"
+                step="0.0001"
                 inputMode="decimal"
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}

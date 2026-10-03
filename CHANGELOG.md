@@ -4,6 +4,16 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
 ## 2026-10-03
 
+### Four-decimal per-share prices
+
+- Enabled up to four decimal places in stock buy/sell price inputs and API validation, with a minimum price of 0.0001 IDR and rejection of excess precision.
+- Added migration `0005_concerned_ego.sql` to widen trade prices to `numeric(16, 4)` without rewriting trade history or reducing integer capacity.
+- Displayed recorded prices, average cost, market prices, and watchlist prices with exactly four localized decimal places. Cash totals retain two-decimal precision; trade gross calculations multiply full-precision quantities and prices before rounding.
+- Updated bilingual field guidance and migration documentation, and added calculation, formatting, validation, and migration-regression tests.
+- With user approval, created and archive-validated a new private Supabase backup and applied migration 0005 through the Session pooler with certificate/hostname verification. All 15 application tables retained their row counts and financial values; the previous five migration records were unchanged.
+
+Verification: 176 automated tests, TypeScript checking, and the production build passed. An isolated PostgreSQL-compatible check applied all six migrations, verified unchanged legacy values across 15 tables, and exercised actual buy/edit/sale handlers, four-decimal storage, invalid-input rollback, and cash accounting. Mocked browser checks passed in English and Indonesian for price formatting, trailing zeros, edit prefills, input precision, failed-save recovery, and mobile dialog bounds. Supabase readiness checks passed with all 15 tables and six recorded migrations; real investment, account-summary, dashboard, and net-worth GET endpoints returned HTTP 200. No sample trades were written to the live database. The backup archive was listed successfully; a full restore rehearsal was not performed.
+
 ### Dependency and TypeScript updates
 
 - Committed the existing upgrades to Next.js 16.3.8, Drizzle ORM 0.45.3, Drizzle Kit 0.31.11, and Vitest 5.0.3, with their matching npm lockfile.

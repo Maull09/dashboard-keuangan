@@ -1,0 +1,1 @@
+ALTER TABLE "stock_trades" ALTER COLUMN "price" SET DATA TYPE numeric(16, 4);

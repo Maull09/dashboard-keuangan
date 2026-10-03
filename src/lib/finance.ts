@@ -17,6 +17,10 @@ export function formatStockQuantity(amount: number, locale: Locale = "id", maxim
   return new Intl.NumberFormat(localeCodes[locale], { maximumFractionDigits }).format(amount)
 }
 
+export function formatStockPrice(amount: number, locale: Locale = "id") {
+  return new Intl.NumberFormat(localeCodes[locale], { style: "currency", currency: "IDR", minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(amount)
+}
+
 export function getToday() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jakarta",

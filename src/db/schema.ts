@@ -183,8 +183,8 @@ export const stockTrades = pgTable(
       mode: "number",
     }).notNull(),
     price: numeric("price", {
-      precision: 14,
-      scale: 2,
+      precision: 16,
+      scale: 4,
       mode: "number",
     }).notNull(),
     fees: bigint("fees", { mode: "number" }).notNull().default(0),

@@ -6,14 +6,16 @@ The investment, net-worth, simulation, calendar, and sinking-fund views share th
 
 1. Back up the intended Supabase database and stop the app while updating its schema.
 2. Use the Supabase Direct connection URL or Session pooler (port 5432) in `DATABASE_URL` temporarily.
-3. Run `npm run db:migrate` to apply pending migrations, including `0003_wild_ultimo.sql` and `0004_clumsy_jane_foster.sql`.
+3. Run `npm run db:migrate` to apply pending migrations, including `0003_wild_ultimo.sql`, `0004_clumsy_jane_foster.sql`, and `0005_concerned_ego.sql`.
 4. Run `npm run db:migrate -- --check`, restore the runtime pooler URL, and restart the app.
 
 Existing tables with empty migration history need explicit, verified legacy adoption rather than replaying the initial migration. See the [database migration and recovery guide](database-migrations.md).
 
-The new migration adds six tables: instruments, trades, prices, watchlist entries, sinking funds, and fund entries. It does not reinterpret existing balances or insert sample financial records. Migration generation is not database migration. Without these tables, the new ledger queries, including the dashboard's cash balance, will fail.
+Migration 0003 adds six tables: instruments, trades, prices, watchlist entries, sinking funds, and fund entries. It does not reinterpret existing balances or insert sample financial records. Migration generation is not database migration. Without these tables, the ledger queries, including the dashboard's cash balance, will fail.
 
 Migration 0004 removes the whole-lot restriction and converts trade quantities/prices to fixed-precision PostgreSQL numeric columns without changing their existing values. Apply it before recording decimal trades.
+
+Migration 0005 widens trade prices from two to four decimal places without changing existing values or reducing integer capacity. Apply it before entering four-decimal prices; otherwise PostgreSQL can round stored prices to the old two-decimal scale.
 
 Review legacy investment accounts before recording stock trades. Their opening balance must represent cash, not holdings. Do not leave a previous portfolio valuation in opening cash and then record the same holdings again. Enter actual trade history and the cash funding that existed before those purchases; backdated buys are checked against cash and earlier holdings. Back up and reconcile existing data before making manual corrections.
 
@@ -21,10 +23,10 @@ Review legacy investment accounts before recording stock trades. Their opening b
 
 - Create an **Investment** account for brokerage cash. Record transfers into it using Transactions.
 - Record actual buys and sells in Investments. These records do not send orders to a broker.
-- Use a four-letter IDX ticker, a trade date no later than today, lots, price per share, and total fees/taxes. One lot represents 100 shares. Lots allow up to six decimal places; shares allow four; prices allow two. For example, 1.25 lots equals 125 shares, and 0.012345 lots equals 1.2345 shares.
+- Use a four-letter IDX ticker, a trade date no later than today, lots, price per share, and total fees/taxes. One lot represents 100 shares. Lots allow up to six decimal places; shares and prices allow four. For example, 1.25 lots equals 125 shares, and 0.012345 lots equals 1.2345 shares. The minimum per-share price is 0.0001 IDR; more than four significant decimal places are rejected.
 - Decimal quantities are bookkeeping inputs, not a guarantee that a broker or exchange can execute them. Fees remain whole-rupiah inputs. The table localizes decimal separators and calculates average cost from trades and fees; it is not an independently editable balance.
 - Positions are calculated separately for each account and ticker, in date order. Same-day trades use record order.
-- Trade gross values are rounded half-up to 0.01 IDR, using scaled integer arithmetic; trades whose gross rounds to zero are rejected. Weighted-average cost includes buy fees. A partial sale releases proportional cost basis rounded to 0.01 IDR rather than whole rupiah; the final sale releases the remaining basis exactly. Sale fees reduce proceeds. Average cost is computed from the remaining cost basis and displayed with up to two decimal places.
+- Trade gross values are rounded half-up to 0.01 IDR after multiplying the full four-decimal quantity and price, using scaled integer arithmetic; trades whose gross rounds to zero are rejected. Weighted-average cost includes buy fees. A partial sale releases proportional cost basis rounded to 0.01 IDR rather than whole rupiah; the final sale releases the remaining basis exactly. Sale fees reduce proceeds. Average cost is computed from the remaining cost basis and displayed with exactly four decimal places. Recorded, market, and watchlist per-share prices also display four decimal places, including trailing zeros; cash totals retain two-decimal precision. Daily provider prices remain whole-rupiah values, displayed with four trailing zeros rather than fabricated precision.
 - Buying reduces brokerage cash; selling increases it. Neither creates an ordinary consumption expense or income record, so the same trade must not also be entered in Transactions.
 - Sales exceeding holdings, cash-short purchases, and purchases using money already allocated to goals/funds are rejected. Editing or removing a trade is rejected when it would invalidate subsequent holdings, dated cash history, or current allocations.
 - Open **Manage trades** or **Trade history** to edit/delete an individual trade. Edit forms show the previous/new cash impact and estimated available cash in the selected account after saving. Changing the account validates both affected accounts; changing the ticker or date cannot orphan later sales. Existing record IDs remain the ordering tie-breaker for same-day trades. Changes are atomic; failures leave the original trade intact and retain form input.
@@ -98,6 +100,6 @@ Reservations are bookkeeping labels, not a bank lock. Other ordinary expenses/ma
 
 Run `npm test`, `npx tsc --noEmit`, and `npm run build`. Automated tests cover fees, weighted-average sales, missing prices, schedule expansion, simulations, fund math, strict input validation, provider-payload validation, bilingual messages, and sanitized client errors.
 
-An isolated in-memory PostgreSQL smoke check applied all four migrations and exercised actual API handlers for buys/sales, oversell/backdate rollback, dependent-trade deletion, cash/valuation consistency, reservations, linked fund spending, empty-fund editing/deletion, calendar aggregation, simulation non-mutation, invalid requests, and the cron guard. This was not a Supabase production migration or a concurrency/load test.
+Isolated in-memory PostgreSQL checks exercised actual API handlers for buys/sales, oversell/backdate rollback, dependent-trade deletion, cash/valuation consistency, reservations, linked fund spending, empty-fund editing/deletion, calendar aggregation, simulation non-mutation, invalid requests, and the cron guard. A subsequent six-migration check verified four-decimal price persistence, unchanged legacy values across all 15 tables, edit/rejection behavior, and cent-precision cash accounting. These were not Supabase production migrations or concurrency/load tests.
 
 The application currently has no authentication or per-user isolation. Keep it private; the cron secret protects the scheduled endpoint only, not the rest of the application. Live quote retrieval and deployment scheduling need verification after environment setup.

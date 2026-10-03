@@ -55,7 +55,7 @@ const en = {
   lotsHint:
     "1 lot = 100 shares. Decimal lots are allowed (1.25 lots = 125 shares), up to 6 decimal places.",
   stockPriceHint:
-    "Decimal prices are allowed, up to 2 decimal places. Average cost is calculated from your trades and fees.",
+    "Prices support up to 4 decimal places. Average cost is calculated from your trades and fees; cash totals are rounded to 2 decimal places.",
   shares: "Shares",
   pricePerShare: "Price per share (IDR)",
   tradingFees: "Total fees and taxes (IDR)",
@@ -253,7 +253,7 @@ const id: Record<keyof typeof en, string> = {
   lotsHint:
     "1 lot = 100 lembar. Lot desimal diperbolehkan (1,25 lot = 125 lembar), maksimal 6 angka desimal.",
   stockPriceHint:
-    "Harga boleh desimal, maksimal 2 angka desimal. Modal rata-rata dihitung dari transaksi dan biaya Anda.",
+    "Harga mendukung maksimal 4 angka desimal. Modal rata-rata dihitung dari transaksi dan biaya Anda; total kas dibulatkan ke 2 angka desimal.",
   shares: "Lembar",
   pricePerShare: "Harga per lembar (IDR)",
   tradingFees: "Total biaya dan pajak (IDR)",

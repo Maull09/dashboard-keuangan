@@ -70,7 +70,7 @@ export function parseStockTrade(value: unknown) {
     throw new FinanceError("invalidInput")
   const lots = decimalInput(body.lots, 6, 0.000001, 100_000)
   const shares = Math.round(lots * 1_000_000) / 10_000
-  const price = decimalInput(body.price, 2, 0.01, 1_000_000_000)
+  const price = decimalInput(body.price, 4, 0.0001, 1_000_000_000)
   const fees = integerInput(body.fees ?? 0, 0, 2_147_483_647)
   const gross = -tradeCashChange({ side: "buy", shares, price, fees: 0 })
   if (
