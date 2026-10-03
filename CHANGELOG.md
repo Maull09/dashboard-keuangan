@@ -4,6 +4,24 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
 ## 2026-10-03
 
+### Investments and planning expansion
+
+- Added IDX stock portfolios, buy/sell records, brokerage cash accounts, whole-lot quantities, fees, weighted-average cost, realized/unrealized gains, and watchlists.
+- Added validated Twelve Data daily-close retrieval, visible quote dates, 15-minute caching, partial-error/pending feedback, and a secret-protected daily Vercel price job. Missing prices remain visibly incomplete; no fabricated market values are used.
+- Added net worth combining cash, valued stocks, receivables, and debts without counting goal/fund allocations twice.
+- Added read-only monthly-payment simulations, input/data-change invalidation, and monthly comparison results.
+- Added a month-selectable financial calendar for unrecorded recurring occurrences, debt/receivable deadlines, and sinking-fund targets.
+- Added account-linked sinking funds with allocation/release/spending history, suggested monthly savings, and atomic linked expense recording. Allocations do not move cash; spending reduces cash exactly once.
+- Integrated stock cash flows into account summaries, dashboard cash history, forecasts, and reconciliation. Stock trading does not inflate ordinary income/expense or budget totals.
+- Expanded weekly/monthly forecast occurrences, respecting start/end dates and already-recorded payments.
+- Added six database tables and migration `0003_wild_ultimo.sql`, strict API input validation, conflict/rollback safeguards, and protection for linked fund expenses.
+- Added English/Indonesian feature copy and contextual Quick guide topics. Fixed narrow/tablet action wrapping and made scrollable investment/projection tables keyboard-focusable.
+- Updated setup, data semantics, limitations, progress documentation, and provider/scheduler requirements.
+
+Verification: 95 automated tests across ten files, TypeScript checking, migration/schema generation consistency, and a production build passed. An isolated PostgreSQL check applied all four migrations and exercised the actual financial API handlers, including invalid-trade rollback, cash/valuation consistency, fund spending, simulation non-mutation, price upserts/caching, quota-failure preservation, and the cron guard. Mocked browser checks covered all five new views at 1440, 768, and 375 px, trade-input recovery, cancellation, simulation invalidation, calendar navigation, mobile dialog bounds, and both languages. Targeted axe scans reported no WCAG A/AA violations on those view/width combinations; no uncaught browser errors were observed.
+
+No migration was applied to the user's Supabase database, no real financial records were changed in verification, and no live market-data account was configured. Live quote retrieval and deployment scheduling require the user's environment setup. Work was committed locally on `feat/investments-planning`; no Git remote is configured for pushing.
+
 ### Added
 
 - Bilingual Quick guide, persistent field labels and hints, shared loading/error/empty states, retry controls, and success notifications.

@@ -32,6 +32,8 @@ npm run db:migrate
 
 Drizzle schema definitions are in `src/db/schema.ts`; generated migrations are in `drizzle/`. The first migration preserves legacy transactions by assigning them to an `Uncategorized account`. Move them to their real account after migrating.
 
+Migration `0003_wild_ultimo.sql` adds stock portfolios, price history, watchlists, and sinking funds. Apply it before running this version, since cash queries now include the stock ledger. Optional daily pricing uses `TWELVE_DATA_API_KEY` and `CRON_SECRET`; see [investment and planning setup](investments-and-planning.md).
+
 ## Troubleshooting
 
 - **Cannot connect to the database:** verify that `DATABASE_URL` comes from Supabase Connect, is URL-encoded where required, and uses SSL.

@@ -10,6 +10,12 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 - Financial goals with account-linked contributions.
 - Debts and receivables with partial payments and repayment history.
 - Recurring transactions, payday cash-flow forecasts, and account reconciliation.
+- IDX stock portfolios with buy/sell records, fees, weighted-average cost, realized/unrealized gains, and a watchlist.
+- Daily stock closes from Twelve Data, with manual refresh and a protected scheduled job; provider configuration and IDX entitlement are required.
+- Net worth combining cash, stock valuations, receivables, and unpaid debts without counting allocations twice.
+- Read-only simulations comparing scheduled cash flow with an extra monthly installment.
+- A monthly financial calendar for recurring income/payments, debt deadlines, and sinking-fund targets.
+- Account-linked sinking funds with allocation/release history, suggested monthly savings, and linked expense recording.
 - English and Indonesian user interface localization.
 - Consistent loading/error feedback, guided forms, destructive-action confirmations, responsive navigation, and a bilingual Quick guide.
 
@@ -48,6 +54,21 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Existing installations also need migration `0003_wild_ultimo.sql` before starting this version. It adds the investment and sinking-fund tables; generating it does not apply it to Supabase.
+
+### Optional daily stock prices
+
+Add these server-only variables to `.env` and your deployment environment, then restart the app:
+
+```env
+TWELVE_DATA_API_KEY=your_provider_key_with_IDX_access
+CRON_SECRET=your_generated_long_random_secret
+```
+
+Manual trade recording works without a market-data key. Automatic valuation needs an API plan with IDX access; do not assume a free key includes it. Quotes are end-of-day, not live. Opening Investments requests an update; `vercel.json` also schedules a protected update at 13:30 UTC daily (20:30 Asia/Jakarta) on Vercel. Other hosts need their own scheduler.
+
+See [investment and planning setup](docs/investments-and-planning.md) for provider coverage, scheduling, migration steps, and limitations.
+
 ## Commands
 
 | Command               | Purpose                                                                |
@@ -61,15 +82,21 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Data rules
 
-- Account balance = opening balance + income - expenses - outgoing transfers + incoming transfers.
+- Cash balance = opening cash + income - expenses - outgoing transfers + incoming transfers - stock purchases and fees + net stock-sale proceeds.
 - Transfers do not change the total dashboard balance.
 - Budget use includes only expenses in its selected period.
 - Goal contributions are allocations; they do not reduce the source account until a cash transaction is recorded.
 - Debt and receivable payments create cash transactions to keep balances and payment history consistent.
+- Stock trades change cash and holdings, not consumption budgets or ordinary income/expense totals. Buy fees enter the cost basis; sale fees reduce proceeds.
+- An investment account's opening balance is brokerage cash, not the value of owned stocks.
+- Net worth = cash + priced stocks + outstanding receivables - outstanding debts. Missing stock prices make the total incomplete, with a separately labeled known subtotal.
+- Sinking-fund allocations reserve existing cash; spending posts one actual expense. Simulations and calendar reminders do not post transactions.
 
 ## Using the interface
 
 Start by adding an account and its opening balance, then record your income, expenses, or transfers. Use the navigation to review budgets, goals, debts, reports, and recurring schedules. **Quick guide** in the header explains the main workflows.
+
+For stocks, create an account of type **Investment**, fund it with cash, and record actual buys/sells in **Investments**. **Net worth** combines cash and current stock valuations. **Simulation** lets you preview an extra monthly payment; **Financial calendar** shows planned dates; **Sinking funds** reserves money for expected expenses.
 
 The transaction filters search all matching records, not just the current page. **This month** selects the current period; **Clear filters** returns to the complete history. Reports and budgets have their own month selectors.
 

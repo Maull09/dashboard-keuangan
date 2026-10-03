@@ -36,9 +36,9 @@ The interface follows a practical bookkeeping direction: white surfaces, slate t
 
 Automated tests cover financial calculations, transaction-filter validation, translated category matching, bilingual message parity, and client-request error handling. Run `npm test`, `npx tsc --noEmit`, and `npm run build` after changes.
 
-Browser checks should cover desktop and mobile widths, all seven views, keyboard navigation, dialog focus and overflow, form recovery, language persistence, and empty/error states. Use mocked API responses for mutation tests; do not create or delete real financial data just to verify the interface.
+Browser checks should cover desktop and mobile widths, all twelve views, keyboard navigation, dialog focus and overflow, form recovery, language persistence, and empty/error states. Use mocked API responses for mutation tests; do not create or delete real financial data just to verify the interface.
 
-Further work includes representative-user usability testing, a full assistive-technology audit, saved or shareable filters, and a recoverable deletion workflow. These improvements do not introduce authentication, database migrations, or changes to historical financial data.
+Further work includes representative-user usability testing, a full assistive-technology audit, saved or shareable filters, and a recoverable deletion workflow. The initial usability iteration did not introduce database migrations or changes to historical financial data; the subsequent investment/planning expansion adds a new migration. Neither introduces authentication.
 
 ### Checks run on 2026-10-03
 
@@ -48,4 +48,13 @@ Further work includes representative-user usability testing, a full assistive-te
 - Automated axe checks reported no WCAG A/AA violations on the desktop dashboard and mobile transaction view tested. This does not establish full WCAG compliance; other pages and assistive technologies still require testing.
 - Mutation requests were intercepted with fixtures. No real financial records were created, changed, or deleted during these browser checks.
 
-The existing forecast currently applies each selected recurring schedule once rather than expanding all weekly/monthly occurrences through payday. Improving its date and already-recorded-payment handling remains a financial-calculation task, separate from this UI iteration.
+### Investment and planning checks on 2026-10-03
+
+- Expanded forecast occurrences through payday and excluded already-recorded schedule dates.
+- Added Quick guide topics and contextual hints for brokerage cash, incomplete valuations, net worth, read-only scenarios, calendar reminders, and sinking-fund spending.
+- Fixed action wrapping at narrow content widths and made horizontally scrollable portfolio, trade-history, and scenario tables keyboard-focusable.
+- 95 automated tests across ten files, TypeScript checking, and a production build passed. An isolated PostgreSQL check verified migrations and actual API flows without connecting to Supabase or changing real financial data.
+- Mocked browser checks covered the five new views at 1440, 768, and 375 px; English/Indonesian headings; partial price-update errors; trade failures retaining input; cancellation; simulation input-change invalidation; calendar date/month navigation; fund-expense explanations; and help/trade dialog bounds on mobile. No uncaught browser errors were observed.
+- Targeted axe WCAG A/AA checks reported no violations across those five view/width combinations. This remains a targeted automated check, not a complete accessibility audit.
+
+See [investment and planning setup](investments-and-planning.md) for data semantics and deployment requirements.
