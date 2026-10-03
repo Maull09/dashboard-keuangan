@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { db } from "@/db"
-import { accounts, transactions } from "@/db/schema"
+import { readLedger } from "@/lib/server/ledger"
+import { tradeCashChange } from "@/lib/investments"
 import {
   getCategoryInsight,
   getPeriodRange,
@@ -18,10 +18,12 @@ import {
 export async function GET(request: NextRequest) {
   const locale =
     new URL(request.url).searchParams.get("locale") === "en" ? "en" : "id"
-  const [allAccounts, allTransactions] = await Promise.all([
-    db.select().from(accounts),
-    db.select().from(transactions),
-  ])
+  const {
+    accounts: allAccounts,
+    transactions: allTransactions,
+    trades,
+    cashBalance,
+  } = await readLedger()
   const requestedMonth = new URL(request.url).searchParams.get("month")
   const currentMonth = isMonth(requestedMonth)
     ? requestedMonth
@@ -37,7 +39,7 @@ export async function GET(request: NextRequest) {
     (total, account) => total + account.initialBalance,
     0,
   )
-  const runningBalance = startingBalance + netAmount(allTransactions)
+  const runningBalance = cashBalance
   const months = getRecentMonths(6)
   const firstMonthStart = getMonthStart(months[0])
   let historicalBalance =
@@ -46,7 +48,10 @@ export async function GET(request: NextRequest) {
       allTransactions.filter(
         (transaction) => transaction.date < firstMonthStart,
       ),
-    )
+    ) +
+    trades
+      .filter((trade) => trade.date < firstMonthStart)
+      .reduce((total, trade) => total + tradeCashChange(trade), 0)
 
   const monthlyData = months.map((month) => {
     const monthTransactions = allTransactions.filter((transaction) =>
@@ -54,7 +59,12 @@ export async function GET(request: NextRequest) {
     )
     const monthIncome = totalFor(monthTransactions, "income")
     const monthExpense = totalFor(monthTransactions, "expense")
-    historicalBalance += monthIncome - monthExpense
+    historicalBalance +=
+      monthIncome -
+      monthExpense +
+      trades
+        .filter((trade) => trade.date.startsWith(month))
+        .reduce((total, trade) => total + tradeCashChange(trade), 0)
 
     return {
       month: formatMonth(month, locale),
