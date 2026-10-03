@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   integerInput,
   parseFund,
+  parseGoal,
+  parseDebt,
+  parseRecurring,
   parseSimulation,
   parseStockTrade,
   symbolInput,
@@ -23,6 +26,84 @@ const trade = {
 }
 
 describe("financial planning validation", () => {
+  const goal = {
+    title: "Emergency reserve",
+    targetAmount: 1000000,
+    targetDate: "2026-12-01",
+  }
+  const debt = { type: "utang", name: "Car loan", amount: 500000 }
+  const recurring = {
+    name: "Internet",
+    type: "expense",
+    accountId: 1,
+    amount: 300000,
+    category: "Tagihan",
+    frequency: "monthly",
+    startDate: "2026-10-03",
+  }
+  it("parses metadata without synthesizing goal progress or debt payments", () => {
+    expect(parseGoal(goal)).toEqual({
+      ...goal,
+      category: "other",
+      description: "",
+    })
+    expect(parseDebt(debt)).toEqual({ ...debt, description: "", dueDate: null })
+    expect(parseRecurring(recurring)).toMatchObject({
+      ...recurring,
+      endDate: null,
+      destinationAccountId: null,
+    })
+    expect(parseRecurring(recurring)).not.toHaveProperty("date")
+  })
+  it.each([
+    { currentAmount: 0 },
+    { title: true },
+    { targetDate: "2026-02-30" },
+    { targetAmount: 2147483648 },
+    { description: [] },
+    { title: "x".repeat(121) },
+  ])("rejects invalid goal metadata: %s", (override) => {
+    expect(() => parseGoal({ ...goal, ...override })).toThrow("invalidInput")
+  })
+  it.each([
+    { status: "paid" },
+    { paidDate: null },
+    { paidAmount: 0 },
+    { type: "expense" },
+    { name: {} },
+    { dueDate: "2026-02-30" },
+    { amount: 1.5 },
+    { amount: 2147483648 },
+  ])("rejects invalid debt metadata: %s", (override) => {
+    expect(() => parseDebt({ ...debt, ...override })).toThrow("invalidInput")
+  })
+  it.each([
+    { endDate: "2026-10-02" },
+    { endDate: "2026-02-30" },
+    { frequency: "daily" },
+    { startDate: "2026-02-30" },
+    { name: null },
+    { accountId: true },
+    { type: "transfer", destinationAccountId: 1 },
+  ])("rejects invalid recurring metadata: %s", (override) => {
+    expect(() => parseRecurring({ ...recurring, ...override })).toThrow(
+      "invalidInput",
+    )
+  })
+  it("supports recurring transfers and optional end dates", () => {
+    expect(
+      parseRecurring({
+        ...recurring,
+        type: "transfer",
+        destinationAccountId: 2,
+        endDate: "2026-12-31",
+      }),
+    ).toMatchObject({
+      type: "transfer",
+      destinationAccountId: 2,
+      endDate: "2026-12-31",
+    })
+  })
   it("normalizes IDX symbols and converts lots to shares", () => {
     expect(parseStockTrade(trade)).toMatchObject({
       symbol: "BBCA",

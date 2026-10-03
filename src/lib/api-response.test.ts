@@ -38,11 +38,12 @@ describe("financial API error responses", () => {
   )
 
   it("keeps unexpected service details out of the response", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {})
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
     const response = await financeResponse(async () => {
       throw new Error("private connection details")
     })
     expect(response.status).toBe(500)
     expect(await response.json()).toEqual({ code: "serviceUnavailable" })
+    expect(log).toHaveBeenCalledWith("Financial request failed", "UNKNOWN")
   })
 })

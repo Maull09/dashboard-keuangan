@@ -5,6 +5,7 @@ import {
   investmentTotals,
   tradeCashChange,
   totalTradeCashChange,
+  validateInvestmentAccount,
   type StockTrade,
 } from "./investments"
 
@@ -20,6 +21,90 @@ const buy: StockTrade = {
 }
 
 describe("stock portfolio accounting", () => {
+  it("validates edited trade cash and protected allocations", () => {
+    expect(() =>
+      validateInvestmentAccount(
+        { id: 1, initialBalance: 300000 },
+        [],
+        [buy],
+        99900,
+      ),
+    ).not.toThrow()
+    expect(() =>
+      validateInvestmentAccount(
+        { id: 1, initialBalance: 300000 },
+        [],
+        [buy],
+        99901,
+      ),
+    ).toThrow("insufficientAvailableCash")
+    expect(() =>
+      validateInvestmentAccount(
+        { id: 1, initialBalance: 200000 },
+        [],
+        [buy],
+        0,
+      ),
+    ).toThrow("insufficientCash")
+  })
+  it("does not fund a backdated purchase with later income", () => {
+    const income = {
+      type: "income" as const,
+      amount: 300000,
+      accountId: 1,
+      destinationAccountId: null,
+      date: "2026-01-02",
+    }
+    expect(() =>
+      validateInvestmentAccount(
+        { id: 1, initialBalance: 0 },
+        [income],
+        [buy],
+        0,
+      ),
+    ).toThrow("insufficientCash")
+    expect(() =>
+      validateInvestmentAccount(
+        { id: 1, initialBalance: 0 },
+        [{ ...income, date: buy.date }],
+        [buy],
+        0,
+      ),
+    ).not.toThrow()
+  })
+  it("rejects edits moving a dependent purchase to another account or ticker", () => {
+    const sale = {
+      ...buy,
+      id: 2,
+      side: "sell",
+      shares: 100,
+      date: "2026-01-02",
+    }
+    for (const changed of [
+      { ...buy, accountId: 2 },
+      { ...buy, symbol: "BBRI" },
+      { ...buy, date: "2026-01-03" },
+    ])
+      expect(() =>
+        validateInvestmentAccount(
+          { id: 1, initialBalance: 1000000 },
+          [],
+          [changed, sale],
+          0,
+        ),
+      ).toThrow("insufficientShares")
+  })
+  it("keeps fractional quantities and cash cents exact during validation", () => {
+    const fractional = { ...buy, shares: 0.1, price: 0.1, fees: 0 }
+    expect(() =>
+      validateInvestmentAccount(
+        { id: 1, initialBalance: 1 },
+        [],
+        Array.from({ length: 100 }, (_, id) => ({ ...fractional, id })),
+        0,
+      ),
+    ).not.toThrow()
+  })
   it("sums repeated decimal cash changes without residual cents", () => {
     const trades = Array.from({ length: 100 }, (_, id) => ({
       ...buy,

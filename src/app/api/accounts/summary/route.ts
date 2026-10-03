@@ -7,13 +7,16 @@ export async function GET() {
   return financeResponse(async () => {
     const { summaries } = await readLedger()
     return NextResponse.json(
-      summaries.map(({ id, name, type, description, balance }) => ({
-        id,
-        name,
-        type,
-        description,
-        balance,
-      })),
+      summaries.map(
+        ({ id, name, type, initialBalance, description, balance }) => ({
+          id,
+          name,
+          type,
+          initialBalance,
+          description,
+          balance,
+        }),
+      ),
     )
   })
 }

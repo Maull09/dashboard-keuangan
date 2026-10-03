@@ -97,11 +97,11 @@ export function parseBudgetInput(value: unknown): BudgetInput | null {
 }
 
 function isRecord(value: unknown): value is RecordBody {
-  return typeof value === "object" && value !== null
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function toRequiredText(value: unknown) {
-  return typeof value === "string" ? value.trim() : ""
+  return typeof value === "string" && value.trim().length <= 120 ? value.trim() : ""
 }
 
 function toOptionalText(value: unknown) {
@@ -115,5 +115,5 @@ function toPositiveInteger(value: unknown) {
 
 function toInteger(value: unknown) {
   const parsed = typeof value === "number" || typeof value === "string" ? Number(value) : Number.NaN
-  return Number.isSafeInteger(parsed) ? parsed : null
+  return Number.isSafeInteger(parsed) && parsed >= -2_147_483_648 && parsed <= 2_147_483_647 ? parsed : null
 }

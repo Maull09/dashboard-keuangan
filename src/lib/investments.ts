@@ -1,4 +1,5 @@
 import { FinanceError } from "./finance-errors"
+import { calculateAccountBalance, type LedgerTransaction } from "./calculations"
 
 export type StockTrade = {
   id: number
@@ -138,6 +139,37 @@ export function totalTradeCashChange(trades: StockTrade[]) {
       0,
     ) / 100
   )
+}
+
+export function validateInvestmentAccount(
+  account: { id: number; initialBalance: number },
+  transactions: LedgerTransaction[],
+  trades: StockTrade[],
+  reservedAmount: number,
+) {
+  const accountTrades = trades.filter((trade) => trade.accountId === account.id)
+  calculateHoldings(accountTrades)
+  let investedCents = 0
+  for (const trade of [...accountTrades].sort(
+    (a, b) => a.date.localeCompare(b.date) || a.id - b.id,
+  )) {
+    investedCents += Math.round(tradeCashChange(trade) * 100)
+    const cashCents =
+      calculateAccountBalance(
+        account.initialBalance,
+        account.id,
+        transactions.filter((item) => item.date <= trade.date),
+      ) *
+        100 +
+      investedCents
+    if (cashCents < 0) throw new FinanceError("insufficientCash", 409)
+  }
+  const currentCents =
+    calculateAccountBalance(account.initialBalance, account.id, transactions) *
+      100 +
+    investedCents
+  if (currentCents < reservedAmount * 100)
+    throw new FinanceError("insufficientAvailableCash", 409)
 }
 
 export function investmentTotals(holdings: Holding[]) {

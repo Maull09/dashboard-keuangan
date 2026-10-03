@@ -52,8 +52,10 @@ const en = {
     "Four-letter IDX symbol, for example BBCA. This records a trade; it does not place an order with a broker.",
   brokerageAccount: "Brokerage cash account",
   lots: "Lots",
-  lotsHint: "1 lot = 100 shares. Decimal lots are allowed (1.25 lots = 125 shares), up to 6 decimal places.",
-  stockPriceHint: "Decimal prices are allowed, up to 2 decimal places. Average cost is calculated from your trades and fees.",
+  lotsHint:
+    "1 lot = 100 shares. Decimal lots are allowed (1.25 lots = 125 shares), up to 6 decimal places.",
+  stockPriceHint:
+    "Decimal prices are allowed, up to 2 decimal places. Average cost is calculated from your trades and fees.",
   shares: "Shares",
   pricePerShare: "Price per share (IDR)",
   tradingFees: "Total fees and taxes (IDR)",
@@ -92,9 +94,9 @@ const en = {
     "Add IDX symbols to view daily prices without recording a purchase.",
   noTrades: "No stock trades yet.",
   tradeDeleteHint:
-    "Cash, cost basis, and gains will be recalculated. Removal is blocked if it would leave a sale without enough shares or insufficient cash.",
+    "Permanently delete this trade. Cash, cost basis, and gains will be recalculated. Removal is blocked if it would leave a sale without enough shares or insufficient cash.",
   removeWatchHint:
-    "This only removes the watchlist entry. It does not remove your trades or holdings.",
+    "Permanently remove this watchlist entry and note. Your trades and holdings stay unchanged; you can add the ticker again.",
   corporateActionsHint:
     "This version does not automatically apply stock splits or other corporate actions.",
   insufficientShares:
@@ -248,8 +250,10 @@ const id: Record<keyof typeof en, string> = {
     "Kode empat huruf BEI, misalnya BBCA. Ini mencatat transaksi, bukan memasang order ke sekuritas.",
   brokerageAccount: "Akun kas sekuritas",
   lots: "Lot",
-  lotsHint: "1 lot = 100 lembar. Lot desimal diperbolehkan (1,25 lot = 125 lembar), maksimal 6 angka desimal.",
-  stockPriceHint: "Harga boleh desimal, maksimal 2 angka desimal. Modal rata-rata dihitung dari transaksi dan biaya Anda.",
+  lotsHint:
+    "1 lot = 100 lembar. Lot desimal diperbolehkan (1,25 lot = 125 lembar), maksimal 6 angka desimal.",
+  stockPriceHint:
+    "Harga boleh desimal, maksimal 2 angka desimal. Modal rata-rata dihitung dari transaksi dan biaya Anda.",
   shares: "Lembar",
   pricePerShare: "Harga per lembar (IDR)",
   tradingFees: "Total biaya dan pajak (IDR)",
@@ -288,9 +292,9 @@ const id: Record<keyof typeof en, string> = {
     "Tambahkan kode BEI untuk melihat harga harian tanpa mencatat pembelian.",
   noTrades: "Belum ada transaksi saham.",
   tradeDeleteHint:
-    "Kas, modal, dan hasil dihitung ulang. Penghapusan ditolak bila membuat penjualan kekurangan saham atau kas tidak cukup.",
+    "Hapus transaksi saham ini secara permanen. Kas, modal, dan hasil dihitung ulang. Penghapusan ditolak bila membuat penjualan kekurangan saham atau kas tidak cukup.",
   removeWatchHint:
-    "Ini hanya menghapus entri watchlist, bukan transaksi atau kepemilikan saham Anda.",
+    "Hapus entri watchlist dan catatan ini secara permanen. Transaksi dan kepemilikan saham tetap tersimpan; kode saham bisa ditambahkan lagi.",
   corporateActionsHint:
     "Versi ini belum menerapkan stock split atau aksi korporasi lain secara otomatis.",
   insufficientShares:

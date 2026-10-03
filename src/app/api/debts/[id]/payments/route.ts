@@ -2,49 +2,101 @@ import { asc, eq } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
 import { db } from "@/db"
-import { debtPayments, debts, transactions } from "@/db/schema"
-import { accountsExist } from "@/lib/accounts"
+import { accounts, debtPayments, debts, transactions } from "@/db/schema"
 import { getToday, isDate } from "@/lib/finance"
+import { financeResponse } from "@/lib/api-response"
+import { FinanceError } from "@/lib/finance-errors"
+import { integerInput, recordInput, textInput } from "@/lib/planning-validation"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
 export async function GET(_: NextRequest, { params }: RouteContext) {
-  const debtId = Number((await params).id)
-  return NextResponse.json(await db.select().from(debtPayments).where(eq(debtPayments.debtId, debtId)).orderBy(asc(debtPayments.date)))
+  return financeResponse(async () => {
+    const debtId = integerInput((await params).id, 1, 2_147_483_647)
+    const [debt] = await db.select().from(debts).where(eq(debts.id, debtId))
+    if (!debt) throw new FinanceError("recordMissing", 404)
+    return NextResponse.json(
+      await db
+        .select()
+        .from(debtPayments)
+        .where(eq(debtPayments.debtId, debtId))
+        .orderBy(asc(debtPayments.date), asc(debtPayments.id)),
+    )
+  })
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
-  const debtId = Number((await params).id)
-  const body = await request.json()
-  const amount = Number(body.amount)
-  const accountId = Number(body.accountId)
-  const date = typeof body.date === "string" ? body.date : getToday()
-
-  if (!Number.isSafeInteger(debtId) || !Number.isSafeInteger(amount) || amount <= 0 || !Number.isSafeInteger(accountId) || accountId <= 0 || !isDate(date) || !(await accountsExist(accountId, null))) {
-    return NextResponse.json({ error: "Pembayaran tidak valid" }, { status: 400 })
-  }
-
-  const [debt] = await db.select().from(debts).where(eq(debts.id, debtId))
-  if (!debt) return NextResponse.json({ error: "Utang/piutang tidak ditemukan" }, { status: 404 })
-  const payments = await db.select({ amount: debtPayments.amount }).from(debtPayments).where(eq(debtPayments.debtId, debtId))
-  const paidAmount = payments.reduce((total, payment) => total + payment.amount, 0)
-  if (paidAmount + amount > debt.amount) return NextResponse.json({ error: "Pembayaran melebihi sisa tagihan" }, { status: 400 })
-
-  const result = await db.transaction(async (tx) => {
-    const [transaction] = await tx.insert(transactions).values({
-      type: debt.type === "utang" ? "expense" : "income",
-      amount,
-      category: debt.type === "utang" ? "Pembayaran utang" : "Penerimaan piutang",
-      description: body.note || debt.name,
-      date,
-      accountId,
-      destinationAccountId: null,
-    }).returning()
-    const [payment] = await tx.insert(debtPayments).values({ debtId, accountId, amount, date, note: typeof body.note === "string" ? body.note.trim() : "", transactionId: transaction.id }).returning()
-    const isPaid = paidAmount + amount === debt.amount
-    await tx.update(debts).set({ status: isPaid ? "paid" : "unpaid", paidDate: isPaid ? date : null }).where(eq(debts.id, debtId))
-    return payment
+  return financeResponse(async () => {
+    const debtId = integerInput((await params).id, 1, 2_147_483_647)
+    const body = recordInput(await request.json())
+    const amount = integerInput(body.amount, 1, 2_147_483_647)
+    const accountId = integerInput(body.accountId, 1, 2_147_483_647)
+    const date = body.date ?? getToday()
+    if (!isDate(date) || date > getToday())
+      throw new FinanceError("invalidInput")
+    const note = textInput(body.note, 500, false)
+    const result = await db.transaction(
+      async (tx) => {
+        const [account] = await tx
+          .select()
+          .from(accounts)
+          .where(eq(accounts.id, accountId))
+          .for("update")
+        if (!account) throw new FinanceError("recordMissing", 404)
+        const [debt] = await tx
+          .select()
+          .from(debts)
+          .where(eq(debts.id, debtId))
+          .for("update")
+        if (!debt) throw new FinanceError("recordMissing", 404)
+        if (debt.status === "paid")
+          throw new FinanceError("debtPaymentExceeded", 409)
+        const payments = await tx
+          .select()
+          .from(debtPayments)
+          .where(eq(debtPayments.debtId, debtId))
+        const paidAmount = payments.reduce(
+          (total, payment) => total + payment.amount,
+          0,
+        )
+        if (paidAmount + amount > debt.amount)
+          throw new FinanceError("debtPaymentExceeded", 409)
+        const [transaction] = await tx
+          .insert(transactions)
+          .values({
+            type: debt.type === "utang" ? "expense" : "income",
+            amount,
+            category:
+              debt.type === "utang" ? "Pembayaran utang" : "Penerimaan piutang",
+            description: note || debt.name,
+            date,
+            accountId,
+            destinationAccountId: null,
+          })
+          .returning()
+        const [payment] = await tx
+          .insert(debtPayments)
+          .values({
+            debtId,
+            accountId,
+            amount,
+            date,
+            note,
+            transactionId: transaction.id,
+          })
+          .returning()
+        const isPaid = paidAmount + amount === debt.amount
+        await tx
+          .update(debts)
+          .set({
+            status: isPaid ? "paid" : "unpaid",
+            paidDate: isPaid ? date : null,
+          })
+          .where(eq(debts.id, debtId))
+        return payment
+      },
+      { isolationLevel: "serializable" },
+    )
+    return NextResponse.json(result, { status: 201 })
   })
-
-  return NextResponse.json(result, { status: 201 })
 }

@@ -13,6 +13,15 @@ export const financeErrorCodes = [
   "priceAccessRequired",
   "pricesRateLimited",
   "invalidMarketPrice",
+  "historyProtected",
+  "amountBelowRecorded",
+  "accountInUse",
+  "watchAlreadyExists",
+  "budgetAlreadyExists",
+  "goalTargetExceeded",
+  "debtPaymentExceeded",
+  "scheduleUnavailable",
+  "scheduleAlreadyRecorded",
 ] as const
 
 export type FinanceErrorCode = (typeof financeErrorCodes)[number]

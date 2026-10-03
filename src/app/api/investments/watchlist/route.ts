@@ -3,6 +3,7 @@ import { db } from "@/db"
 import { stockInstruments, stockWatchlist } from "@/db/schema"
 import { financeResponse } from "@/lib/api-response"
 import { recordInput, symbolInput, textInput } from "@/lib/planning-validation"
+import { FinanceError } from "@/lib/finance-errors"
 
 export async function POST(request: NextRequest) {
   return financeResponse(async () => {
@@ -18,7 +19,9 @@ export async function POST(request: NextRequest) {
       const [item] = await connection
         .insert(stockWatchlist)
         .values({ symbol, note })
+        .onConflictDoNothing()
         .returning()
+      if (!item) throw new FinanceError("watchAlreadyExists", 409)
       return item
     })
     return NextResponse.json(item, { status: 201 })

@@ -13,7 +13,7 @@ export async function financeResponse(action: () => Promise<Response>) {
     const code = cause.code ?? cause.cause?.code
     if (["23503", "23505", "40001", "40P01"].includes(code ?? ""))
       return NextResponse.json({ code: "recordConflict" }, { status: 409 })
-    console.error("Financial request failed", error)
+    console.error("Financial request failed", code ?? "UNKNOWN")
     return NextResponse.json({ code: "serviceUnavailable" }, { status: 500 })
   }
 }

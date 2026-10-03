@@ -8,7 +8,7 @@ export type Account = {
   description: string | null
 }
 
-export type AccountSummary = Omit<Account, "initialBalance"> & {
+export type AccountSummary = Account & {
   balance: number
 }
 

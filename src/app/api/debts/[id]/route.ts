@@ -1,31 +1,92 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db"
-import { debts } from "@/db/schema"
+import { debtPayments, debts } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { getToday } from "@/lib/finance"
+import { financeResponse } from "@/lib/api-response"
+import { FinanceError } from "@/lib/finance-errors"
+import { integerInput, parseDebt } from "@/lib/planning-validation"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const body = await req.json()
-  const id = Number((await params).id)
-  if (!Number.isSafeInteger(id) || id <= 0 || !["paid", "unpaid"].includes(body.status)) {
-    return NextResponse.json({ error: "Data tidak valid" }, { status: 400 })
-  }
-  const [result] = await db
-    .update(debts)
-    .set({
-      status: body.status,
-      paidDate: body.status === "paid" ? getToday() : null,
-    })
-    .where(eq(debts.id, id))
-    .returning()
-  return NextResponse.json(result)
+  return financeResponse(async () => {
+    const id = integerInput((await params).id, 1, 2_147_483_647)
+    const input = parseDebt(await req.json())
+    const result = await db.transaction(
+      async (connection) => {
+        const [debt] = await connection
+          .select()
+          .from(debts)
+          .where(eq(debts.id, id))
+          .for("update")
+        if (!debt) throw new FinanceError("recordMissing", 404)
+        const payments = await connection
+          .select()
+          .from(debtPayments)
+          .where(eq(debtPayments.debtId, id))
+        const paid = payments.reduce(
+          (total, payment) => total + payment.amount,
+          0,
+        )
+        if (
+          !payments.length &&
+          debt.status === "paid" &&
+          (input.type !== debt.type || input.amount !== debt.amount)
+        )
+          throw new FinanceError("historyProtected", 409)
+        if (input.amount < paid)
+          throw new FinanceError("amountBelowRecorded", 409)
+        if (payments.length && input.type !== debt.type)
+          throw new FinanceError("historyProtected", 409)
+        const isPaid = paid === input.amount
+        const lastPayment =
+          payments
+            .map((payment) => payment.date)
+            .sort()
+            .at(-1) ?? null
+        const [updated] = await connection
+          .update(debts)
+          .set({
+            ...input,
+            status: payments.length
+              ? isPaid
+                ? "paid"
+                : "unpaid"
+              : debt.status,
+            paidDate: payments.length
+              ? isPaid
+                ? lastPayment
+                : null
+              : debt.paidDate,
+          })
+          .where(eq(debts.id, id))
+          .returning()
+        return updated
+      },
+      { isolationLevel: "serializable" },
+    )
+    return NextResponse.json(result)
+  })
 }
 
 export async function DELETE(_: NextRequest, { params }: RouteContext) {
-  const id = Number((await params).id)
-  const [debt] = await db.delete(debts).where(eq(debts.id, id)).returning()
-  if (!debt) return NextResponse.json({ error: "Utang/piutang tidak ditemukan" }, { status: 404 })
-  return NextResponse.json({ id })
+  return financeResponse(async () => {
+    const id = integerInput((await params).id, 1, 2_147_483_647)
+    await db.transaction(async (connection) => {
+      const [debt] = await connection
+        .select()
+        .from(debts)
+        .where(eq(debts.id, id))
+        .for("update")
+      if (!debt) throw new FinanceError("recordMissing", 404)
+      const [history] = await connection
+        .select()
+        .from(debtPayments)
+        .where(eq(debtPayments.debtId, id))
+        .limit(1)
+      if (history) throw new FinanceError("historyProtected", 409)
+      await connection.delete(debts).where(eq(debts.id, id))
+    })
+    return NextResponse.json({ id })
+  })
 }

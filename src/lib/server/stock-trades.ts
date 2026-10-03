@@ -1,39 +1,10 @@
-import { eq } from "drizzle-orm"
+import { asc, eq, inArray } from "drizzle-orm"
 import { db } from "@/db"
 import { accounts, stockInstruments, stockTrades } from "@/db/schema"
-import { calculateAccountBalance } from "../calculations"
-import {
-  calculateHoldings,
-  tradeCashChange,
-  totalTradeCashChange,
-  type StockTrade,
-} from "../investments"
+import { tradeCashChange, validateInvestmentAccount } from "../investments"
 import { FinanceError } from "../finance-errors"
 import { parseStockTrade } from "../planning-validation"
 import { readLedger, readReservations } from "./ledger"
-
-function validateCashHistory(
-  initialBalance: number,
-  accountId: number,
-  ledger: Parameters<typeof calculateAccountBalance>[2],
-  trades: StockTrade[],
-) {
-  let investedCents = 0
-  for (const trade of [...trades]
-    .filter((item) => item.accountId === accountId)
-    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)) {
-    investedCents += Math.round(tradeCashChange(trade) * 100)
-    const cash =
-      calculateAccountBalance(
-        initialBalance,
-        accountId,
-        ledger.filter((item) => item.date <= trade.date),
-      ) *
-        100 +
-      investedCents
-    if (cash < 0) throw new FinanceError("insufficientCash", 409)
-  }
-}
 
 export async function recordStockTrade(body: unknown) {
   const input = parseStockTrade(body)
@@ -66,12 +37,11 @@ export async function recordStockTrade(body: unknown) {
         .values(input)
         .returning()
       const updatedTrades = [...ledger.trades, trade]
-      calculateHoldings(updatedTrades)
-      validateCashHistory(
-        account.initialBalance,
-        account.id,
+      validateInvestmentAccount(
+        account,
         ledger.transactions,
         updatedTrades,
+        reservations.reserved.get(account.id) ?? 0,
       )
       return trade
     },
@@ -94,30 +64,68 @@ export async function removeStockTrade(id: number) {
         .for("update")
       const ledger = await readLedger(connection)
       const remaining = ledger.trades.filter((item) => item.id !== id)
-      calculateHoldings(remaining)
-      validateCashHistory(
-        account.initialBalance,
-        account.id,
+      const reservations = await readReservations(connection)
+      validateInvestmentAccount(
+        account,
         ledger.transactions,
         remaining,
+        reservations.reserved.get(account.id) ?? 0,
       )
-      const reservations = await readReservations(connection)
-      const cashCents =
-        calculateAccountBalance(
-          account.initialBalance,
-          account.id,
-          ledger.transactions,
-        ) *
-          100 +
-        Math.round(
-          totalTradeCashChange(
-            remaining.filter((item) => item.accountId === account.id),
-          ) * 100,
-        )
-      if (cashCents < (reservations.reserved.get(account.id) ?? 0) * 100)
-        throw new FinanceError("insufficientAvailableCash", 409)
       await connection.delete(stockTrades).where(eq(stockTrades.id, id))
       return { id }
+    },
+    { isolationLevel: "serializable" },
+  )
+}
+
+export async function updateStockTrade(id: number, body: unknown) {
+  const input = parseStockTrade(body)
+  return db.transaction(
+    async (connection) => {
+      const [existing] = await connection
+        .select()
+        .from(stockTrades)
+        .where(eq(stockTrades.id, id))
+      if (!existing) throw new FinanceError("recordMissing", 404)
+      const affected = await connection
+        .select()
+        .from(accounts)
+        .where(
+          inArray(accounts.id, [
+            ...new Set([existing.accountId, input.accountId]),
+          ]),
+        )
+        .orderBy(asc(accounts.id))
+        .for("update")
+      const destination = affected.find(
+        (account) => account.id === input.accountId,
+      )
+      if (!destination) throw new FinanceError("recordMissing", 404)
+      if (destination.type !== "investment")
+        throw new FinanceError("invalidInput")
+      const ledger = await readLedger(connection)
+      const reservations = await readReservations(connection)
+      const candidate = { ...existing, ...input }
+      const changedTrades = ledger.trades.map((trade) =>
+        trade.id === id ? candidate : trade,
+      )
+      for (const account of affected)
+        validateInvestmentAccount(
+          account,
+          ledger.transactions,
+          changedTrades,
+          reservations.reserved.get(account.id) ?? 0,
+        )
+      await connection
+        .insert(stockInstruments)
+        .values({ symbol: input.symbol, name: input.symbol })
+        .onConflictDoNothing()
+      const [updated] = await connection
+        .update(stockTrades)
+        .set(input)
+        .where(eq(stockTrades.id, id))
+        .returning()
+      return updated
     },
     { isolationLevel: "serializable" },
   )

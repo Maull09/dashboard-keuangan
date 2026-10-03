@@ -1,6 +1,7 @@
 import { getToday, isDate } from "./finance"
 import { FinanceError } from "./finance-errors"
 import { tradeCashChange } from "./investments"
+import { parseTransactionInput } from "./validation"
 
 export function recordInput(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -25,6 +26,8 @@ export function integerInput(
 }
 
 export function textInput(value: unknown, maximum = 120, required = true) {
+  if (value != null && typeof value !== "string")
+    throw new FinanceError("invalidInput")
   const text = typeof value === "string" ? value.trim() : ""
   if ((required && !text) || text.length > maximum)
     throw new FinanceError("invalidInput")
@@ -98,6 +101,58 @@ export function parseFund(value: unknown) {
     targetAmount: integerInput(body.targetAmount, 1, 2_147_483_647),
     targetDate: body.targetDate,
     description: textInput(body.description, 500, false),
+  }
+}
+
+export function parseGoal(value: unknown) {
+  const body = recordInput(value)
+  if (!isDate(body.targetDate) || "currentAmount" in body)
+    throw new FinanceError("invalidInput")
+  return {
+    title: textInput(body.title),
+    description: textInput(body.description, 500, false),
+    targetAmount: integerInput(body.targetAmount, 1, 2_147_483_647),
+    targetDate: body.targetDate,
+    category: textInput(body.category ?? "other"),
+  }
+}
+
+export function parseDebt(value: unknown) {
+  const body = recordInput(value)
+  if (
+    (body.type !== "utang" && body.type !== "piutang") ||
+    "status" in body ||
+    "paidDate" in body ||
+    "paidAmount" in body ||
+    (body.dueDate != null && body.dueDate !== "" && !isDate(body.dueDate))
+  )
+    throw new FinanceError("invalidInput")
+  return {
+    type: body.type as "utang" | "piutang",
+    name: textInput(body.name),
+    amount: integerInput(body.amount, 1, 2_147_483_647),
+    description: textInput(body.description, 500, false),
+    dueDate: body.dueDate ? String(body.dueDate) : null,
+  }
+}
+
+export function parseRecurring(value: unknown) {
+  const body = recordInput(value)
+  const transaction = parseTransactionInput({ ...body, description: textInput(body.description, 500, false), date: body.startDate })
+  if (
+    !transaction ||
+    (body.frequency !== "weekly" && body.frequency !== "monthly") ||
+    (body.endDate != null && body.endDate !== "" &&
+      (!isDate(body.endDate) || String(body.endDate) < transaction.date))
+  )
+    throw new FinanceError("invalidInput")
+  const { date, ...input } = transaction
+  return {
+    ...input,
+    name: textInput(body.name),
+    frequency: body.frequency as "weekly" | "monthly",
+    startDate: date,
+    endDate: body.endDate ? String(body.endDate) : null,
   }
 }
 

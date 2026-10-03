@@ -9,6 +9,20 @@ import {
 import { parseTransactionInput } from "./validation"
 
 describe("financial calculations", () => {
+  it.each([2147483648, -2147483649, true, [], Infinity])(
+    "rejects values outside PostgreSQL integer bounds: %s",
+    (amount) => {
+      expect(
+        parseTransactionInput({
+          type: "expense",
+          amount,
+          category: "Makanan",
+          date: "2026-10-03",
+          accountId: 1,
+        }),
+      ).toBeNull()
+    },
+  )
   it("calculates account balance including a transfer", () => {
     const transactions = [
       {
