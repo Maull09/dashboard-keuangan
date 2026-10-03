@@ -1,132 +1,476 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-
-import { TransactionForm } from "@/components/transaction-form"
-import { useLanguage } from "@/components/language-provider"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { formatCurrency, formatDate, type TransactionType } from "@/lib/finance"
+import { Search, SlidersHorizontal, Trash2 } from "lucide-react"
+import { TransactionForm } from "./transaction-form"
+import { useLanguage } from "./language-provider"
+import {
+  ConfirmDelete,
+  EmptyState,
+  ErrorNotice,
+  Field,
+  LoadingState,
+  PageHeading,
+  useFeedback,
+} from "./feedback"
+import { AddAccountForm } from "./accounts-form"
+import { Button } from "./ui/button"
+import { Card, CardContent } from "./ui/card"
+import { Input } from "./ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select"
+import {
+  getCurrentMonth,
+  getNextMonthStart,
+  type TransactionType,
+} from "@/lib/finance"
+import { useRemoteData } from "@/lib/use-remote-data"
+import { requestJson } from "@/lib/client-api"
 import type { Account, Transaction } from "@/lib/types"
 
-const transactionLabels: Record<TransactionType, string> = {
-  income: "Pemasukan",
-  expense: "Pengeluaran",
-  transfer: "Transfer",
+type TransactionPage = {
+  items: Transaction[]
+  total: number
+  page: number
+  totalPages: number
+  summary: { income: number; expense: number }
 }
-
-const transactionColors: Record<TransactionType, string> = {
-  income: "bg-emerald-100 text-emerald-800",
-  expense: "bg-rose-100 text-rose-800",
-  transfer: "bg-sky-100 text-sky-800",
+const colors = {
+  income: "text-emerald-700 bg-emerald-50",
+  expense: "text-rose-700 bg-rose-50",
+  transfer: "text-sky-700 bg-sky-50",
 }
 
 export function TransactionList() {
-  const { formatCurrency, formatDate, t } = useLanguage()
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [typeFilter, setTypeFilter] = useState<"all" | TransactionType>("all")
-  const [accountFilter, setAccountFilter] = useState("all")
-  const [fromDate, setFromDate] = useState("")
-  const [toDate, setToDate] = useState("")
+  const { t, formatCurrency, formatDate } = useLanguage()
+  const notify = useFeedback()
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [type, setType] = useState<"all" | TransactionType>("all")
+  const [account, setAccount] = useState("all")
+  const [from, setFrom] = useState("")
+  const [to, setTo] = useState("")
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [error, setError] = useState("")
-
-  async function fetchData() {
-    const [transactionsResponse, accountsResponse] = await Promise.all([fetch(`/api/transactions?page=${page}&limit=25`), fetch("/api/accounts")])
-
-    if (!transactionsResponse.ok || !accountsResponse.ok) {
-      setError(t("dataUnavailable"))
-      return
-    }
-
-    const transactionData = await transactionsResponse.json()
-    setTransactions(transactionData.items)
-    setTotalPages(transactionData.totalPages)
-    setAccounts(await accountsResponse.json())
-    setError("")
-  }
-
-  useEffect(() => { void fetchData() }, [page])
-
-  const accountsById = useMemo(() => new Map(accounts.map((account) => [account.id, account.name])), [accounts])
-  const filteredTransactions = transactions.filter((transaction) => {
-    const keyword = searchTerm.toLowerCase()
-    const textMatches = transaction.description?.toLowerCase().includes(keyword) || transaction.category.toLowerCase().includes(keyword)
-    const typeMatches = typeFilter === "all" || transaction.type === typeFilter
-    const accountMatches = accountFilter === "all" || transaction.accountId === Number(accountFilter) || transaction.destinationAccountId === Number(accountFilter)
-    const dateMatches = (!fromDate || transaction.date >= fromDate) && (!toDate || transaction.date <= toDate)
-
-    return Boolean(textMatches) && typeMatches && accountMatches && dateMatches
+  const [deleting, setDeleting] = useState<Transaction | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
+  const invalidRange = Boolean(from && to && from > to)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [search])
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: "25",
+    search: debouncedSearch,
+    type,
+    account,
+    from,
+    to: invalidRange ? "" : to,
   })
-  const totalIncome = filteredTransactions.filter((transaction) => transaction.type === "income").reduce((total, transaction) => total + transaction.amount, 0)
-  const totalExpense = filteredTransactions.filter((transaction) => transaction.type === "expense").reduce((total, transaction) => total + transaction.amount, 0)
-
-  async function deleteTransaction(id: number) {
-    if (!window.confirm(t("deleteTransactionConfirm"))) return
-
-    const response = await fetch(`/api/transactions/${id}`, { method: "DELETE" })
-    if (!response.ok) {
-      setError(t("transactionDeleteFailed"))
-      return
-    }
-
-    await fetchData()
-    window.dispatchEvent(new Event("finance-data-changed"))
+  const records = useRemoteData<TransactionPage>("/api/transactions?" + params)
+  const accountData = useRemoteData<Account[]>("/api/accounts")
+  const accounts = accountData.data ?? []
+  const accountsById = useMemo(
+    () => new Map(accounts.map((item) => [item.id, item.name])),
+    [accounts],
+  )
+  const hasFilters = Boolean(
+    search || type !== "all" || account !== "all" || from || to,
+  )
+  function resetFilters() {
+    setSearch("")
+    setDebouncedSearch("")
+    setType("all")
+    setAccount("all")
+    setFrom("")
+    setTo("")
+    setPage(1)
   }
+  function selectThisMonth() {
+    const month = getCurrentMonth()
+    const lastDay = new Date(getNextMonthStart(month) + "T00:00:00Z")
+    lastDay.setUTCDate(lastDay.getUTCDate() - 1)
+    setFrom(month + "-01")
+    setTo(lastDay.toISOString().slice(0, 10))
+    setPage(1)
+  }
+  async function deleteTransaction() {
+    if (!deleting || busy) return
+    setBusy(true)
+    setDeleteError("")
+    try {
+      await requestJson("/api/transactions/" + deleting.id, {
+        method: "DELETE",
+      })
+      setDeleting(null)
+      notify("transactionDeleted")
+      window.dispatchEvent(new Event("finance-data-changed"))
+    } catch (reason) {
+      setDeleteError((reason as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const error = accountData.error || records.error
+  const loading =
+    accountData.loading || records.loading || search !== debouncedSearch
+  const data = records.data
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">{t("transactionTitle")}</h2>
-          <p className="text-muted-foreground">{t("transactionDescription")}</p>
-        </div>
-        <TransactionForm accounts={accounts} onSaved={fetchData} />
-      </div>
-      {accounts.length === 0 && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{t("addAnAccountFirst")}</p>}
-      {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{error}</p>}
-      <div className="grid gap-3 md:grid-cols-3">
-        <SummaryCard label={t("filteredIncome")} value={formatCurrency(totalIncome)} tone="text-emerald-700" />
-        <SummaryCard label={t("filteredExpense")} value={formatCurrency(totalExpense)} tone="text-rose-700" />
-        <SummaryCard label={t("filteredDifference")} value={formatCurrency(totalIncome - totalExpense)} tone={totalIncome - totalExpense >= 0 ? "text-emerald-700" : "text-rose-700"} />
-      </div>
-      <Card>
-        <CardHeader><CardTitle>{t("transactionHistory")}</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <Input placeholder={t("searchTransactions")} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
-            <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as "all" | TransactionType)}>
-              <SelectTrigger><SelectValue placeholder={t("allTypes")} /></SelectTrigger>
-              <SelectContent><SelectItem value="all">{t("allTypes")}</SelectItem><SelectItem value="income">{t("income")}</SelectItem><SelectItem value="expense">{t("expense")}</SelectItem><SelectItem value="transfer">{t("transfer")}</SelectItem></SelectContent>
-            </Select>
-            <Select value={accountFilter} onValueChange={setAccountFilter}>
-              <SelectTrigger><SelectValue placeholder={t("allAccounts")} /></SelectTrigger>
-              <SelectContent><SelectItem value="all">{t("allAccounts")}</SelectItem>{accounts.map((account) => <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>)}</SelectContent>
-            </Select>
-            <Input type="date" aria-label={t("fromDate")} value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
-            <Input type="date" aria-label={t("toDate")} value={toDate} onChange={(event) => setToDate(event.target.value)} />
+      <PageHeading
+        title={t("transactionTitle")}
+        description={t("transactionDescription")}
+      >
+        <TransactionForm accounts={accounts} onSaved={() => {}} />
+      </PageHeading>
+      <Card className="shadow-none">
+        <CardContent className="space-y-4 pt-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <SlidersHorizontal className="h-4 w-4" />
+              {t("filters")}
+            </h2>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" onClick={selectThisMonth}>
+                {t("thisMonth")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                disabled={!hasFilters}
+              >
+                {t("resetFilters")}
+              </Button>
+            </div>
           </div>
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="min-w-full text-sm">
-              <thead className="bg-muted/70 text-muted-foreground"><tr><th className="p-3 text-left font-medium">Tanggal</th><th className="p-3 text-left font-medium">Jenis</th><th className="p-3 text-left font-medium">Kategori</th><th className="p-3 text-left font-medium">Akun</th><th className="p-3 text-right font-medium">Jumlah</th><th className="p-3 text-right font-medium">Aksi</th></tr></thead>
-              <tbody>
-                {filteredTransactions.map((transaction) => <tr key={transaction.id} className="border-t"><td className="p-3 whitespace-nowrap">{formatDate(transaction.date)}</td><td className="p-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${transactionColors[transaction.type]}`}>{transactionLabels[transaction.type]}</span></td><td className="p-3"><div className="font-medium">{transaction.category}</div>{transaction.description && <div className="mt-1 text-xs text-muted-foreground">{transaction.description}</div>}</td><td className="p-3 text-muted-foreground">{transaction.type === "transfer" ? `${accountsById.get(transaction.accountId) ?? "Akun"} → ${accountsById.get(transaction.destinationAccountId ?? 0) ?? "Akun"}` : accountsById.get(transaction.accountId)}</td><td className={`p-3 text-right font-semibold ${transaction.type === "income" ? "text-emerald-700" : transaction.type === "expense" ? "text-rose-700" : "text-sky-700"}`}>{transaction.type === "income" ? "+" : transaction.type === "expense" ? "−" : ""}{formatCurrency(transaction.amount)}</td><td className="p-3"><div className="flex justify-end gap-2"><TransactionForm accounts={accounts} transaction={transaction} onSaved={fetchData} /><Button variant="ghost" className="text-destructive hover:text-destructive" onClick={() => void deleteTransaction(transaction.id)}>Hapus</Button></div></td></tr>)}
-              </tbody>
-            </table>
-            {filteredTransactions.length === 0 && <p className="p-8 text-center text-muted-foreground">Tidak ada transaksi yang sesuai dengan filter.</p>}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <Field id="search-transactions" label={t("search")}>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search-transactions"
+                  className="pl-9"
+                  placeholder={t("searchTransactions")}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+            </Field>
+            <Field id="filter-type" label={t("type")}>
+              <Select
+                value={type}
+                onValueChange={(value) => {
+                  setType(value as "all" | TransactionType)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger id="filter-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["all", "income", "expense", "transfer"].map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {t(value === "all" ? "allTypes" : value)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field id="filter-account" label={t("account")}>
+              <Select
+                value={account}
+                onValueChange={(value) => {
+                  setAccount(value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger id="filter-account">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("allAccounts")}</SelectItem>
+                  {accounts.map((item) => (
+                    <SelectItem key={item.id} value={String(item.id)}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field id="filter-from" label={t("fromDate")}>
+              <Input
+                id="filter-from"
+                type="date"
+                value={from}
+                onChange={(event) => {
+                  setFrom(event.target.value)
+                  setPage(1)
+                }}
+              />
+            </Field>
+            <Field id="filter-to" label={t("toDate")}>
+              <Input
+                id="filter-to"
+                type="date"
+                min={from || undefined}
+                aria-invalid={invalidRange}
+                value={to}
+                onChange={(event) => {
+                  setTo(event.target.value)
+                  setPage(1)
+                }}
+              />
+            </Field>
           </div>
-          <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Halaman {page} dari {totalPages}</span><div className="flex gap-2"><Button variant="outline" disabled={page === 1} onClick={() => setPage(page - 1)}>Sebelumnya</Button><Button variant="outline" disabled={page === totalPages} onClick={() => setPage(page + 1)}>Berikutnya</Button></div></div>
+          <p className="text-xs text-muted-foreground">{t("filtersHint")}</p>
+          {invalidRange && <ErrorNotice message="invalidDateRange" />}
         </CardContent>
       </Card>
+      {error ? (
+        <ErrorNotice
+          message={error}
+          onRetry={() => {
+            records.reload()
+            accountData.reload()
+          }}
+        />
+      ) : loading ? (
+        <LoadingState />
+      ) : invalidRange ? null : (
+        data && (
+          <>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                ["matchingIncome", data.summary.income, "text-emerald-700"],
+                ["matchingExpense", data.summary.expense, "text-rose-700"],
+                [
+                  "matchingNet",
+                  data.summary.income - data.summary.expense,
+                  "text-foreground",
+                ],
+              ].map(([label, amount, tone]) => (
+                <div
+                  key={String(label)}
+                  className="rounded-lg border bg-card p-4"
+                >
+                  <p className="text-xs text-muted-foreground">
+                    {t(String(label))}
+                  </p>
+                  <p
+                    className={
+                      "mt-2 text-xl font-semibold tabular-nums " + tone
+                    }
+                  >
+                    {formatCurrency(Number(amount))}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {accounts.length === 0 ? (
+              <EmptyState
+                title={t("noAccounts")}
+                description={t("accountHelp")}
+              >
+                <AddAccountForm />
+              </EmptyState>
+            ) : data.items.length === 0 ? (
+              <EmptyState
+                title={t(
+                  hasFilters ? "noMatchingTransactions" : "noTransactions",
+                )}
+                description={t(
+                  hasFilters ? "noMatchesHint" : "noTransactionsHint",
+                )}
+              >
+                {hasFilters ? (
+                  <Button variant="outline" onClick={resetFilters}>
+                    {t("resetFilters")}
+                  </Button>
+                ) : (
+                  <TransactionForm accounts={accounts} onSaved={() => {}} />
+                )}
+              </EmptyState>
+            ) : (
+              <div className="overflow-hidden rounded-xl border bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b p-4">
+                  <h2 className="font-semibold">{t("transactionHistory")}</h2>
+                  <span className="text-xs text-muted-foreground">
+                    {t("results", { count: data.total })}
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-sm">
+                    <caption className="sr-only">
+                      {t("transactionHistory")}
+                    </caption>
+                    <thead className="bg-muted/50">
+                      <tr>
+                        {[
+                          "date",
+                          "type",
+                          "category",
+                          "account",
+                          "amount",
+                          "actions",
+                        ].map((key) => (
+                          <th
+                            scope="col"
+                            key={key}
+                            className={
+                              "p-4 font-medium text-muted-foreground " +
+                              (key === "amount" || key === "actions"
+                                ? "text-right"
+                                : "text-left")
+                            }
+                          >
+                            {t(key)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.items.map((item) => (
+                        <tr
+                          key={item.id}
+                          className="border-t hover:bg-muted/30"
+                        >
+                          <td className="whitespace-nowrap p-4">
+                            {formatDate(item.date)}
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={
+                                "rounded-md px-2 py-1 text-xs font-medium " +
+                                colors[item.type]
+                              }
+                            >
+                              {t(item.type)}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="font-medium">
+                              {t(item.category)}
+                            </span>
+                            {item.description && (
+                              <p className="mt-1 max-w-[220px] break-words text-xs text-muted-foreground">
+                                {item.description}
+                              </p>
+                            )}
+                          </td>
+                          <td className="p-4 text-muted-foreground">
+                            {accountsById.get(item.accountId) ?? t("account")}
+                            {item.type === "transfer" &&
+                              " → " +
+                                (accountsById.get(
+                                  item.destinationAccountId ?? 0,
+                                ) ?? t("account"))}
+                          </td>
+                          <td
+                            className={
+                              "whitespace-nowrap p-4 text-right font-semibold tabular-nums " +
+                              (item.type === "expense"
+                                ? "text-rose-700"
+                                : item.type === "income"
+                                  ? "text-emerald-700"
+                                  : "")
+                            }
+                          >
+                            {item.type === "income"
+                              ? "+"
+                              : item.type === "expense"
+                                ? "−"
+                                : ""}
+                            {formatCurrency(item.amount)}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex justify-end gap-2">
+                              <TransactionForm
+                                accounts={accounts}
+                                transaction={item}
+                                onSaved={() => {}}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={
+                                  t("delete") +
+                                  " " +
+                                  t(item.category) +
+                                  " " +
+                                  formatCurrency(item.amount)
+                                }
+                                onClick={() => {
+                                  setDeleting(item)
+                                  setDeleteError("")
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t p-4 text-sm">
+                  <span className="text-muted-foreground">
+                    {t("page", { current: data.page, total: data.totalPages })}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={data.page <= 1}
+                      onClick={() => setPage(data.page - 1)}
+                    >
+                      {t("previous")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={data.page >= data.totalPages}
+                      onClick={() => setPage(data.page + 1)}
+                    >
+                      {t("next")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )
+      )}
+      <ConfirmDelete
+        open={Boolean(deleting)}
+        onOpenChange={(value) => {
+          if (!value) setDeleting(null)
+        }}
+        detail={
+          deleting
+            ? t(deleting.category) +
+              " · " +
+              formatCurrency(deleting.amount) +
+              " · " +
+              formatDate(deleting.date)
+            : ""
+        }
+        description={t("transactionDeleteHint")}
+        busy={busy}
+        error={deleteError}
+        onConfirm={() => void deleteTransaction()}
+      />
     </div>
   )
-}
-
-function SummaryCard({ label, value, tone }: { label: string; value: string; tone: string }) {
-  return <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{label}</p><p className={`mt-1 text-2xl font-bold ${tone}`}>{value}</p></CardContent></Card>
 }

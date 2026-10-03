@@ -1,18 +1,35 @@
-import { useEffect, useState } from "react"
+"use client"
 
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { expenseCategories, getToday, incomeCategories, type TransactionType } from "@/lib/finance"
-import { useLanguage } from "@/components/language-provider"
+import { useId, useState } from "react"
+import { Plus } from "lucide-react"
+import { ErrorNotice, Field, SubmitButton, useFeedback } from "./feedback"
+import { useLanguage } from "./language-provider"
+import { Button } from "./ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog"
+import { Input } from "./ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select"
+import {
+  expenseCategories,
+  getToday,
+  incomeCategories,
+  type TransactionType,
+} from "@/lib/finance"
+import { jsonBody, requestJson } from "@/lib/client-api"
 import type { Account, Transaction } from "@/lib/types"
-
-type TransactionFormProps = {
-  accounts: Account[]
-  transaction?: Transaction
-  onSaved: () => void
-}
 
 const categories: Record<TransactionType, readonly string[]> = {
   income: incomeCategories,
@@ -20,115 +37,276 @@ const categories: Record<TransactionType, readonly string[]> = {
   transfer: ["Transfer antar akun"],
 }
 
-export function TransactionForm({ accounts, transaction, onSaved }: TransactionFormProps) {
-  const { t } = useLanguage()
+export function TransactionForm({
+  accounts,
+  transaction,
+  onSaved,
+}: {
+  accounts: Account[]
+  transaction?: Transaction
+  onSaved: () => void
+}) {
+  const { t, formatCurrency } = useLanguage()
+  const notify = useFeedback()
+  const id = useId()
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense")
-  const [amount, setAmount] = useState(transaction?.amount ? String(transaction.amount) : "")
-  const [category, setCategory] = useState(transaction?.category ?? "")
-  const [accountId, setAccountId] = useState(transaction?.accountId ? String(transaction.accountId) : "")
-  const [destinationAccountId, setDestinationAccountId] = useState(transaction?.destinationAccountId ? String(transaction.destinationAccountId) : "")
-  const [description, setDescription] = useState(transaction?.description ?? "")
-  const [date, setDate] = useState(transaction?.date ?? getToday())
+  const [type, setType] = useState<TransactionType>("expense")
+  const [amount, setAmount] = useState("")
+  const [category, setCategory] = useState("")
+  const [accountId, setAccountId] = useState("")
+  const [destinationAccountId, setDestinationAccountId] = useState("")
+  const [description, setDescription] = useState("")
+  const [date, setDate] = useState(getToday())
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (!open) return
-
+  function changeOpen(value: boolean) {
+    if (loading) return
+    setOpen(value)
+    if (!value) return
     setType(transaction?.type ?? "expense")
-    setAmount(transaction?.amount ? String(transaction.amount) : "")
+    setAmount(transaction ? String(transaction.amount) : "")
     setCategory(transaction?.category ?? "")
-    setAccountId(transaction?.accountId ? String(transaction.accountId) : "")
-    setDestinationAccountId(transaction?.destinationAccountId ? String(transaction.destinationAccountId) : "")
+    setAccountId(
+      transaction
+        ? String(transaction.accountId)
+        : accounts.length === 1
+          ? String(accounts[0].id)
+          : "",
+    )
+    setDestinationAccountId(
+      transaction?.destinationAccountId
+        ? String(transaction.destinationAccountId)
+        : "",
+    )
     setDescription(transaction?.description ?? "")
     setDate(transaction?.date ?? getToday())
     setError("")
-  }, [open, transaction])
+  }
 
-  function handleTypeChange(value: TransactionType) {
+  function changeType(value: TransactionType) {
     setType(value)
-    setCategory("")
+    setCategory(value === "transfer" ? "Transfer antar akun" : "")
     setDestinationAccountId("")
   }
 
+  const valid =
+    Number.isSafeInteger(Number(amount)) &&
+    Number(amount) > 0 &&
+    category &&
+    accountId &&
+    date &&
+    (type !== "transfer" ||
+      (destinationAccountId && destinationAccountId !== accountId))
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+    if (!valid || loading) return
     setLoading(true)
     setError("")
-
-    const response = await fetch(transaction ? `/api/transactions/${transaction.id}` : "/api/transactions", {
-      method: transaction ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type,
-        amount,
-        category,
-        accountId,
-        destinationAccountId: type === "transfer" ? destinationAccountId : null,
-        description,
-        date,
-      }),
-    })
-    setLoading(false)
-
-    if (!response.ok) {
-      const result = await response.json().catch(() => null)
-      setError(result?.error ?? t("transactionSaveFailed"))
-      return
+    try {
+      await requestJson(
+        transaction
+          ? "/api/transactions/" + transaction.id
+          : "/api/transactions",
+        jsonBody(transaction ? "PATCH" : "POST", {
+          type,
+          amount,
+          category,
+          accountId,
+          destinationAccountId:
+            type === "transfer" ? destinationAccountId : null,
+          description,
+          date,
+        }),
+      )
+      setOpen(false)
+      notify("transactionSaved")
+      onSaved()
+      window.dispatchEvent(new Event("finance-data-changed"))
+    } catch (reason) {
+      setError((reason as Error).message)
+    } finally {
+      setLoading(false)
     }
-
-    setOpen(false)
-    onSaved()
-    window.dispatchEvent(new Event("finance-data-changed"))
   }
 
+  const availableCategories =
+    transaction &&
+    !categories[type].includes(transaction.category) &&
+    transaction.type === type
+      ? [transaction.category, ...categories[type]]
+      : categories[type]
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
-        <Button variant={transaction ? "outline" : "default"}>{transaction ? t("edit") : t("addTransaction")}</Button>
+        <Button
+          variant={transaction ? "outline" : "default"}
+          disabled={accounts.length === 0}
+        >
+          {!transaction && <Plus className="h-4 w-4" />}
+          {t(transaction ? "edit" : "addTransaction")}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{transaction ? t("editTransaction") : t("recordTransaction")}</DialogTitle>
+          <DialogTitle>
+            {t(transaction ? "editTransaction" : "recordTransaction")}
+          </DialogTitle>
+          <DialogDescription>{t("requiredHint")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Select value={type} onValueChange={(value) => handleTypeChange(value as TransactionType)} required>
-            <SelectTrigger><SelectValue placeholder={t("transactionType")} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="income">{t("income")}</SelectItem>
-              <SelectItem value="expense">{t("expense")}</SelectItem>
-              <SelectItem value="transfer">{t("transfer")}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input type="number" min="1" step="1" inputMode="numeric" placeholder={t("amount")} value={amount} onChange={(event) => setAmount(event.target.value)} required />
-          <Select value={category} onValueChange={setCategory} required>
-            <SelectTrigger><SelectValue placeholder={t("chooseCategory")} /></SelectTrigger>
-            <SelectContent>
-              {categories[type].map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={accountId} onValueChange={setAccountId} required>
-            <SelectTrigger><SelectValue placeholder={type === "transfer" ? t("sourceAccount") : t("chooseAccount")} /></SelectTrigger>
-            <SelectContent>
-              {accounts.map((account) => <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {type === "transfer" && (
-            <Select value={destinationAccountId} onValueChange={setDestinationAccountId} required>
-              <SelectTrigger><SelectValue placeholder={t("destinationAccount")} /></SelectTrigger>
-              <SelectContent>
-                {accounts.filter((account) => String(account.id) !== accountId).map((account) => (
-                  <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <fieldset disabled={loading} className="space-y-4">
+            <Field id={id + "-type"} label={t("transactionType")} required>
+              <Select
+                value={type}
+                onValueChange={(value) => changeType(value as TransactionType)}
+              >
+                <SelectTrigger id={id + "-type"}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="income">{t("income")}</SelectItem>
+                  <SelectItem value="expense">{t("expense")}</SelectItem>
+                  <SelectItem value="transfer" disabled={accounts.length < 2}>
+                    {t("transfer")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            {type === "transfer" && (
+              <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-900">
+                {t("transferHint")}
+              </p>
+            )}
+            <Field
+              id={id + "-amount"}
+              label={t("amountIdr")}
+              hint={t("amountHint")}
+              required
+            >
+              <Input
+                id={id + "-amount"}
+                aria-describedby={id + "-amount-hint"}
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                placeholder="0"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+              />
+              {Number(amount) > 0 && (
+                <p className="text-sm font-medium text-primary">
+                  {formatCurrency(Number(amount))}
+                </p>
+              )}
+            </Field>
+            {type !== "transfer" && (
+              <Field id={id + "-category"} label={t("category")} required>
+                <Select value={category} onValueChange={setCategory} required>
+                  <SelectTrigger id={id + "-category"}>
+                    <SelectValue placeholder={t("chooseCategory")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCategories.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {t(item)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
+            <Field
+              id={id + "-account"}
+              label={t(type === "transfer" ? "sourceAccount" : "account")}
+              required
+            >
+              <Select
+                value={accountId}
+                onValueChange={(value) => {
+                  setAccountId(value)
+                  if (value === destinationAccountId)
+                    setDestinationAccountId("")
+                }}
+                required
+              >
+                <SelectTrigger id={id + "-account"}>
+                  <SelectValue placeholder={t("chooseAccount")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={String(account.id)}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            {type === "transfer" && (
+              <Field
+                id={id + "-destination"}
+                label={t("destinationAccount")}
+                required
+              >
+                <Select
+                  value={destinationAccountId}
+                  onValueChange={setDestinationAccountId}
+                  required
+                >
+                  <SelectTrigger id={id + "-destination"}>
+                    <SelectValue placeholder={t("chooseAccount")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts
+                      .filter((account) => String(account.id) !== accountId)
+                      .map((account) => (
+                        <SelectItem key={account.id} value={String(account.id)}>
+                          {account.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
+            <Field id={id + "-date"} label={t("date")} required>
+              <Input
+                id={id + "-date"}
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+                required
+              />
+            </Field>
+            <Field id={id + "-note"} label={t("note")}>
+              <Input
+                id={id + "-note"}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </Field>
+          </fieldset>
+          <ErrorNotice message={error} />
+          {!valid && (
+            <p className="text-xs text-muted-foreground">
+              {t("selectRequired")}
+            </p>
           )}
-          <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
-          <Input placeholder={t("note")} value={description} onChange={(event) => setDescription(event.target.value)} />
-          {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
           <DialogFooter>
-            <Button type="submit" disabled={loading || accounts.length === 0}>{loading ? t("saving") : t("saveTransaction")}</Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => setOpen(false)}
+            >
+              {t("cancel")}
+            </Button>
+            <SubmitButton busy={loading} disabled={!valid}>
+              {t("saveTransaction")}
+            </SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>
