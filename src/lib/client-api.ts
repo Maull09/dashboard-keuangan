@@ -1,3 +1,5 @@
+import { financeErrorCodes } from "./finance-errors"
+
 export async function requestJson<T>(
   url: string,
   options?: RequestInit,
@@ -10,6 +12,9 @@ export async function requestJson<T>(
     throw new Error("networkError")
   }
   if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    if (body && financeErrorCodes.includes(body.code))
+      throw new Error(body.code)
     const message =
       response.status === 400
         ? "invalidInput"

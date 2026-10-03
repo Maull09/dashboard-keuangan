@@ -4,6 +4,33 @@ import { jsonBody, requestJson } from "./client-api"
 afterEach(() => vi.unstubAllGlobals())
 
 describe("client request feedback", () => {
+  it("uses only approved financial error codes", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ code: "insufficientShares" }, { status: 409 }),
+        ),
+    )
+    await expect(requestJson("/api/investments/trades")).rejects.toThrow(
+      "insufficientShares",
+    )
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { code: "private database information" },
+            { status: 400 },
+          ),
+        ),
+    )
+    await expect(requestJson("/api/investments/trades")).rejects.toThrow(
+      "invalidInput",
+    )
+  })
   it("returns successful responses", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ id: 1 })))
     expect(await requestJson("/api/accounts")).toEqual({ id: 1 })
