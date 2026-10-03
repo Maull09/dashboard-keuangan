@@ -13,7 +13,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 - Recurring transactions with optional end dates, transfers, guarded manual recording, payday forecasts, and account reconciliation.
 - IDX stock portfolios with editable buy/sell records, fees, weighted-average cost, realized/unrealized gains, and an editable watchlist.
 - Decimal stock quantities and purchase/sale prices: fractional lots and shares are supported, with four-decimal per-share prices and average cost, and cent-precision cash accounting.
-- Daily stock closes from Twelve Data, with manual refresh and a protected scheduled job; provider configuration and IDX entitlement are required.
+- Daily IDX stock closes from Yahoo Finance, with manual refresh, visible quote dates/sources, and a protected scheduled job. No market-data API key is required; the integration is unofficial and availability is not guaranteed.
 - Net worth combining cash, stock valuations, receivables, and unpaid debts without counting allocations twice.
 - Read-only simulations comparing scheduled cash flow with an extra monthly installment.
 - A monthly financial calendar for recurring income/payments, debt deadlines, and sinking-fund targets.
@@ -63,14 +63,15 @@ If application tables already exist but migration history is empty, normal migra
 
 ### Optional daily stock prices
 
-Add these server-only variables to `.env` and your deployment environment, then restart the app:
+Daily prices use Yahoo Finance through `yahoo-finance2` on the server. Tickers such as `BNBR` map to `BNBR.JK`; `TWELVE_DATA_API_KEY` is no longer used. Install the updated dependencies and restart the app. No database migration is needed for this provider switch.
+
+Only the scheduled job needs a server-only secret in `.env` and your deployment environment:
 
 ```env
-TWELVE_DATA_API_KEY=your_provider_key_with_IDX_access
 CRON_SECRET=your_generated_long_random_secret
 ```
 
-Manual trade recording works without a market-data key. Automatic valuation needs an API plan with IDX access; do not assume a free key includes it. Quotes are end-of-day, not live. Opening Investments requests an update; `vercel.json` also schedules a protected update at 13:30 UTC daily (20:30 Asia/Jakarta) on Vercel. Other hosts need their own scheduler.
+Quotes are completed daily closes, not live prices. Opening Investments requests an update; `vercel.json` also schedules a protected update at 13:30 UTC daily (20:30 Asia/Jakarta) on Vercel. Other hosts need their own scheduler. Yahoo access can be delayed, throttled, blocked, or changed without notice; review Yahoo's data-use terms before deployment or redistribution. Failed updates preserve saved quotes and display a market-data error rather than a misleading database warning.
 
 See [investment and planning setup](docs/investments-and-planning.md) for provider coverage, scheduling, migration steps, and limitations.
 

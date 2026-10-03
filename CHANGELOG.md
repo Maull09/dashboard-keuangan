@@ -2,6 +2,21 @@
 
 This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
+## 2026-10-04
+
+### Yahoo Finance daily IDX prices
+
+- Replaced Twelve Data with server-side `yahoo-finance2` daily chart requests. IDX symbols map to `.JK`; the application no longer reads `TWELVE_DATA_API_KEY`. The protected scheduled job still requires `CRON_SECRET`.
+- Validated ticker, Jakarta exchange/timezone, equity type, IDR currency, daily interval, timestamp, and whole-rupiah close. Selected the latest non-null unadjusted daily close; today's bar is excluded until 15 minutes after the reported regular session ends. Stored the actual quote date rather than the fetch date.
+- Preserved saved quotes on provider failure and retained the existing 15-minute cache, bounded sequential requests, and updated/cached/failed/pending feedback. Old-provider quotes do not skip the first Yahoo fetch; no transactions or opening balances are rewritten.
+- Kept price dates/source labels visible and added an unofficial/delayed-data notice. Separated Yahoo network/access/rate-limit/invalid-price recovery messages from database errors in English and Indonesian.
+- Added Yahoo request and refresh regression tests, plus the Vitest source-path alias needed to test server modules without connecting to the real database. Aligned Node.js types with the existing Node.js 22/Vitest 5 requirements after npm rejected the old peer dependency.
+- Updated provider setup, limitations, deployment checks, and documentation. No schema migration is required; the writer explicitly sets its source while the historical database default remains unchanged.
+
+Verification: 199 automated tests, TypeScript checking, and the production build passed. Direct Yahoo reads succeeded for BNBR and BBCA. A real application refresh stored a Yahoo BNBR quote; before/after comparisons verified unchanged trades, quantities, cost basis, realized gains, brokerage cash, and available cash, with correct market-value/gain calculations. Investments, net worth, account-summary, and dashboard GET endpoints returned HTTP 200. Mocked English/Indonesian desktop/mobile browser checks passed for source/price display, automatic keyless refresh, provider-error recovery, retained prices, and retry. No sample financial records were created. Deployment access, scheduling, and data-use rights still require environment-specific verification.
+
+Dependency audit: npm reported four moderate findings in the existing Drizzle Kit / esbuild development-tool chain; those package versions are unchanged. No forced audit fix or unrelated tool downgrade was applied.
+
 ## 2026-10-03
 
 ### Four-decimal per-share prices
