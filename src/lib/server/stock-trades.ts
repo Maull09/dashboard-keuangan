@@ -5,6 +5,7 @@ import { calculateAccountBalance } from "../calculations"
 import {
   calculateHoldings,
   tradeCashChange,
+  totalTradeCashChange,
   type StockTrade,
 } from "../investments"
 import { FinanceError } from "../finance-errors"
@@ -17,17 +18,19 @@ function validateCashHistory(
   ledger: Parameters<typeof calculateAccountBalance>[2],
   trades: StockTrade[],
 ) {
-  let investedCash = 0
+  let investedCents = 0
   for (const trade of [...trades]
     .filter((item) => item.accountId === accountId)
     .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)) {
-    investedCash += tradeCashChange(trade)
+    investedCents += Math.round(tradeCashChange(trade) * 100)
     const cash =
       calculateAccountBalance(
         initialBalance,
         accountId,
         ledger.filter((item) => item.date <= trade.date),
-      ) + investedCash
+      ) *
+        100 +
+      investedCents
     if (cash < 0) throw new FinanceError("insufficientCash", 409)
   }
 }
@@ -50,8 +53,8 @@ export async function recordStockTrade(body: unknown) {
       )!.balance
       if (
         input.side === "buy" &&
-        cash + tradeCashChange(input) <
-          (reservations.reserved.get(input.accountId) ?? 0)
+        Math.round(cash * 100) + Math.round(tradeCashChange(input) * 100) <
+          (reservations.reserved.get(input.accountId) ?? 0) * 100
       )
         throw new FinanceError("insufficientAvailableCash", 409)
       await connection
@@ -99,16 +102,19 @@ export async function removeStockTrade(id: number) {
         remaining,
       )
       const reservations = await readReservations(connection)
-      const cash =
+      const cashCents =
         calculateAccountBalance(
           account.initialBalance,
           account.id,
           ledger.transactions,
-        ) +
-        remaining
-          .filter((item) => item.accountId === account.id)
-          .reduce((total, item) => total + tradeCashChange(item), 0)
-      if (cash < (reservations.reserved.get(account.id) ?? 0))
+        ) *
+          100 +
+        Math.round(
+          totalTradeCashChange(
+            remaining.filter((item) => item.accountId === account.id),
+          ) * 100,
+        )
+      if (cashCents < (reservations.reserved.get(account.id) ?? 0) * 100)
         throw new FinanceError("insufficientAvailableCash", 409)
       await connection.delete(stockTrades).where(eq(stockTrades.id, id))
       return { id }

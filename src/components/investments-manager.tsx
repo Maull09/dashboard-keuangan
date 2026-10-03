@@ -35,8 +35,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useRemoteData } from "@/lib/use-remote-data"
 import { requestJson, jsonBody } from "@/lib/client-api"
-import { getToday } from "@/lib/finance"
+import { formatStockQuantity, getToday } from "@/lib/finance"
 import { tradeCashChange } from "@/lib/investments"
+import { parseStockTrade } from "@/lib/planning-validation"
 import type { PortfolioData, CashAccount } from "@/lib/planning-types"
 
 type PriceResult = {
@@ -47,7 +48,7 @@ type PriceResult = {
 }
 
 export function InvestmentsManager() {
-  const { t, formatCurrency, formatDate } = useLanguage()
+  const { t, locale, formatCurrency, formatDate } = useLanguage()
   const notify = useFeedback()
   const records = useRemoteData<PortfolioData>("/api/investments")
   const data = records.data
@@ -283,7 +284,10 @@ export function InvestmentsManager() {
                                     </p>
                                   </td>
                                   <td className="p-4 text-right tabular-nums">
-                                    {holding.shares}
+                                    {formatStockQuantity(
+                                      holding.shares,
+                                      locale,
+                                    )}
                                   </td>
                                   <td className="p-4 text-right tabular-nums">
                                     {formatCurrency(holding.averageCost)}
@@ -445,7 +449,11 @@ export function InvestmentsManager() {
                             </td>
                             <td className="p-3">{t(trade.side)}</td>
                             <td className="p-3 tabular-nums">
-                              {trade.shares / 100}
+                              {formatStockQuantity(
+                                trade.shares / 100,
+                                locale,
+                                6,
+                              )}
                             </td>
                             <td className="p-3 text-right tabular-nums">
                               {formatCurrency(trade.fees)}
@@ -525,19 +533,23 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  const valid =
-    /^[A-Z]{4}$/.test(symbol) &&
-    accountId &&
-    Number(lots) > 0 &&
-    Number(price) > 0 &&
-    Number(fees) >= 0 &&
-    date
-  const cashChange = tradeCashChange({
-    side,
-    shares: Number(lots) * 100,
-    price: Number(price),
-    fees: Number(fees),
-  })
+  let preview: ReturnType<typeof parseStockTrade> | null = null
+  try {
+    preview = parseStockTrade({
+      symbol,
+      side,
+      accountId,
+      lots,
+      price,
+      fees,
+      date,
+      note,
+    })
+  } catch {
+    // Incomplete or invalid form values must not enter decimal arithmetic.
+  }
+  const valid = preview !== null
+  const cashChange = preview ? tradeCashChange(preview) : 0
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (busy) return
@@ -662,21 +674,29 @@ function StockTradeForm({ accounts }: { accounts: CashAccount[] }) {
                 id={id + "-lots"}
                 aria-describedby={id + "-lots-hint"}
                 type="number"
-                min="1"
+                min="0.000001"
                 max="100000"
-                step="1"
+                step="0.000001"
+                inputMode="decimal"
                 value={lots}
                 onChange={(event) => setLots(event.target.value)}
                 required
               />
             </Field>
-            <Field id={id + "-price"} label={t("pricePerShare")} required>
+            <Field
+              id={id + "-price"}
+              label={t("pricePerShare")}
+              hint={t("stockPriceHint")}
+              required
+            >
               <Input
                 id={id + "-price"}
                 type="number"
-                min="1"
+                aria-describedby={id + "-price-hint"}
+                min="0.01"
                 max="1000000000"
-                step="1"
+                step="0.01"
+                inputMode="decimal"
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
                 required

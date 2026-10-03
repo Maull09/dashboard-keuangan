@@ -10,7 +10,11 @@ export type Locale = "en" | "id"
 const localeCodes: Record<Locale, string> = { en: "en-US", id: "id-ID" }
 
 export function formatCurrency(amount: number, locale: Locale = "id") {
-  return new Intl.NumberFormat(localeCodes[locale], { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)
+  return new Intl.NumberFormat(localeCodes[locale], { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount)
+}
+
+export function formatStockQuantity(amount: number, locale: Locale = "id", maximumFractionDigits = 4) {
+  return new Intl.NumberFormat(localeCodes[locale], { maximumFractionDigits }).format(amount)
 }
 
 export function getToday() {

@@ -51,8 +51,15 @@ describe("financial planning validation", () => {
   )
   it.each([
     { lots: 0 },
-    { lots: 1.5 },
+    { lots: 0.0000001 },
+    { lots: "1.0000001" },
+    { lots: Infinity },
+    { lots: "1,25" },
+    { lots: "1e2" },
+    { lots: true },
     { price: 0 },
+    { price: 1.001 },
+    { price: NaN },
     { fees: -1 },
     { accountId: true },
     { date: "2026-10-04" },
@@ -63,6 +70,22 @@ describe("financial planning validation", () => {
     expect(() => parseStockTrade({ ...trade, ...override })).toThrow(
       "invalidInput",
     )
+  })
+  it.each([
+    ["1.25", "8500.75", 125],
+    [0.003, 10.25, 0.3],
+    [0.000001, 100, 0.0001],
+    ["1.2500000", "8500.750", 125],
+  ])("accepts decimal lots and prices: %s, %s", (lots, price, shares) => {
+    expect(parseStockTrade({ ...trade, lots, price })).toMatchObject({
+      shares,
+      price: Number(price),
+    })
+  })
+  it("rejects trades that round to zero gross value", () => {
+    expect(() =>
+      parseStockTrade({ ...trade, lots: 0.000001, price: 0.01, fees: 0 }),
+    ).toThrow("invalidInput")
   })
   it("rejects an overflowing trade amount", () => {
     expect(() =>

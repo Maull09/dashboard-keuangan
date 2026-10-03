@@ -20,7 +20,7 @@ function normalizeDefault(value) {
 export async function readDatabaseSchema(client) {
   const [columns, constraints, enums, indexes] = await Promise.all([
     client.query(`SELECT table_name, column_name, data_type, udt_name, udt_schema,
-      is_nullable, column_default,
+      is_nullable, column_default, numeric_precision, numeric_scale,
       pg_get_serial_sequence(format('%I.%I', table_schema, table_name), column_name) AS sequence
       FROM information_schema.columns WHERE table_schema = 'public'`),
     client.query(`SELECT t.relname AS table_name, c.conname AS name, c.contype AS kind,
@@ -77,7 +77,13 @@ export function schemaIssues(snapshot, actual, { strictTables = false } = {}) {
         issues.push(`Missing column: ${label}`)
         continue
       }
-      const expectedType = column.type === "serial" ? "integer" : column.type
+      const numericType = column.type.match(/^numeric\((\d+),\s*(\d+)\)$/)
+      const expectedType =
+        column.type === "serial"
+          ? "integer"
+          : numericType
+            ? "numeric"
+            : column.type
       const foundType =
         found.data_type === "USER-DEFINED" ? found.udt_name : found.data_type
       if (
@@ -85,6 +91,12 @@ export function schemaIssues(snapshot, actual, { strictTables = false } = {}) {
         (column.typeSchema && found.udt_schema !== column.typeSchema)
       )
         issues.push(`Column type differs: ${label}`)
+      if (
+        numericType &&
+        (Number(found.numeric_precision) !== Number(numericType[1]) ||
+          Number(found.numeric_scale) !== Number(numericType[2]))
+      )
+        issues.push(`Numeric precision differs: ${label}`)
       if ((found.is_nullable === "NO") !== column.notNull)
         issues.push(`Nullability differs: ${label}`)
       if (column.type === "serial") {

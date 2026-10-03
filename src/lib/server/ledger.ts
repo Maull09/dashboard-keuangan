@@ -8,7 +8,7 @@ import {
   goalContributions,
 } from "@/db/schema"
 import { calculateAccountBalance } from "../calculations"
-import { tradeCashChange } from "../investments"
+import { totalTradeCashChange } from "../investments"
 import { fundBalance } from "../planning"
 
 export type ReadConnection = Pick<typeof db, "select">
@@ -22,24 +22,28 @@ export async function readLedger(connection: ReadConnection = db) {
   const summaries = allAccounts.map((account) => ({
     ...account,
     balance:
-      calculateAccountBalance(
-        account.initialBalance,
-        account.id,
-        allTransactions,
-      ) +
-      trades
-        .filter((trade) => trade.accountId === account.id)
-        .reduce((total, trade) => total + tradeCashChange(trade), 0),
+      Math.round(
+        (calculateAccountBalance(
+          account.initialBalance,
+          account.id,
+          allTransactions,
+        ) +
+          totalTradeCashChange(
+            trades.filter((trade) => trade.accountId === account.id),
+          )) *
+          100,
+      ) / 100,
   }))
   return {
     accounts: allAccounts,
     transactions: allTransactions,
     trades,
     summaries,
-    cashBalance: summaries.reduce(
-      (total, account) => total + account.balance,
-      0,
-    ),
+    cashBalance:
+      summaries.reduce(
+        (total, account) => total + Math.round(account.balance * 100),
+        0,
+      ) / 100,
   }
 }
 

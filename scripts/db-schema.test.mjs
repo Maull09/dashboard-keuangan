@@ -64,6 +64,23 @@ function fixture() {
 }
 
 describe("database baseline verification", () => {
+  it("checks numeric precision and scale rather than only the base type", () => {
+    const { snapshot, actual } = fixture()
+    snapshot.tables["public.accounts"].columns.type.type = "numeric(16, 4)"
+    delete snapshot.tables["public.accounts"].columns.type.typeSchema
+    delete snapshot.tables["public.accounts"].columns.type.default
+    Object.assign(actual.columns[1], {
+      data_type: "numeric",
+      numeric_precision: 16,
+      numeric_scale: 4,
+      column_default: null,
+    })
+    expect(schemaIssues(snapshot, actual)).toEqual([])
+    actual.columns[1].numeric_scale = 0
+    expect(schemaIssues(snapshot, actual)).toContain(
+      "Numeric precision differs: accounts.type",
+    )
+  })
   it("accepts matching columns, serial sequences, keys, enums, and cast defaults", () => {
     const { snapshot, actual } = fixture()
     expect(schemaIssues(snapshot, actual, { strictTables: true })).toEqual([])

@@ -9,6 +9,7 @@ import {
   date,
   pgEnum,
   bigint,
+  numeric,
   uniqueIndex,
   index,
   check,
@@ -176,8 +177,16 @@ export const stockTrades = pgTable(
       .notNull()
       .references(() => accounts.id),
     side: text("side").notNull(),
-    shares: integer("shares").notNull(),
-    price: bigint("price", { mode: "number" }).notNull(),
+    shares: numeric("shares", {
+      precision: 16,
+      scale: 4,
+      mode: "number",
+    }).notNull(),
+    price: numeric("price", {
+      precision: 14,
+      scale: 2,
+      mode: "number",
+    }).notNull(),
     fees: bigint("fees", { mode: "number" }).notNull().default(0),
     date: date("date").notNull(),
     note: text("note").notNull().default(""),
@@ -194,7 +203,7 @@ export const stockTrades = pgTable(
     check("stock_trades_valid_side", sql`${table.side} in ('buy', 'sell')`),
     check(
       "stock_trades_positive_shares",
-      sql`${table.shares} > 0 and ${table.shares} % 100 = 0`,
+      sql`${table.shares} > 0 and ${table.shares} <= 10000000`,
     ),
     check(
       "stock_trades_valid_money",

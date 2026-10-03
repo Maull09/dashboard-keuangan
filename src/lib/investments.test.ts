@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
+import { formatCurrency, formatStockQuantity } from "./finance"
 import {
   calculateHoldings,
   investmentTotals,
   tradeCashChange,
+  totalTradeCashChange,
   type StockTrade,
 } from "./investments"
 
@@ -18,6 +20,68 @@ const buy: StockTrade = {
 }
 
 describe("stock portfolio accounting", () => {
+  it("sums repeated decimal cash changes without residual cents", () => {
+    const trades = Array.from({ length: 100 }, (_, id) => ({
+      ...buy,
+      id,
+      shares: 0.01,
+      price: 1,
+      fees: 0,
+    }))
+    expect(totalTradeCashChange(trades)).toBe(-1)
+  })
+  it("preserves decimal prices and odd-lot average cost", () => {
+    const trade = { ...buy, shares: 125, price: 1000.75, fees: 1 }
+    expect(tradeCashChange(trade)).toBe(-125094.75)
+    expect(calculateHoldings([trade])[0]).toMatchObject({
+      shares: 125,
+      costBasis: 125094.75,
+      averageCost: 1000.758,
+    })
+  })
+  it("closes fractional shares without floating-point leftovers", () => {
+    const trades: StockTrade[] = [
+      { ...buy, shares: 0.1, price: 10.25, fees: 0 },
+      { ...buy, id: 2, shares: 0.2, price: 10.25, fees: 0 },
+      { ...buy, id: 3, side: "sell", shares: 0.3, price: 12.35, fees: 0 },
+    ]
+    expect(calculateHoldings(trades)[0]).toMatchObject({
+      shares: 0,
+      costBasis: 0,
+      averageCost: 0,
+      realizedGain: 0.63,
+    })
+    expect(() =>
+      calculateHoldings([
+        ...trades,
+        { ...buy, id: 4, side: "sell", shares: 0.0001 },
+      ]),
+    ).toThrow("insufficientShares")
+  })
+  it("allocates partial-sale costs in cents and removes the final remainder", () => {
+    const trades: StockTrade[] = [
+      { ...buy, shares: 0.3, price: 10.25, fees: 0 },
+      { ...buy, id: 2, side: "sell", shares: 0.1, price: 12.35, fees: 0 },
+    ]
+    expect(calculateHoldings(trades)[0]).toMatchObject({
+      shares: 0.2,
+      costBasis: 2.05,
+      realizedGain: 0.21,
+    })
+    expect(
+      calculateHoldings([
+        ...trades,
+        { ...buy, id: 3, side: "sell", shares: 0.2, price: 12.35, fees: 0 },
+      ])[0],
+    ).toMatchObject({ shares: 0, costBasis: 0, realizedGain: 0.63 })
+  })
+  it("formats fractional quantities and average costs in both languages", () => {
+    expect(formatStockQuantity(1234.5678, "id")).toBe("1.234,5678")
+    expect(formatStockQuantity(1234.5678, "en")).toBe("1,234.5678")
+    expect(formatStockQuantity(0.000001, "id", 6)).toBe("0,000001")
+    expect(formatCurrency(1000.758, "id")).toContain("1.000,76")
+    expect(formatCurrency(1000.758, "en")).toContain("1,000.76")
+  })
   it("charges purchase fees to cash and cost basis", () => {
     expect(tradeCashChange(buy)).toBe(-200100)
     expect(calculateHoldings([buy])[0]).toMatchObject({

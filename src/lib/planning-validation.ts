@@ -1,5 +1,6 @@
 import { getToday, isDate } from "./finance"
 import { FinanceError } from "./finance-errors"
+import { tradeCashChange } from "./investments"
 
 export function recordInput(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -30,6 +31,28 @@ export function textInput(value: unknown, maximum = 120, required = true) {
   return text
 }
 
+export function decimalInput(
+  value: unknown,
+  places: number,
+  minimum: number,
+  maximum: number,
+) {
+  if (typeof value !== "number" && typeof value !== "string")
+    throw new FinanceError("invalidInput")
+  const text = String(value)
+  if (!/^\d+(?:\.\d+)?$/.test(text)) throw new FinanceError("invalidInput")
+  const fraction = (text.split(".")[1] ?? "").replace(/0+$/, "")
+  const number = Number(text)
+  if (
+    fraction.length > places ||
+    !Number.isFinite(number) ||
+    number < minimum ||
+    number > maximum
+  )
+    throw new FinanceError("invalidInput")
+  return number
+}
+
 export function symbolInput(value: unknown) {
   const symbol = textInput(value, 4).toUpperCase()
   if (!/^[A-Z]{4}$/.test(symbol)) throw new FinanceError("invalidInput")
@@ -42,14 +65,15 @@ export function parseStockTrade(value: unknown) {
     throw new FinanceError("invalidInput")
   if (!isDate(body.date) || body.date > getToday() || body.date < "1900-01-01")
     throw new FinanceError("invalidInput")
-  const lots = integerInput(body.lots, 1, 100_000)
-  const shares = lots * 100
-  const price = integerInput(body.price, 1, 1_000_000_000)
+  const lots = decimalInput(body.lots, 6, 0.000001, 100_000)
+  const shares = Math.round(lots * 1_000_000) / 10_000
+  const price = decimalInput(body.price, 2, 0.01, 1_000_000_000)
   const fees = integerInput(body.fees ?? 0, 0, 2_147_483_647)
+  const gross = -tradeCashChange({ side: "buy", shares, price, fees: 0 })
   if (
-    !Number.isSafeInteger(shares * price + fees) ||
-    shares * price + fees > 1_000_000_000_000 ||
-    (body.side === "sell" && fees >= shares * price)
+    gross <= 0 ||
+    gross + fees > 1_000_000_000_000 ||
+    (body.side === "sell" && fees >= gross)
   )
     throw new FinanceError("invalidInput")
   return {

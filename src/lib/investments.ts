@@ -34,8 +34,16 @@ export type Holding = {
 export function tradeCashChange(
   trade: Pick<StockTrade, "side" | "shares" | "price" | "fees">,
 ) {
-  const gross = trade.shares * trade.price
-  return trade.side === "buy" ? -(gross + trade.fees) : gross - trade.fees
+  const shareUnits = BigInt(Math.round(trade.shares * 10_000))
+  const priceCents = BigInt(Math.round(trade.price * 100))
+  const grossCents = Number(
+    (shareUnits * priceCents + BigInt(5_000)) / BigInt(10_000),
+  )
+  const feeCents = Math.round(trade.fees * 100)
+  return (
+    (trade.side === "buy" ? -(grossCents + feeCents) : grossCents - feeCents) /
+    100
+  )
 }
 
 export function calculateHoldings(
@@ -67,19 +75,31 @@ export function calculateHoldings(
       priceDate: null,
       source: null,
     }
+    const shareUnits = Math.round(trade.shares * 10_000)
+    const heldUnits = Math.round(holding.shares * 10_000)
+    const costCents = Math.round(holding.costBasis * 100)
     if (trade.side === "buy") {
-      holding.shares += trade.shares
-      holding.costBasis += trade.shares * trade.price + trade.fees
+      holding.shares = (heldUnits + shareUnits) / 10_000
+      holding.costBasis =
+        (costCents - Math.round(tradeCashChange(trade) * 100)) / 100
     } else {
-      if (trade.shares > holding.shares)
+      if (shareUnits > heldUnits)
         throw new FinanceError("insufficientShares", 409)
-      const soldCost =
-        trade.shares === holding.shares
-          ? holding.costBasis
-          : Math.round((holding.costBasis * trade.shares) / holding.shares)
-      holding.realizedGain += trade.shares * trade.price - trade.fees - soldCost
-      holding.costBasis -= soldCost
-      holding.shares -= trade.shares
+      const soldCents =
+        shareUnits === heldUnits
+          ? costCents
+          : Number(
+              (BigInt(costCents) * BigInt(shareUnits) +
+                BigInt(Math.floor(heldUnits / 2))) /
+                BigInt(heldUnits),
+            )
+      holding.realizedGain =
+        (Math.round(holding.realizedGain * 100) +
+          Math.round(tradeCashChange(trade) * 100) -
+          soldCents) /
+        100
+      holding.costBasis = (costCents - soldCents) / 100
+      holding.shares = (heldUnits - shareUnits) / 10_000
     }
     holding.averageCost = holding.shares
       ? holding.costBasis / holding.shares
@@ -93,8 +113,16 @@ export function calculateHoldings(
       holding.unrealizedGain = 0
     } else if (quote) {
       holding.marketPrice = quote.price
-      holding.marketValue = holding.shares * quote.price
-      holding.unrealizedGain = holding.marketValue - holding.costBasis
+      holding.marketValue = tradeCashChange({
+        side: "sell",
+        shares: holding.shares,
+        price: quote.price,
+        fees: 0,
+      })
+      holding.unrealizedGain =
+        (Math.round(holding.marketValue * 100) -
+          Math.round(holding.costBasis * 100)) /
+        100
       holding.priceDate = quote.date
       holding.source = quote.source
     }
@@ -102,26 +130,42 @@ export function calculateHoldings(
   return [...holdings.values()]
 }
 
+export function totalTradeCashChange(trades: StockTrade[]) {
+  return (
+    trades.reduce(
+      (totalCents, trade) =>
+        totalCents + Math.round(tradeCashChange(trade) * 100),
+      0,
+    ) / 100
+  )
+}
+
 export function investmentTotals(holdings: Holding[]) {
   const active = holdings.filter((holding) => holding.shares > 0)
   const unpriced = active.filter((holding) => holding.marketValue === null)
-  const knownMarketValue = active.reduce(
-    (total, holding) => total + (holding.marketValue ?? 0),
-    0,
-  )
-  const costBasis = active.reduce(
-    (total, holding) => total + holding.costBasis,
-    0,
-  )
+  const knownMarketValue =
+    active.reduce(
+      (total, holding) => total + Math.round((holding.marketValue ?? 0) * 100),
+      0,
+    ) / 100
+  const costBasis =
+    active.reduce(
+      (total, holding) => total + Math.round(holding.costBasis * 100),
+      0,
+    ) / 100
   return {
     costBasis,
     knownMarketValue,
     marketValue: unpriced.length ? null : knownMarketValue,
-    unrealizedGain: unpriced.length ? null : knownMarketValue - costBasis,
-    realizedGain: holdings.reduce(
-      (total, holding) => total + holding.realizedGain,
-      0,
-    ),
+    unrealizedGain: unpriced.length
+      ? null
+      : (Math.round(knownMarketValue * 100) - Math.round(costBasis * 100)) /
+        100,
+    realizedGain:
+      holdings.reduce(
+        (total, holding) => total + Math.round(holding.realizedGain * 100),
+        0,
+      ) / 100,
     unpricedCount: unpriced.length,
   }
 }
