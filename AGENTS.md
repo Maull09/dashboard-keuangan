@@ -47,7 +47,7 @@ This section is intentionally project-specific. Replace or remove it when copyin
 
 - This repository is a personal finance dashboard for recording accounts, transactions, budgets, financial goals, and debts or receivables.
 - The application uses Next.js, React, TypeScript, Tailwind CSS, Drizzle ORM, and PostgreSQL through Supabase.
-- UI copy and currency formatting are in Indonesian and use IDR; preserve that convention unless a request changes it.
+- UI copy supports English and Indonesian. Keep both translations in sync and preserve IDR currency formatting.
 - Database schema definitions live in `src/db/schema.ts`; API route handlers live in `src/app/api/`; reusable UI components live in `src/components/`.
 - Treat financial amounts and transaction history as user data: validate inputs, avoid unintended data changes, and keep API behavior explicit.
 - Favor financial clarity over decoration: amounts, trends, warnings, and primary actions must remain easy to scan on desktop and mobile.

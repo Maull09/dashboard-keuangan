@@ -5,16 +5,17 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 ## Features
 
 - Accounts with opening balances, income, expenses, and transfers.
-- Searchable and paginated transaction history with edit and delete actions.
+- Searchable and paginated transaction history with database-wide type, account, and date-range filters, matching totals, and edit/delete actions.
 - Monthly budgets, optional rollover, reports, and month-over-month spending insights.
 - Financial goals with account-linked contributions.
 - Debts and receivables with partial payments and repayment history.
 - Recurring transactions, payday cash-flow forecasts, and account reconciliation.
 - English and Indonesian user interface localization.
+- Consistent loading/error feedback, guided forms, destructive-action confirmations, responsive navigation, and a bilingual Quick guide.
 
 ## Stack
 
-- Next.js 15, React 19, TypeScript, Tailwind CSS, and Radix UI.
+- Next.js, React 19, TypeScript, Tailwind CSS, and Radix UI.
 - PostgreSQL on Supabase, Drizzle ORM, and Drizzle Kit.
 - Recharts and Vitest.
 
@@ -49,14 +50,14 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the development server. |
-| `npm run build` | Build the production application. |
-| `npm run start` | Run the production build. |
-| `npm test` | Run financial calculation tests. |
-| `npm run db:generate` | Generate a migration after a schema change. |
-| `npm run db:migrate` | Apply existing Drizzle migrations. |
+| Command               | Purpose                                                                |
+| --------------------- | ---------------------------------------------------------------------- |
+| `npm run dev`         | Start the development server.                                          |
+| `npm run build`       | Build the production application.                                      |
+| `npm run start`       | Run the production build.                                              |
+| `npm test`            | Run calculation, validation, localization, and request-feedback tests. |
+| `npm run db:generate` | Generate a migration after a schema change.                            |
+| `npm run db:migrate`  | Apply existing Drizzle migrations.                                     |
 
 ## Data rules
 
@@ -65,6 +66,16 @@ Open [http://localhost:3000](http://localhost:3000).
 - Budget use includes only expenses in its selected period.
 - Goal contributions are allocations; they do not reduce the source account until a cash transaction is recorded.
 - Debt and receivable payments create cash transactions to keep balances and payment history consistent.
+
+## Using the interface
+
+Start by adding an account and its opening balance, then record your income, expenses, or transfers. Use the navigation to review budgets, goals, debts, reports, and recurring schedules. **Quick guide** in the header explains the main workflows.
+
+The transaction filters search all matching records, not just the current page. **This month** selects the current period; **Clear filters** returns to the complete history. Reports and budgets have their own month selectors.
+
+Choose **English** or **Bahasa Indonesia** at the bottom of the navigation. Your choice is remembered in this browser; amounts remain in IDR. Browser Back and Forward navigate between views.
+
+See [the usability guide](docs/usability.md) for the Nielsen heuristic mapping, financial-action behavior, and remaining usability work.
 
 ## Project structure
 
