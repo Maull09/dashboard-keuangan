@@ -1,98 +1,302 @@
 "use client"
 
-import { useEffect, useState } from "react"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { expenseCategories, formatCurrency, getCurrentMonth, formatMonth } from "@/lib/finance"
+import { useState } from "react"
+import { Plus } from "lucide-react"
+import { useLanguage } from "./language-provider"
+import {
+  EmptyState,
+  ErrorNotice,
+  Field,
+  LoadingState,
+  PageHeading,
+  SubmitButton,
+  useFeedback,
+} from "./feedback"
+import { Button } from "./ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog"
+import { Input } from "./ui/input"
+import { Progress } from "./ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select"
+import { expenseCategories, getCurrentMonth } from "@/lib/finance"
+import { jsonBody, requestJson } from "@/lib/client-api"
+import { useRemoteData } from "@/lib/use-remote-data"
 import type { Budget } from "@/lib/types"
 
 export function BudgetManager() {
-  const [budgets, setBudgets] = useState<Budget[]>([])
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth())
+  const { t, formatCurrency, formatMonth } = useLanguage()
+  const notify = useFeedback()
+  const [month, setMonth] = useState(getCurrentMonth())
+  const records = useRemoteData<Budget[]>("/api/budgets?month=" + month)
+  const budgets = records.data ?? []
   const [open, setOpen] = useState(false)
   const [category, setCategory] = useState("")
-  const [budgetAmount, setBudgetAmount] = useState("")
-  const [rolloverEnabled, setRolloverEnabled] = useState(false)
+  const [amount, setAmount] = useState("")
+  const [rollover, setRollover] = useState(false)
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const total = budgets.reduce(
+    (sum, budget) => sum + (budget.effectiveBudget ?? budget.budget),
+    0,
+  )
+  const spent = budgets.reduce((sum, budget) => sum + budget.spent, 0)
 
-  async function fetchBudgets() {
-    const response = await fetch(`/api/budgets?month=${selectedMonth}`)
-    if (!response.ok) {
-      setError("Anggaran tidak dapat dimuat.")
-      return
-    }
-
-    setBudgets(await response.json())
-    setError("")
-  }
-
-  useEffect(() => { void fetchBudgets() }, [selectedMonth])
-  useEffect(() => {
-    const refresh = () => void fetchBudgets()
-    window.addEventListener("finance-data-changed", refresh)
-    return () => window.removeEventListener("finance-data-changed", refresh)
-  }, [selectedMonth])
-
-  async function handleAddBudget(event: React.FormEvent) {
+  async function saveBudget(event: React.FormEvent) {
     event.preventDefault()
-    setLoading(true)
+    if (busy) return
+    setBusy(true)
     setError("")
-    const response = await fetch("/api/budgets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category, budget: budgetAmount, periodStart: selectedMonth, rolloverEnabled }),
-    })
-    setLoading(false)
-
-    if (!response.ok) {
-      const result = await response.json().catch(() => null)
-      setError(result?.error ?? "Anggaran tidak dapat disimpan.")
-      return
+    try {
+      await requestJson(
+        "/api/budgets",
+        jsonBody("POST", {
+          category,
+          budget: amount,
+          periodStart: month,
+          rolloverEnabled: rollover,
+        }),
+      )
+      setOpen(false)
+      setCategory("")
+      setAmount("")
+      setRollover(false)
+      notify("budgetSaved")
+      records.reload()
+    } catch (reason) {
+      setError((reason as Error).message)
+    } finally {
+      setBusy(false)
     }
-
-    setOpen(false)
-    setCategory("")
-    setBudgetAmount("")
-    setRolloverEnabled(false)
-    await fetchBudgets()
   }
 
-  const totalBudget = budgets.reduce((total, budget) => total + budget.budget, 0)
-  const totalSpent = budgets.reduce((total, budget) => total + budget.spent, 0)
+  const add = (
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!busy) {
+          setOpen(value)
+          setError("")
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button disabled={records.loading || Boolean(records.error)}>
+          <Plus className="h-4 w-4" />
+          {t("addBudget")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("addBudget")} · {formatMonth(month)}
+          </DialogTitle>
+          <DialogDescription>{t("noBudgetHint")}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={saveBudget} className="space-y-4">
+          <fieldset disabled={busy} className="space-y-4">
+            <Field id="budget-category" label={t("category")} required>
+              <Select value={category} onValueChange={setCategory} required>
+                <SelectTrigger id="budget-category">
+                  <SelectValue placeholder={t("chooseCategory")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {expenseCategories
+                    .filter(
+                      (item) =>
+                        !budgets.some((budget) => budget.category === item),
+                    )
+                    .map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {t(item)}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field
+              id="budget-amount"
+              label={t("budgetLimit") + " (IDR)"}
+              hint={t("amountHint")}
+              required
+            >
+              <Input
+                id="budget-amount"
+                aria-describedby="budget-amount-hint"
+                type="number"
+                min="1"
+                step="1"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+              />
+            </Field>
+            <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm leading-relaxed">
+              <input
+                className="mt-1 accent-teal-700"
+                type="checkbox"
+                checked={rollover}
+                onChange={(event) => setRollover(event.target.checked)}
+              />
+              {t("rollover")}
+            </label>
+          </fieldset>
+          <ErrorNotice message={error} />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={() => setOpen(false)}
+            >
+              {t("cancel")}
+            </Button>
+            <SubmitButton
+              busy={busy}
+              disabled={!category || Number(amount) <= 0}
+            >
+              {t("saveBudget")}
+            </SubmitButton>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div><h2 className="text-3xl font-bold tracking-tight">Anggaran</h2><p className="text-muted-foreground">Batas belanja yang otomatis mengikuti transaksi Anda.</p></div>
-        <div className="flex gap-2"><Input type="month" aria-label="Pilih bulan anggaran" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} /><Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild><Button>Tambah anggaran</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Tambah anggaran {formatMonth(selectedMonth)}</DialogTitle></DialogHeader><form onSubmit={handleAddBudget} className="space-y-4"><div className="space-y-2"><Label>Kategori</Label><Select value={category} onValueChange={setCategory} required><SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger><SelectContent>{expenseCategories.filter((item) => !budgets.some((budget) => budget.category === item)).map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select></div><div className="space-y-2"><Label htmlFor="budget">Batas anggaran</Label><Input id="budget" type="number" min="1" step="1" inputMode="numeric" placeholder="0" value={budgetAmount} onChange={(event) => setBudgetAmount(event.target.value)} required /></div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={rolloverEnabled} onChange={(event) => setRolloverEnabled(event.target.checked)} />Bawa sisa anggaran ke bulan berikutnya</label><DialogFooter><Button type="submit" disabled={loading}>{loading ? "Menyimpan..." : "Simpan anggaran"}</Button></DialogFooter></form></DialogContent></Dialog></div>
-      </div>
-      {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{error}</p>}
-      <div className="grid gap-3 md:grid-cols-3"><BudgetTotal label="Total anggaran" value={formatCurrency(totalBudget)} /><BudgetTotal label="Terpakai" value={formatCurrency(totalSpent)} tone="text-rose-700" /><BudgetTotal label="Sisa" value={formatCurrency(totalBudget - totalSpent)} tone={totalBudget - totalSpent < 0 ? "text-rose-700" : "text-emerald-700"} /></div>
-      <div className="grid gap-4">
-        {budgets.map((budget) => <BudgetCard key={budget.id} budget={budget} />)}
-        {budgets.length === 0 && <Card><CardContent className="py-12 text-center"><p className="font-semibold">Belum ada anggaran untuk {formatMonth(selectedMonth)}</p><p className="mt-1 text-sm text-muted-foreground">Tambahkan batas belanja untuk mulai memantau pengeluaran.</p></CardContent></Card>}
-      </div>
+      <PageHeading
+        title={t("budgetTitle")}
+        description={t("budgetDescription")}
+      >
+        <Field id="budget-month" label={t("period")}>
+          <Input
+            id="budget-month"
+            type="month"
+            value={month}
+            onChange={(event) => {
+              if (event.target.value) setMonth(event.target.value)
+            }}
+          />
+        </Field>
+        {add}
+      </PageHeading>
+      {records.error ? (
+        <ErrorNotice message={records.error} onRetry={records.reload} />
+      ) : records.loading ? (
+        <LoadingState />
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              ["totalBudget", total],
+              ["spent", spent],
+              ["remaining", total - spent],
+            ].map(([label, value]) => (
+              <div
+                key={String(label)}
+                className="rounded-lg border bg-card p-4"
+              >
+                <p className="text-xs text-muted-foreground">
+                  {t(String(label))}
+                </p>
+                <p
+                  className={
+                    "mt-2 text-xl font-semibold tabular-nums " +
+                    (Number(value) < 0 ? "text-rose-700" : "")
+                  }
+                >
+                  {formatCurrency(Number(value))}
+                </p>
+              </div>
+            ))}
+          </div>
+          {budgets.length === 0 ? (
+            <EmptyState
+              title={t("noBudget", { month: formatMonth(month) })}
+              description={t("noBudgetHint")}
+            />
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {budgets.map((budget) => (
+                <BudgetCard key={budget.id} budget={budget} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
 
-function BudgetTotal({ label, value, tone = "text-foreground" }: { label: string; value: string; tone?: string }) {
-  return <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{label}</p><p className={`mt-1 text-2xl font-bold ${tone}`}>{value}</p></CardContent></Card>
-}
-
 function BudgetCard({ budget }: { budget: Budget }) {
-  const effectiveBudget = budget.effectiveBudget ?? budget.budget
-  const carryover = budget.carryover ?? 0
-  const percentage = Math.round((budget.spent / effectiveBudget) * 100)
-  const status = percentage >= 100 ? "Melebihi batas" : percentage >= 80 ? "Hampir habis" : "Terkendali"
-  const tone = percentage >= 100 ? "text-rose-700" : percentage >= 80 ? "text-amber-700" : "text-emerald-700"
-
-  return <Card><CardHeader className="pb-3"><div className="flex items-center justify-between gap-4"><CardTitle className="text-lg">{budget.category}</CardTitle><span className={`text-sm font-semibold ${tone}`}>{status} · {percentage}%</span></div></CardHeader><CardContent className="space-y-3"><Progress value={Math.min(percentage, 100)} className="h-2" /><div className="flex justify-between text-sm"><span className="text-muted-foreground">Terpakai {formatCurrency(budget.spent)}</span><span className="font-medium">dari {formatCurrency(effectiveBudget)}</span></div>{carryover > 0 && <p className="text-sm text-primary">Termasuk rollover {formatCurrency(carryover)}</p>}<p className={`text-sm ${tone}`}>{percentage > 100 ? `Melebihi ${formatCurrency(budget.spent - effectiveBudget)}` : `Sisa ${formatCurrency(effectiveBudget - budget.spent)}`}</p></CardContent></Card>
+  const { t, formatCurrency } = useLanguage()
+  const effective = budget.effectiveBudget ?? budget.budget
+  const percentage =
+    effective > 0 ? Math.round((budget.spent / effective) * 100) : 0
+  const tone =
+    percentage >= 100
+      ? "text-rose-700"
+      : percentage >= 80
+        ? "text-amber-700"
+        : "text-teal-700"
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle>{t(budget.category)}</CardTitle>
+          <span className={"text-xs font-semibold " + tone}>
+            {t(
+              percentage >= 100
+                ? "overLimit"
+                : percentage >= 80
+                  ? "nearlyUsed"
+                  : "onTrack",
+            )}{" "}
+            · {percentage}%
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Progress
+          value={Math.min(percentage, 100)}
+          aria-label={t(budget.category) + " " + t("progress")}
+          className="h-2"
+        />
+        <div className="flex justify-between gap-2 text-sm">
+          <span className="text-muted-foreground">
+            {t("spent")} {formatCurrency(budget.spent)}
+          </span>
+          <span>
+            {t("of")} {formatCurrency(effective)}
+          </span>
+        </div>
+        {(budget.carryover ?? 0) > 0 && (
+          <p className="text-xs text-primary">
+            {t("includesRollover", {
+              amount: formatCurrency(budget.carryover ?? 0),
+            })}
+          </p>
+        )}
+        <p className={"text-sm font-medium " + tone}>
+          {t(budget.spent > effective ? "overBy" : "remainingAmount", {
+            amount: formatCurrency(Math.abs(effective - budget.spent)),
+          })}
+        </p>
+      </CardContent>
+    </Card>
+  )
 }

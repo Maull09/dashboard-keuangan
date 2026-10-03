@@ -1,323 +1,470 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useId, useState } from "react"
+import { Plus, Target } from "lucide-react"
+import { useLanguage } from "./language-provider"
+import {
+  EmptyState,
+  ErrorNotice,
+  Field,
+  LoadingState,
+  PageHeading,
+  SubmitButton,
+  useFeedback,
+} from "./feedback"
+import { Button } from "./ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog"
+import { Input } from "./ui/input"
+import { Textarea } from "./ui/textarea"
+import { Progress } from "./ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select"
+import { getToday } from "@/lib/finance"
+import { requestJson, jsonBody } from "@/lib/client-api"
+import { useRemoteData } from "@/lib/use-remote-data"
 import type { Account } from "@/lib/types"
 
+type Goal = {
+  id: number
+  title: string
+  description: string
+  targetAmount: number
+  currentAmount: number
+  targetDate: string
+}
+
 export function GoalsManager() {
-  const [goals, setGoals] = useState<any[]>([])
+  const { t, formatCurrency } = useLanguage()
+  const goals = useRemoteData<Goal[]>("/api/goals")
+  const accounts = useRemoteData<Account[]>("/api/accounts")
+  const items = goals.data ?? []
+  const summary = [
+    { label: "totalGoals", value: String(items.length) },
+    {
+      label: "completedGoals",
+      value: String(
+        items.filter((goal) => goal.currentAmount >= goal.targetAmount).length,
+      ),
+    },
+    {
+      label: "totalTarget",
+      value: formatCurrency(
+        items.reduce((total, goal) => total + goal.targetAmount, 0),
+      ),
+    },
+    {
+      label: "totalSaved",
+      value: formatCurrency(
+        items.reduce((total, goal) => total + goal.currentAmount, 0),
+      ),
+    },
+  ]
+  return (
+    <div className="space-y-6">
+      <PageHeading title={t("goalsTitle")} description={t("goalsDescription")}>
+        <AddGoal />
+      </PageHeading>
+      {goals.error || accounts.error ? (
+        <ErrorNotice
+          message={goals.error || accounts.error}
+          onRetry={() => {
+            goals.reload()
+            accounts.reload()
+          }}
+        />
+      ) : goals.loading || accounts.loading ? (
+        <LoadingState />
+      ) : !items.length ? (
+        <EmptyState title={t("noGoals")} description={t("noGoalsHint")} />
+      ) : (
+        <>
+          <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {summary.map((item) => (
+              <div key={item.label} className="rounded-lg border bg-card p-4">
+                <dt className="text-xs text-muted-foreground">
+                  {t(item.label)}
+                </dt>
+                <dd className="mt-2 text-xl font-semibold tabular-nums">
+                  {item.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {items.map((goal) => (
+              <GoalCard
+                key={goal.id}
+                goal={goal}
+                accounts={accounts.data ?? []}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AddGoal() {
+  const { t } = useLanguage()
+  const notify = useFeedback()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [targetAmount, setTargetAmount] = useState("")
-  const [targetDate, setTargetDate] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const [contributionAccountId, setContributionAccountId] = useState("")
-
-  // Fetch goals dari API
-  const fetchGoals = () => {
-    fetch("/api/goals")
-      .then((res) => res.json())
-      .then(setGoals)
-  }
-
-  useEffect(() => {
-    fetchGoals()
-    fetch("/api/accounts").then((res) => res.json()).then(setAccounts)
-  }, [])
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount)
-
-  const formatDate = (date: string) =>
-    new Intl.DateTimeFormat("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(new Date(date))
-
-  const getDaysRemaining = (targetDate: string) => {
-    const today = new Date()
-    const diffTime = new Date(targetDate).getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
-
-  const getGoalStatus = (current: number, target: number, targetDate: string) => {
-    const percentage = (current / target) * 100
-    const daysRemaining = getDaysRemaining(targetDate)
-    if (percentage >= 100) return { status: "completed", color: "text-green-600" }
-    if (daysRemaining < 0) return { status: "overdue", color: "text-red-600" }
-    if (daysRemaining < 30) return { status: "urgent", color: "text-yellow-600" }
-    return { status: "on-track", color: "text-blue-600" }
-  }
-
-  // Tambah goal ke database
-  const handleAddGoal = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    const res = await fetch("/api/goals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        description,
-        targetAmount: Number(targetAmount),
-        currentAmount: 0,
-        targetDate,
-        category: "other",
-      }),
-    })
-    setLoading(false)
-    if (res.ok) {
-      fetchGoals()
+  const [target, setTarget] = useState("")
+  const [date, setDate] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  async function submit(event: React.FormEvent) {
+    event.preventDefault()
+    if (busy) return
+    setBusy(true)
+    setError("")
+    try {
+      await requestJson(
+        "/api/goals",
+        jsonBody("POST", {
+          title,
+          description,
+          targetAmount: Number(target),
+          targetDate: date,
+          category: "other",
+        }),
+      )
+      setOpen(false)
       setTitle("")
       setDescription("")
-      setTargetAmount("")
-      setTargetDate("")
-      setOpen(false)
-    } else {
-      alert("Gagal menambah tujuan")
-    }
-  }
-
-  // Tambah kontribusi ke goal (update currentAmount)
-  const handleAddContribution = async (goalId: number, amount: number) => {
-    if (!contributionAccountId) {
-      alert("Pilih akun sumber kontribusi terlebih dahulu")
-      return
-    }
-    const goal = goals.find((g) => g.id === goalId)
-    if (!goal) return
-    const allowedAmount = Math.min(amount, goal.targetAmount - goal.currentAmount)
-    const res = await fetch(`/api/goals/${goalId}/contributions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: allowedAmount, accountId: Number(contributionAccountId) }),
-    })
-    if (res.ok) {
-      fetchGoals()
+      setTarget("")
+      setDate("")
+      notify("goalSaved")
       window.dispatchEvent(new Event("finance-data-changed"))
+    } catch (reason) {
+      setError((reason as Error).message)
+    } finally {
+      setBusy(false)
     }
-    else alert("Gagal update kontribusi")
   }
-
-  const totalTargetAmount = goals.reduce((sum, goal) => sum + goal.targetAmount, 0)
-  const totalCurrentAmount = goals.reduce((sum, goal) => sum + goal.currentAmount, 0)
-  const completedGoals = goals.filter((goal) => goal.currentAmount >= goal.targetAmount).length
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Tujuan Keuangan</h2>
-          <p className="text-muted-foreground">Tetapkan dan lacak pencapaian tujuan keuangan Anda</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <span className="font-bold text-lg mr-2">+</span> Tambah Tujuan
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!busy) {
+          setOpen(value)
+          setError("")
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4" />
+          {t("addGoal")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("addGoal")}</DialogTitle>
+          <DialogDescription>{t("requiredHint")}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <fieldset disabled={busy} className="space-y-4">
+            <Field id="goal-title" label={t("goalName")} required>
+              <Input
+                id="goal-title"
+                placeholder={t("goalExample")}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                required
+              />
+            </Field>
+            <Field
+              id="goal-description"
+              label={t("description") + " (" + t("optional") + ")"}
+            >
+              <Textarea
+                id="goal-description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </Field>
+            <Field
+              id="goal-target"
+              label={t("targetAmount") + " (IDR)"}
+              required
+            >
+              <Input
+                id="goal-target"
+                type="number"
+                min="1"
+                step="1"
+                value={target}
+                onChange={(event) => setTarget(event.target.value)}
+                required
+              />
+            </Field>
+            <Field id="goal-date" label={t("targetDate")} required>
+              <Input
+                id="goal-date"
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+                required
+              />
+            </Field>
+          </fieldset>
+          <ErrorNotice message={error} />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={() => setOpen(false)}
+            >
+              {t("cancel")}
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Tambah Tujuan Keuangan</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddGoal} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Nama Tujuan</Label>
-                <Input
-                  id="title"
-                  placeholder="Contoh: Dana Darurat"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Deskripsi</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Deskripsi tujuan keuangan"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="targetAmount">Target Jumlah</Label>
-                <Input
-                  id="targetAmount"
-                  type="number"
-                  placeholder="0"
-                  value={targetAmount}
-                  onChange={(e) => setTargetAmount(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="targetDate">Target Tanggal</Label>
-                <Input
-                  id="targetDate"
-                  type="date"
-                  value={targetDate}
-                  onChange={(e) => setTargetDate(e.target.value)}
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
-                  Batal
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Menyimpan..." : "Simpan"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="max-w-sm"><Select value={contributionAccountId} onValueChange={setContributionAccountId}><SelectTrigger><SelectValue placeholder="Pilih akun sumber kontribusi" /></SelectTrigger><SelectContent>{accounts.map((account) => <SelectItem key={account.id} value={String(account.id)}>{account.name}</SelectItem>)}</SelectContent></Select><p className="mt-2 text-sm text-muted-foreground">Kontribusi dicatat sebagai alokasi dari akun ini; saldo akun tidak berkurang.</p></div>
+            <SubmitButton
+              busy={busy}
+              disabled={!title.trim() || Number(target) <= 0 || !date}
+            >
+              {t("save")}
+            </SubmitButton>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Tujuan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{goals.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Tujuan Tercapai</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completedGoals}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Target</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalTargetAmount)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Terkumpul</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalCurrentAmount)}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Goals List */}
-      <div className="grid gap-4">
-        {goals.map((goal) => {
-          const percentage = (goal.currentAmount / goal.targetAmount) * 100
-          const daysRemaining = getDaysRemaining(goal.targetDate)
-          const { status, color } = getGoalStatus(goal.currentAmount, goal.targetAmount, goal.targetDate)
-
-          return (
-            <Card key={goal.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl">{goal.title}</CardTitle>
-                    <CardDescription>{goal.description}</CardDescription>
+function GoalCard({ goal, accounts }: { goal: Goal; accounts: Account[] }) {
+  const { t, formatCurrency, formatDate } = useLanguage()
+  const notify = useFeedback()
+  const id = useId()
+  const remaining = Math.max(goal.targetAmount - goal.currentAmount, 0)
+  const percentage = Math.round((goal.currentAmount / goal.targetAmount) * 100)
+  const days = Math.round(
+    (Date.parse(goal.targetDate) - Date.parse(getToday())) / 86400000,
+  )
+  const status =
+    remaining === 0
+      ? "completed"
+      : days < 0
+        ? "overdue"
+        : days < 30
+          ? "urgent"
+          : "active"
+  const [open, setOpen] = useState(false)
+  const [amount, setAmount] = useState("")
+  const [account, setAccount] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  async function contribute(event: React.FormEvent) {
+    event.preventDefault()
+    if (busy) return
+    setBusy(true)
+    setError("")
+    try {
+      await requestJson(
+        "/api/goals/" + goal.id + "/contributions",
+        jsonBody("POST", {
+          amount: Number(amount),
+          accountId: Number(account),
+        }),
+      )
+      setOpen(false)
+      setAmount("")
+      notify("contributionSaved")
+      window.dispatchEvent(new Event("finance-data-changed"))
+    } catch (reason) {
+      setError((reason as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              {goal.title}
+            </CardTitle>
+            {goal.description && (
+              <CardDescription className="mt-2">
+                {goal.description}
+              </CardDescription>
+            )}
+          </div>
+          <span
+            className={
+              "rounded-md px-2 py-1 text-xs font-medium " +
+              (status === "overdue"
+                ? "bg-rose-50 text-rose-800"
+                : status === "urgent"
+                  ? "bg-amber-50 text-amber-800"
+                  : "bg-teal-50 text-teal-800")
+            }
+          >
+            {t(status)}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap justify-between gap-2 text-sm">
+          <span className="font-semibold tabular-nums">
+            {formatCurrency(goal.currentAmount)}
+          </span>
+          <span className="text-muted-foreground">
+            {t("of")} {formatCurrency(goal.targetAmount)}
+          </span>
+        </div>
+        <Progress
+          value={Math.min(100, percentage)}
+          aria-label={goal.title + " " + t("progress")}
+          className="h-2"
+        />
+        <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+          <span>
+            {t("progress")}: {percentage}%
+          </span>
+          <span>
+            {t("targetDate")}: {formatDate(goal.targetDate)}
+          </span>
+        </div>
+        {remaining > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {t(days < 0 ? "daysOverdue" : "daysLeft", {
+              count: Math.abs(days),
+            })}{" "}
+            · {t("remainingAmount", { amount: formatCurrency(remaining) })}
+          </p>
+        )}
+        {remaining > 0 && (
+          <Dialog
+            open={open}
+            onOpenChange={(value) => {
+              if (!busy) {
+                setOpen(value)
+                setError("")
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={accounts.length === 0}>
+                {t("contribute")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {t("contribution")} · {goal.title}
+                </DialogTitle>
+                <DialogDescription>{t("contributionHint")}</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={contribute} className="space-y-4">
+                <Field
+                  id={id + "-amount"}
+                  label={t("contributeAmount")}
+                  hint={t("remainingAmount", {
+                    amount: formatCurrency(remaining),
+                  })}
+                  required
+                >
+                  <Input
+                    id={id + "-amount"}
+                    type="number"
+                    min="1"
+                    max={remaining}
+                    step="1"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    disabled={busy}
+                    required
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {[100000, 500000, 1000000].map((value) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() =>
+                          setAmount(String(Math.min(value, remaining)))
+                        }
+                      >
+                        {formatCurrency(Math.min(value, remaining))}
+                      </Button>
+                    ))}
                   </div>
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      status === "completed"
-                        ? "bg-green-100 text-green-800"
-                        : status === "overdue"
-                        ? "bg-red-100 text-red-800"
-                        : status === "urgent"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
+                </Field>
+                <Field id={id + "-account"} label={t("sourceAccount")} required>
+                  <Select
+                    value={account}
+                    onValueChange={setAccount}
+                    disabled={busy}
+                    required
                   >
-                    {status === "completed"
-                      ? "Tercapai"
-                      : status === "overdue"
-                      ? "Terlambat"
-                      : status === "urgent"
-                      ? "Mendesak"
-                      : "Berjalan"}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <div className="text-sm text-muted-foreground">Progress</div>
-                    <div className="font-semibold">
-                      {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Target Tanggal</div>
-                    <div className="font-semibold">{formatDate(goal.targetDate)}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Sisa Waktu</div>
-                    <div className={`font-semibold ${color}`}>
-                      {daysRemaining > 0 ? `${daysRemaining} hari` : daysRemaining === 0 ? "Hari ini" : "Terlambat"}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress: {percentage.toFixed(1)}%</span>
-                    <span>Sisa: {formatCurrency(goal.targetAmount - goal.currentAmount)}</span>
-                  </div>
-                  <Progress value={Math.min(percentage, 100)} className="h-2" />
-                </div>
-                {percentage < 100 && (
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleAddContribution(goal.id, 100000)}>
-                      +100K
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleAddContribution(goal.id, 500000)}>
-                      +500K
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleAddContribution(goal.id, 1000000)}>
-                      +1M
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      {goals.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-center space-y-2">
-              <div className="text-4xl text-gray-300">🎯</div>
-              <h3 className="text-lg font-semibold">Belum ada tujuan keuangan</h3>
-              <p className="text-muted-foreground">Mulai dengan menetapkan tujuan keuangan pertama Anda</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+                    <SelectTrigger id={id + "-account"}>
+                      <SelectValue placeholder={t("chooseAccount")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((item) => (
+                        <SelectItem key={item.id} value={String(item.id)}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <ErrorNotice message={error} />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => setOpen(false)}
+                  >
+                    {t("cancel")}
+                  </Button>
+                  <SubmitButton
+                    busy={busy}
+                    disabled={
+                      !account ||
+                      Number(amount) <= 0 ||
+                      Number(amount) > remaining
+                    }
+                  >
+                    {t("contribute")}
+                  </SubmitButton>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+        {remaining > 0 && accounts.length === 0 && (
+          <p className="text-xs text-amber-800">{t("addAnAccountFirst")}</p>
+        )}
+      </CardContent>
+    </Card>
   )
 }

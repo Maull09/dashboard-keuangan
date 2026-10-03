@@ -1,54 +1,189 @@
 "use client"
 
-import { useEffect, useState } from "react"
-
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { useLanguage } from "@/components/language-provider"
-import { formatCurrency, getToday } from "@/lib/finance"
-import type { AccountSummary as AccountSummaryData } from "@/lib/types"
+import { useId, useState } from "react"
+import { CheckCircle2, Landmark } from "lucide-react"
+import { AddAccountForm } from "./accounts-form"
+import { TransactionForm } from "./transaction-form"
+import {
+  EmptyState,
+  ErrorNotice,
+  Field,
+  LoadingState,
+  SubmitButton,
+} from "./feedback"
+import { useLanguage } from "./language-provider"
+import { Button } from "./ui/button"
+import { Card, CardContent } from "./ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog"
+import { Input } from "./ui/input"
+import { jsonBody, requestJson } from "@/lib/client-api"
+import { useRemoteData } from "@/lib/use-remote-data"
+import { getToday } from "@/lib/finance"
+import type { Account, AccountSummary as Summary } from "@/lib/types"
 
 export function AccountSummary() {
-  const { formatCurrency, t } = useLanguage()
-  const [accounts, setAccounts] = useState<AccountSummaryData[]>([])
-
-  async function fetchAccounts() {
-    const response = await fetch("/api/accounts/summary")
-    if (response.ok) setAccounts(await response.json())
-  }
-
-  useEffect(() => {
-    void fetchAccounts()
-    window.addEventListener("finance-data-changed", fetchAccounts)
-    return () => window.removeEventListener("finance-data-changed", fetchAccounts)
-  }, [])
-
-  if (accounts.length === 0) return null
-
+  const { t, formatCurrency } = useLanguage()
+  const records = useRemoteData<Summary[]>("/api/accounts/summary")
+  if (records.error)
+    return <ErrorNotice message={records.error} onRetry={records.reload} />
+  if (records.loading) return <LoadingState />
+  if (!records.data?.length)
+    return (
+      <EmptyState title={t("startHere")} description={t("startHereHint")}>
+        <AddAccountForm />
+      </EmptyState>
+    )
+  const accounts: Account[] = records.data.map((account) => ({
+    ...account,
+    initialBalance: account.balance,
+  }))
   return (
-    <section aria-labelledby="account-summary-title">
-      <div className="mb-3 flex items-baseline justify-between"><h3 id="account-summary-title" className="font-semibold">{t("accountBalance")}</h3><span className="text-sm text-muted-foreground">{t("accountBalanceDescription")}</span></div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {accounts.map((account) => <Card key={account.id} className="border-l-4 border-l-primary/60"><CardContent className="p-4"><p className="text-xs text-muted-foreground">{account.type}</p><p className="mt-1 font-semibold">{account.name}</p><p className={`mt-2 text-lg font-bold ${account.balance < 0 ? "text-rose-700" : "text-foreground"}`}>{formatCurrency(account.balance)}</p><ReconcileAccount account={account} /></CardContent></Card>)}
+    <section aria-labelledby="account-summary-title" className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="account-summary-title" className="text-base font-semibold">
+          {t("accountBalance")}
+        </h2>
+        <TransactionForm accounts={accounts} onSaved={() => {}} />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {records.data.map((account) => (
+          <Card key={account.id}>
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-3">
+                <Landmark className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">{account.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t(account.type)}
+                  </p>
+                </div>
+              </div>
+              <p
+                className={
+                  "mt-4 text-xl font-semibold tabular-nums " +
+                  (account.balance < 0 ? "text-rose-700" : "")
+                }
+              >
+                {formatCurrency(account.balance)}
+              </p>
+              <ReconcileAccount account={account} />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </section>
   )
 }
 
-function ReconcileAccount({ account }: { account: AccountSummaryData }) {
+function ReconcileAccount({ account }: { account: Summary }) {
+  const { t, formatCurrency } = useLanguage()
+  const id = useId()
   const [open, setOpen] = useState(false)
-  const [actualBalance, setActualBalance] = useState("")
-  const [result, setResult] = useState("")
-
+  const [actual, setActual] = useState("")
+  const [difference, setDifference] = useState<number | null>(null)
+  const [error, setError] = useState("")
+  const [busy, setBusy] = useState(false)
   async function reconcile(event: React.FormEvent) {
     event.preventDefault()
-    const response = await fetch(`/api/accounts/${account.id}/reconciliations`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ actualBalance, date: getToday() }) })
-    if (!response.ok) { setResult("Saldo aktual tidak valid."); return }
-    const data = await response.json()
-    setResult(data.difference === 0 ? "Saldo cocok dengan catatan." : `Selisih ${formatCurrency(data.difference)} dari catatan.`)
+    if (busy) return
+    setBusy(true)
+    setError("")
+    setDifference(null)
+    try {
+      const result = await requestJson<{ difference: number }>(
+        "/api/accounts/" + account.id + "/reconciliations",
+        jsonBody("POST", { actualBalance: actual, date: getToday() }),
+      )
+      setDifference(result.difference)
+    } catch (reason) {
+      setError((reason as Error).message)
+    } finally {
+      setBusy(false)
+    }
   }
-
-  return <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild><Button variant="ghost" size="sm" className="mt-2 h-auto px-0 text-primary">Rekonsiliasi saldo</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Rekonsiliasi {account.name}</DialogTitle></DialogHeader><form onSubmit={reconcile} className="space-y-3"><p className="text-sm text-muted-foreground">Saldo menurut catatan: {formatCurrency(account.balance)}</p><Input type="number" placeholder="Saldo aktual di rekening" value={actualBalance} onChange={(event) => setActualBalance(event.target.value)} required />{result && <p className="text-sm text-primary">{result}</p>}<DialogFooter><Button type="submit">Bandingkan saldo</Button></DialogFooter></form></DialogContent></Dialog>
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!busy) {
+          setOpen(value)
+          setDifference(null)
+          setError("")
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="mt-3 px-0 text-primary">
+          {t("reconcileBalance")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("reconcileBalance")} · {account.name}
+          </DialogTitle>
+          <DialogDescription>{t("reconcileHint")}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={reconcile} className="space-y-4">
+          <div className="rounded-lg bg-muted p-4">
+            <p className="text-xs text-muted-foreground">
+              {t("recordedBalance")}
+            </p>
+            <p className="mt-1 text-xl font-semibold tabular-nums">
+              {formatCurrency(account.balance)}
+            </p>
+          </div>
+          <Field id={id} label={t("actualBalance") + " (IDR)"} required>
+            <Input
+              id={id}
+              type="number"
+              step="1"
+              value={actual}
+              onChange={(event) => {
+                setActual(event.target.value)
+                setDifference(null)
+              }}
+              disabled={busy}
+              required
+            />
+          </Field>
+          <ErrorNotice message={error} />
+          {difference !== null && (
+            <p
+              role="status"
+              className="flex items-start gap-2 rounded-lg bg-teal-50 p-3 text-sm text-teal-900"
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              {difference === 0
+                ? t("balancesMatch")
+                : t("balanceDifference", {
+                    amount: formatCurrency(difference),
+                  })}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={() => setOpen(false)}
+            >
+              {t(difference === null ? "cancel" : "done")}
+            </Button>
+            <SubmitButton busy={busy} disabled={actual === ""}>
+              {t("compareBalances")}
+            </SubmitButton>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
 }
