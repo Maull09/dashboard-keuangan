@@ -94,7 +94,7 @@ export default function FinanceTracker() {
         onClose={() => setSidebarOpen(false)}
       />
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-20 flex min-h-16 items-center justify-between gap-2 border-b bg-white/95 px-4 backdrop-blur-sm sm:px-7">
+        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-white/95 px-4 backdrop-blur-sm sm:px-7">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"

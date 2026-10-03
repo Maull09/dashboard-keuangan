@@ -53,7 +53,7 @@ export function Sidebar({
   function content(mobile: boolean) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex items-center gap-3 border-b px-5 py-5">
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b px-5">
           <div className="rounded-lg bg-teal-700 p-2 text-white">
             <Landmark className="h-5 w-5" />
           </div>

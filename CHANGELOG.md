@@ -26,6 +26,11 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 - TypeScript checking, 25 automated tests, and a production build passed during this iteration.
 - Mocked browser checks covered all seven views and desktop/mobile behavior; targeted axe checks on the desktop dashboard and mobile transaction view reported no WCAG A/AA violations. See the usability guide for the verification scope and remaining work.
 
+### Fixed
+
+- Aligned the sidebar brand divider with the main header by giving both areas the same 64 px height.
+- Verified equal divider positions at 768 px and 1440 px in both languages, the 375 px mobile drawer, and TypeScript checking.
+
 ## 2026-10-02
 
 ### Added

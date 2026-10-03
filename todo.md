@@ -15,6 +15,7 @@
 - [x] Add confirmations for transaction/schedule deletion and recurring-payment recording.
 - [x] Improve mobile navigation, keyboard focus, language persistence, and financial visual hierarchy.
 - [x] Test filter validation, client-request feedback, bilingual messages, and localized insights.
+- [x] Align the sidebar and main header divider heights.
 
 ## Next
 
