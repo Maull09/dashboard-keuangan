@@ -34,7 +34,9 @@ Choose a skill when its purpose directly matches the task. Do not invoke a skill
 | Task | Required skill usage |
 | --- | --- |
 | Writing, reviewing, or refactoring code | Use `clean-code` and `karpathy-guidelines`. Keep changes small, readable, and verifiable. |
-| Building a new UI feature or materially redesigning a page, component, or visual system | Use `frontend-design` in addition to the code-quality skills. Define a brief, product-specific visual direction before implementation; verify responsiveness, accessibility, and visual hierarchy afterward. |
+| Designing, implementing, reviewing, or refactoring a user-facing interface | Use `design-principle` in addition to the applicable code-quality skills. Establish the user, goal, activity, context, conceptual model, feedback, and usability target; record material UI assumptions rather than treating them as facts. |
+| Building a new UI feature or materially redesigning a page, component, or visual system | Use `frontend-design` and `design-principle` in addition to the code-quality skills. Define a brief, product-specific visual direction before implementation; verify responsiveness, accessibility, task completion, and visual hierarchy afterward. |
+| Landing page, portfolio, or marketing-focused redesign | Also use `design-taste-frontend` (Taste Skill) when it fits the brief. Do not use it for this product's financial dashboard, data tables, forms, multi-step workflows, or other dense product UI; retain the Finance Tracker's clarity-first design priorities. |
 | Small visual correction with no design decision | Use the code-quality skills; `frontend-design` is optional. |
 
 Read the selected skill's instructions before acting. If skills conflict, follow the user's request and the repository's requirements first.
