@@ -2,6 +2,11 @@
 
 ## Completed
 
+- [x] Add an accessible numeric fallback for report pie charts, structured errors for all current API routes, a working ESLint CLI, a fixed Turbopack root, explicit PostgreSQL types for CI, and CI verification.
+- [x] Standardize remaining GET handlers on safe structured API errors.
+- [x] Replace the unsupported `next lint` script with a configured lint command.
+- [x] Install the `ui-ux-pro-max` skill into the Codex skill set and define its Finance Tracker usage in `AGENTS.md`.
+- [x] Install the `design-principle` and Taste Skill (`design-taste-frontend`) into the Codex skill set and define their Finance Tracker usage in `AGENTS.md`.
 - [x] Replace Twelve Data with server-side Yahoo Finance daily IDX closes without a market-data API key, preserving trade history and saved prices on failure.
 - [x] Validate .JK/IDR/Jakarta quote metadata, exclude unfinished daily bars, show price sources, and distinguish provider errors from database errors in both languages.
 - [x] Verify direct Yahoo BNBR/BBCA reads, real BNBR quote refresh with unchanged financial ledger, automated provider/refresh tests, and mocked bilingual desktop/mobile recovery flows.
@@ -58,8 +63,6 @@
 - [ ] Add safe correction/reversal workflows for goal contributions and debt payments without breaking linked cash history.
 - [ ] Add a complete reconciliation-history browser to the interface.
 - [ ] Decide and enforce the desired overdraft/allocated-cash policy consistently for ordinary transactions and trade-funding edits.
-- [ ] Standardize remaining GET handlers on safe structured API errors.
-- [ ] Replace the unsupported `next lint` script with a configured lint command.
 - [ ] Make the isolated API and mocked browser regression fixtures reproducible in CI.
 
 - [ ] Rehearse restoring the private backup into a separate database and configure protected off-device backups.

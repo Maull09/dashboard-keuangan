@@ -22,6 +22,7 @@ Use `npm ci` to install the exact versions in the committed lockfile. Use `npm i
 ```bash
 npm install
 npm run dev
+npm run lint
 npm run build
 npm test
 npm run db:generate
@@ -49,4 +50,5 @@ Switching daily prices from Twelve Data to Yahoo Finance requires updated npm de
 - **Missing `stock_trades`:** run `npm run db:migrate -- --check`, then follow the [migration and recovery guide](database-migrations.md). Successful account queries do not prove that all feature tables exist.
 - **Migration fails:** make sure the connection targets the intended database. Use Direct connection or the Session pooler for migration work. Do not force schema pushes, drop application tables, or invent migration history to suppress an error.
 - **Build fails:** run `npm install`, then retry `npm run build`.
+- **Lint fails:** run `npm run lint` to identify the reported source file and rule. Next.js 16 uses the ESLint CLI rather than `next lint`.
 - **Tests fail:** run `npm test` to identify the failed financial scenario.
