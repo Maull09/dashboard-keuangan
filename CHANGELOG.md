@@ -2,6 +2,15 @@
 
 This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
+## 2026-10-06
+
+### Reliability and report accessibility
+
+- Added text tables with localized IDR amounts and percentage shares beneath report pie charts, so chart information is not available only through color or hover.
+- Standardized the remaining account, transaction, dashboard, forecast, and reconciliation route errors on safe `{ code }` responses.
+- Replaced the removed `next lint` command with official ESLint CLI configuration, pinned Turbopack's project root, and added CI verification for linting, type checking, tests, and production builds.
+- Declared PostgreSQL type definitions explicitly so clean CI installs can type-check database code.
+
 ## 2026-10-04
 
 ### Yahoo Finance daily IDX prices

@@ -2,6 +2,9 @@
 
 ## Completed
 
+- [x] Add an accessible numeric fallback for report pie charts, structured errors for all current API routes, a working ESLint CLI, a fixed Turbopack root, explicit PostgreSQL types for CI, and CI verification.
+- [x] Standardize remaining GET handlers on safe structured API errors.
+- [x] Replace the unsupported `next lint` script with a configured lint command.
 - [x] Replace Twelve Data with server-side Yahoo Finance daily IDX closes without a market-data API key, preserving trade history and saved prices on failure.
 - [x] Validate .JK/IDR/Jakarta quote metadata, exclude unfinished daily bars, show price sources, and distinguish provider errors from database errors in both languages.
 - [x] Verify direct Yahoo BNBR/BBCA reads, real BNBR quote refresh with unchanged financial ledger, automated provider/refresh tests, and mocked bilingual desktop/mobile recovery flows.
