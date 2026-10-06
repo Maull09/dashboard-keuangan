@@ -2,6 +2,7 @@
 
 ## Completed
 
+- [x] Install the `ui-ux-pro-max` skill into the Codex skill set and define its Finance Tracker usage in `AGENTS.md`.
 - [x] Install the `design-principle` and Taste Skill (`design-taste-frontend`) into the Codex skill set and define their Finance Tracker usage in `AGENTS.md`.
 - [x] Replace Twelve Data with server-side Yahoo Finance daily IDX closes without a market-data API key, preserving trade history and saved prices on failure.
 - [x] Validate .JK/IDR/Jakarta quote metadata, exclude unfinished daily bars, show price sources, and distinguish provider errors from database errors in both languages.
