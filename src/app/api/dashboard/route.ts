@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import { financeResponse } from "@/lib/api-response"
 import { readLedger } from "@/lib/server/ledger"
 import { tradeCashChange } from "@/lib/investments"
 import {
@@ -16,99 +17,103 @@ import {
 } from "@/lib/finance"
 
 export async function GET(request: NextRequest) {
-  const locale =
-    new URL(request.url).searchParams.get("locale") === "en" ? "en" : "id"
-  const {
-    accounts: allAccounts,
-    transactions: allTransactions,
-    trades,
-    cashBalance,
-  } = await readLedger()
-  const requestedMonth = new URL(request.url).searchParams.get("month")
-  const currentMonth = isMonth(requestedMonth)
-    ? requestedMonth
-    : getCurrentMonth()
-  const period = getPeriodRange(currentMonth)
-  const monthlyTransactions = allTransactions.filter(
-    (transaction) =>
-      transaction.date >= period.start && transaction.date < period.end,
-  )
-  const income = totalFor(monthlyTransactions, "income")
-  const expense = totalFor(monthlyTransactions, "expense")
-  const startingBalance = allAccounts.reduce(
-    (total, account) => total + account.initialBalance,
-    0,
-  )
-  const runningBalance = cashBalance
-  const months = getRecentMonths(6)
-  const firstMonthStart = getMonthStart(months[0])
-  let historicalBalance =
-    startingBalance +
-    netAmount(
-      allTransactions.filter(
-        (transaction) => transaction.date < firstMonthStart,
-      ),
-    ) +
-    trades
-      .filter((trade) => trade.date < firstMonthStart)
-      .reduce((total, trade) => total + tradeCashChange(trade), 0)
-
-  const monthlyData = months.map((month) => {
-    const monthTransactions = allTransactions.filter((transaction) =>
-      transaction.date.startsWith(month),
+  return financeResponse(async () => {
+    const locale =
+      new URL(request.url).searchParams.get("locale") === "en" ? "en" : "id"
+    const {
+      accounts: allAccounts,
+      transactions: allTransactions,
+      trades,
+      cashBalance,
+    } = await readLedger()
+    const requestedMonth = new URL(request.url).searchParams.get("month")
+    const currentMonth = isMonth(requestedMonth)
+      ? requestedMonth
+      : getCurrentMonth()
+    const period = getPeriodRange(currentMonth)
+    const monthlyTransactions = allTransactions.filter(
+      (transaction) =>
+        transaction.date >= period.start && transaction.date < period.end,
     )
-    const monthIncome = totalFor(monthTransactions, "income")
-    const monthExpense = totalFor(monthTransactions, "expense")
-    historicalBalance +=
-      monthIncome -
-      monthExpense +
+    const income = totalFor(monthlyTransactions, "income")
+    const expense = totalFor(monthlyTransactions, "expense")
+    const startingBalance = allAccounts.reduce(
+      (total, account) => total + account.initialBalance,
+      0,
+    )
+    const runningBalance = cashBalance
+    const months = getRecentMonths(6)
+    const firstMonthStart = getMonthStart(months[0])
+    let historicalBalance =
+      startingBalance +
+      netAmount(
+        allTransactions.filter(
+          (transaction) => transaction.date < firstMonthStart,
+        ),
+      ) +
       trades
-        .filter((trade) => trade.date.startsWith(month))
+        .filter((trade) => trade.date < firstMonthStart)
         .reduce((total, trade) => total + tradeCashChange(trade), 0)
 
-    return {
-      month: formatMonth(month, locale),
-      income: monthIncome,
-      expense: monthExpense,
-      balance: historicalBalance,
-    }
-  })
+    const monthlyData = months.map((month) => {
+      const monthTransactions = allTransactions.filter((transaction) =>
+        transaction.date.startsWith(month),
+      )
+      const monthIncome = totalFor(monthTransactions, "income")
+      const monthExpense = totalFor(monthTransactions, "expense")
+      historicalBalance +=
+        monthIncome -
+        monthExpense +
+        trades
+          .filter((trade) => trade.date.startsWith(month))
+          .reduce((total, trade) => total + tradeCashChange(trade), 0)
 
-  const expenseByCategory = totalByCategory(monthlyTransactions, "expense")
-  const previousPeriod = getPeriodRange(getPreviousPeriod(currentMonth))
-  const previousByCategory = totalByCategory(
-    allTransactions.filter(
-      (transaction) =>
-        transaction.date >= previousPeriod.start &&
-        transaction.date < previousPeriod.end,
-    ),
-    "expense",
-  )
-  const insights = Object.entries(expenseByCategory)
-    .map(([category, amount]) =>
-      getCategoryInsight(
-        category,
-        amount,
-        previousByCategory[category] ?? 0,
-        locale,
+      return {
+        month: formatMonth(month, locale),
+        income: monthIncome,
+        expense: monthExpense,
+        balance: historicalBalance,
+      }
+    })
+
+    const expenseByCategory = totalByCategory(monthlyTransactions, "expense")
+    const previousPeriod = getPeriodRange(getPreviousPeriod(currentMonth))
+    const previousByCategory = totalByCategory(
+      allTransactions.filter(
+        (transaction) =>
+          transaction.date >= previousPeriod.start &&
+          transaction.date < previousPeriod.end,
       ),
+      "expense",
     )
-    .filter((insight): insight is string => insight !== null)
+    const insights = Object.entries(expenseByCategory)
+      .map(([category, amount]) =>
+        getCategoryInsight(
+          category,
+          amount,
+          previousByCategory[category] ?? 0,
+          locale,
+        ),
+      )
+      .filter((insight): insight is string => insight !== null)
 
-  return NextResponse.json({
-    income,
-    expense,
-    runningBalance,
-    savingRate:
-      income === 0 ? 0 : Math.round(((income - expense) / income) * 1000) / 10,
-    monthlyData,
-    balanceHistory: monthlyData.map(({ month, balance }) => ({
-      month,
-      balance,
-    })),
-    expenseByCategory,
-    incomeBySource: totalByCategory(monthlyTransactions, "income"),
-    insights,
+    return NextResponse.json({
+      income,
+      expense,
+      runningBalance,
+      savingRate:
+        income === 0
+          ? 0
+          : Math.round(((income - expense) / income) * 1000) / 10,
+      monthlyData,
+      balanceHistory: monthlyData.map(({ month, balance }) => ({
+        month,
+        balance,
+      })),
+      expenseByCategory,
+      incomeBySource: totalByCategory(monthlyTransactions, "income"),
+      insights,
+    })
   })
 }
 

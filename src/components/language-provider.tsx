@@ -65,6 +65,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     expense: "Expense",
     transfer: "Transfer",
     amount: "Amount",
+    share: "Share",
     category: "Category",
     chooseCategory: "Choose a category",
     chooseAccount: "Choose an account",
@@ -259,6 +260,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     expense: "Pengeluaran",
     transfer: "Transfer",
     amount: "Jumlah",
+    share: "Porsi",
     category: "Kategori",
     chooseCategory: "Pilih kategori",
     chooseAccount: "Pilih akun",
@@ -426,7 +428,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const savedLocale = window.localStorage.getItem("locale")
-    if (savedLocale === "en" || savedLocale === "id") updateLocale(savedLocale)
+    if (savedLocale !== "en" && savedLocale !== "id") return
+    const timer = window.setTimeout(() => updateLocale(savedLocale))
+    return () => window.clearTimeout(timer)
   }, [])
 
   useEffect(() => {

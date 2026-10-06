@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useId } from "react"
+import { useCallback, useEffect, useRef, useState, useId } from "react"
 import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { AddAccountForm } from "./accounts-form"
@@ -66,7 +66,7 @@ export function InvestmentsManager() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState("")
 
-  async function updatePrices() {
+  const updatePrices = useCallback(async () => {
     if (priceBusy) return
     setPriceBusy(true)
     setPriceError("")
@@ -84,14 +84,14 @@ export function InvestmentsManager() {
     } finally {
       setPriceBusy(false)
     }
-  }
+  }, [priceBusy])
 
   useEffect(() => {
     if (data && !priceAttempted.current) {
       priceAttempted.current = true
       void updatePrices()
     }
-  }, [data])
+  }, [data, updatePrices])
 
   async function remove() {
     if (!deleting || deleteBusy) return
