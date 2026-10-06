@@ -2,7 +2,7 @@
 
 ## Completed
 
-- [x] Add an accessible numeric fallback for report pie charts, structured errors for all current API routes, a working ESLint CLI, a fixed Turbopack root, and CI verification.
+- [x] Add an accessible numeric fallback for report pie charts, structured errors for all current API routes, a working ESLint CLI, a fixed Turbopack root, explicit PostgreSQL types for CI, and CI verification.
 - [x] Standardize remaining GET handlers on safe structured API errors.
 - [x] Replace the unsupported `next lint` script with a configured lint command.
 - [x] Install the `ui-ux-pro-max` skill into the Codex skill set and define its Finance Tracker usage in `AGENTS.md`.
