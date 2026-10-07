@@ -1,0 +1,166 @@
+import type { Locale } from "./finance"
+
+const en = {
+  dailyNavigation: "Everyday money",
+  planNavigation: "Plan ahead",
+  reviewNavigation: "Review & analyse",
+  dismissNotice: "Dismiss notification",
+  openWorkspace: "Open dashboard",
+  landingOverview: "A place for your everyday money",
+  landingOverviewBody:
+    "From your first transaction to your next financial goal, keep your records connected.",
+  landingTracking: "Know where your money goes",
+  landingTrackingBody:
+    "Record income, spending, and transfers. Filter your history by date, account, or category.",
+  landingBudgeting: "Give spending a clear limit",
+  landingBudgetingBody:
+    "Set monthly budgets and see remaining amounts update as you record expenses.",
+  landingGoalsBody:
+    "Set a target, add contributions, and see how much is left to save.",
+  landingPlanningBody:
+    "Bring recurring bills, debts, and planned savings into your next money decision.",
+  landingStart: "Start with the money you have",
+  landingStartBody: "Build an accurate picture a little at a time.",
+  landingStepAccount: "Add your accounts",
+  landingStepAccountBody:
+    "Enter your bank, cash, or e-wallet balance before your first transaction.",
+  landingStepTransaction: "Record money in and out",
+  landingStepTransactionBody:
+    "Log income and spending. Use a transfer when money moves between your own accounts.",
+  landingStepPlan: "Choose your next goal",
+  landingStepPlanBody:
+    "Review your cash flow, set a spending limit, or start saving for something specific.",
+  landingQuestions: "Before you get started",
+  landingFaqBank: "Does this connect to my bank?",
+  landingFaqBankBody:
+    "You enter your records yourself. Adding an account does not connect to your bank or move money.",
+  landingFaqBalance: "How are balances calculated?",
+  landingFaqBalanceBody:
+    "Balances start with your opening amounts and change with recorded transactions. Compare them with your statements to keep your records accurate.",
+  landingFaqPlanning: "Do plans create transactions?",
+  landingFaqPlanningBody:
+    "Forecasts and simulations estimate future balances. A recurring schedule creates a transaction only when you choose Record now.",
+  landingFaqCurrency: "Which currency and languages can I use?",
+  landingFaqCurrencyBody:
+    "Record amounts in Indonesian rupiah (IDR). Switch between English and Bahasa Indonesia at any time.",
+  landingFooterNote: "Your accounts. Your records. Your next step.",
+  dashboardDescriptionShort:
+    "See your account balances, this month's cash flow, and the next action to take.",
+  savingsRateHint: "Share of this month's income left after expenses.",
+  savingsRateUnavailable:
+    "A savings rate is available once you record income this month.",
+  notAvailable: "Not available",
+  exploreReports: "Explore reports",
+  accountsCount: "{count} accounts",
+  manageAccounts: "Manage accounts",
+  accountCreateHint: "Add an account to record income, expenses, or transfers.",
+  filterDateError: "Choose an end date on or after the start date.",
+  transactionTableHint:
+    "On a small screen, swipe across the table to see amounts and actions.",
+  calculate: "Calculate",
+  calculating: "Calculating...",
+  saveGoal: "Save goal",
+  saveDebt: "Save debt or receivable",
+  saveFund: "Save fund",
+  saveWatch: "Save watchlist entry",
+  recordAlreadyDone: "Already recorded today",
+  scheduleNotStarted: "Starts on {date}",
+  scheduleEnded: "Ended on {date}",
+  fundNoAllocation: "Allocate money before releasing or spending it.",
+  fundNoCash:
+    "No cash is available to allocate. Review the source account balance.",
+  fundTargetReached: "Your target is fully allocated.",
+  fundAccountLocked:
+    "The source account stays fixed once this fund has history.",
+  budgetAtLimit: "Limit reached",
+  goalQuickAmount: "Choose an amount",
+  calendarDayHint: "Leave empty to see the whole month.",
+  simulationItemLimit:
+    "You can compare up to 20 planned items. Remove an item to add another.",
+} as const
+
+const id: Record<keyof typeof en, string> = {
+  dailyNavigation: "Keuangan harian",
+  planNavigation: "Rencana ke depan",
+  reviewNavigation: "Tinjau & analisis",
+  dismissNotice: "Tutup pemberitahuan",
+  openWorkspace: "Buka dashboard",
+  landingOverview: "Ruang untuk keuangan sehari-hari",
+  landingOverviewBody:
+    "Dari transaksi pertama hingga tujuan berikutnya, kelola catatan keuangan yang saling terhubung.",
+  landingTracking: "Ketahui ke mana uang pergi",
+  landingTrackingBody:
+    "Catat pemasukan, pengeluaran, dan transfer. Telusuri riwayat berdasarkan tanggal, akun, atau kategori.",
+  landingBudgeting: "Beri batas yang jelas untuk belanja",
+  landingBudgetingBody:
+    "Tetapkan anggaran bulanan dan pantau sisanya setiap kali pengeluaran dicatat.",
+  landingGoalsBody:
+    "Tentukan target, catat kontribusi, dan lihat berapa lagi yang perlu dikumpulkan.",
+  landingPlanningBody:
+    "Pertimbangkan tagihan rutin, utang, dan dana terencana saat menentukan langkah keuangan berikutnya.",
+  landingStart: "Mulai dari uang yang Anda miliki",
+  landingStartBody: "Mulai perlahan, bangun catatan keuangan yang akurat.",
+  landingStepAccount: "Tambahkan akun Anda",
+  landingStepAccountBody:
+    "Masukkan saldo bank, tunai, atau dompet digital sebelum transaksi pertama.",
+  landingStepTransaction: "Catat uang masuk dan keluar",
+  landingStepTransactionBody:
+    "Catat pemasukan dan belanja. Gunakan transfer untuk perpindahan antar akun milik Anda.",
+  landingStepPlan: "Tentukan tujuan berikutnya",
+  landingStepPlanBody:
+    "Tinjau arus kas, tetapkan batas belanja, atau mulai menabung untuk kebutuhan tertentu.",
+  landingQuestions: "Sebelum Anda mulai",
+  landingFaqBank: "Apakah aplikasi terhubung ke bank saya?",
+  landingFaqBankBody:
+    "Anda memasukkan catatan sendiri. Menambahkan akun tidak menghubungkan aplikasi ke bank atau memindahkan uang.",
+  landingFaqBalance: "Bagaimana saldo dihitung?",
+  landingFaqBalanceBody:
+    "Saldo dimulai dari nominal awal dan berubah mengikuti transaksi tercatat. Bandingkan dengan rekening Anda agar catatan tetap akurat.",
+  landingFaqPlanning: "Apakah rencana membuat transaksi?",
+  landingFaqPlanningBody:
+    "Estimasi dan simulasi memproyeksikan saldo mendatang. Jadwal rutin hanya membuat transaksi saat Anda memilih Catat sekarang.",
+  landingFaqCurrency: "Mata uang dan bahasa apa yang tersedia?",
+  landingFaqCurrencyBody:
+    "Catat nominal dalam rupiah (IDR). Anda bisa beralih antara Bahasa Indonesia dan Inggris kapan saja.",
+  landingFooterNote: "Akun Anda. Catatan Anda. Langkah berikutnya.",
+  dashboardDescriptionShort:
+    "Lihat saldo akun, arus kas bulan ini, dan tindakan berikutnya dalam satu tempat.",
+  savingsRateHint:
+    "Porsi pemasukan bulan ini yang tersisa setelah pengeluaran.",
+  savingsRateUnavailable:
+    "Rasio tabungan tersedia setelah Anda mencatat pemasukan bulan ini.",
+  notAvailable: "Belum tersedia",
+  exploreReports: "Lihat laporan",
+  accountsCount: "{count} akun",
+  manageAccounts: "Kelola akun",
+  accountCreateHint:
+    "Tambahkan akun untuk mencatat pemasukan, pengeluaran, atau transfer.",
+  filterDateError: "Pilih tanggal akhir yang sama atau setelah tanggal awal.",
+  transactionTableHint:
+    "Di layar kecil, geser tabel untuk melihat nominal dan tindakan.",
+  calculate: "Hitung",
+  calculating: "Menghitung...",
+  saveGoal: "Simpan tujuan",
+  saveDebt: "Simpan utang atau piutang",
+  saveFund: "Simpan dana",
+  saveWatch: "Simpan daftar pantau",
+  recordAlreadyDone: "Sudah dicatat hari ini",
+  scheduleNotStarted: "Mulai pada {date}",
+  scheduleEnded: "Berakhir pada {date}",
+  fundNoAllocation: "Alokasikan dana sebelum melepas atau membelanjakannya.",
+  fundNoCash:
+    "Belum ada kas yang bisa dialokasikan. Periksa saldo akun sumber.",
+  fundTargetReached: "Target dana sudah teralokasi penuh.",
+  fundAccountLocked:
+    "Akun sumber tidak dapat diubah setelah dana memiliki riwayat.",
+  budgetAtLimit: "Batas tercapai",
+  goalQuickAmount: "Pilih nominal",
+  calendarDayHint: "Kosongkan untuk melihat seluruh bulan.",
+  simulationItemLimit:
+    "Anda bisa membandingkan hingga 20 rencana. Hapus satu rencana untuk menambahkan yang lain.",
+}
+
+export const interfaceMessages: Record<Locale, Record<string, string>> = {
+  en,
+  id,
+}

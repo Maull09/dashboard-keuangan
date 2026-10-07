@@ -14,6 +14,7 @@ import {
   Calculator,
   PiggyBank,
   Scale,
+  LogOut,
 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { useAuth } from "./auth-provider"
@@ -80,9 +81,9 @@ export function Sidebar({
   function content(mobile: boolean) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b px-5">
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b px-5 pr-12 md:pr-5">
           <div className="rounded-lg bg-brand p-2 text-white">
-            <Landmark className="h-5 w-5" />
+            <Landmark aria-hidden="true" className="h-5 w-5" />
           </div>
           <div>
             <p className="text-base font-semibold">Finance Tracker</p>
@@ -93,28 +94,62 @@ export function Sidebar({
         </div>
         <nav
           aria-label={t("navigate")}
-          className="min-h-0 flex-1 overflow-y-auto px-3 py-5"
+          className="min-h-0 flex-1 overflow-y-auto px-3 py-4"
         >
-          <ul className="space-y-1">
-            {navigationItems.map(({ key, icon: Icon }) => (
-              <li key={key}>
-                <a
-                  href={"#" + key}
-                  aria-current={activeTab === key ? "page" : undefined}
-                  onClick={onClose}
-                  className={
-                    "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors " +
-                    (activeTab === key
-                      ? "bg-brand-soft font-semibold text-brand-active"
-                      : "text-slate-600 hover:bg-muted hover:text-foreground")
-                  }
-                >
-                  <Icon className="h-[18px] w-[18px]" />
-                  {t(key)}
-                </a>
-              </li>
-            ))}
-          </ul>
+          {[
+            {
+              label: "dailyNavigation",
+              keys: ["dashboard", "transactions", "budget", "goals", "debts"],
+            },
+            {
+              label: "planNavigation",
+              keys: ["planning", "funds", "calendar", "simulation"],
+            },
+            {
+              label: "reviewNavigation",
+              keys: ["reports", "investments", "netWorth"],
+            },
+          ].map(({ label, keys }) => (
+            <section
+              key={label}
+              aria-labelledby={(mobile ? "mobile-" : "desktop-") + label}
+              className="mb-5 last:mb-0"
+            >
+              <h2
+                id={(mobile ? "mobile-" : "desktop-") + label}
+                className="mb-2 px-3 text-xs font-medium text-muted-foreground"
+              >
+                {t(label)}
+              </h2>
+              <ul className="space-y-1">
+                {keys
+                  .map(
+                    (key) => navigationItems.find((item) => item.key === key)!,
+                  )
+                  .map(({ key, icon: Icon }) => (
+                    <li key={key}>
+                      <a
+                        href={"#" + key}
+                        aria-current={activeTab === key ? "page" : undefined}
+                        onClick={onClose}
+                        className={
+                          "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors " +
+                          (activeTab === key
+                            ? "bg-brand-soft font-semibold text-brand-active"
+                            : "text-slate-600 hover:bg-muted hover:text-foreground")
+                        }
+                      >
+                        <Icon
+                          aria-hidden="true"
+                          className="h-[18px] w-[18px] shrink-0"
+                        />
+                        {t(key)}
+                      </a>
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          ))}
           <div className="mt-7 border-t pt-5">
             <p className="mb-3 px-3 text-xs font-medium text-muted-foreground">
               {t("accounts")}
@@ -132,7 +167,14 @@ export function Sidebar({
                     key={account.id}
                     className="flex items-center justify-between gap-2 text-sm"
                   >
-                    <span className="truncate">{account.name}</span>
+                    <a
+                      href="#dashboard"
+                      onClick={onClose}
+                      className="flex min-h-11 min-w-0 items-center rounded-md font-medium hover:text-brand-active"
+                      title={t("manageAccounts")}
+                    >
+                      <span className="truncate">{account.name}</span>
+                    </a>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {t(account.type)}
                     </span>
@@ -146,15 +188,19 @@ export function Sidebar({
           </div>
         </nav>
         <div className="border-t p-5">
-          <p className="mb-2 break-words text-xs text-slate-600">
+          <p
+            className="mb-2 truncate text-xs text-muted-foreground"
+            title={user?.email}
+          >
             {user?.email}
           </p>
           <Button
             variant="outline"
             onClick={handleSignOut}
             disabled={signingOut}
-            className="mb-4 min-h-11 w-full"
+            className="mb-3 min-h-11 w-full"
           >
+            <LogOut aria-hidden="true" className="size-4" />
             {t(signingOut ? "authWorking" : "signOut")}
           </Button>
           {signOutError && (

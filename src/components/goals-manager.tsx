@@ -106,7 +106,9 @@ export function GoalsManager() {
         accounts.loading ? (
         <LoadingState />
       ) : !items.length ? (
-        <EmptyState title={t("noGoals")} description={t("noGoalsHint")} />
+        <EmptyState title={t("noGoals")} description={t("noGoalsHint")}>
+          <AddGoal />
+        </EmptyState>
       ) : (
         <>
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -271,7 +273,7 @@ function AddGoal({ goal }: { goal?: Goal } = {}) {
               busy={busy}
               disabled={!title.trim() || Number(target) <= 0 || !date}
             >
-              {t(goal ? "saveChanges" : "save")}
+              {t(goal ? "saveChanges" : "saveGoal")}
             </SubmitButton>
           </DialogFooter>
         </form>
@@ -399,7 +401,7 @@ function GoalCard({ goal, accounts }: { goal: Goal; accounts: Account[] }) {
                 {t("contribute")}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent showCloseButton={!busy}>
               <DialogHeader>
                 <DialogTitle>
                   {t("contribution")} · {goal.title}
@@ -426,19 +428,27 @@ function GoalCard({ goal, accounts }: { goal: Goal; accounts: Account[] }) {
                     disabled={busy}
                     required
                   />
-                  <div className="flex flex-wrap gap-2">
-                    {[100000, 500000, 1000000].map((value) => (
+                  <div
+                    role="group"
+                    aria-label={t("goalQuickAmount")}
+                    className="flex flex-wrap gap-2"
+                  >
+                    {[
+                      ...new Set(
+                        [100000, 500000, 1000000].map((value) =>
+                          Math.min(value, remaining),
+                        ),
+                      ),
+                    ].map((value) => (
                       <Button
                         key={value}
                         type="button"
                         size="sm"
                         variant="outline"
                         disabled={busy}
-                        onClick={() =>
-                          setAmount(String(Math.min(value, remaining)))
-                        }
+                        onClick={() => setAmount(String(value))}
                       >
-                        {formatCurrency(Math.min(value, remaining))}
+                        {formatCurrency(value)}
                       </Button>
                     ))}
                   </div>

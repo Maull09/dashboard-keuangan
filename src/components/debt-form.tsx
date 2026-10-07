@@ -188,7 +188,7 @@ export function AddDebtForm({
               busy={busy}
               disabled={!name.trim() || Number(amount) <= 0}
             >
-              {t(debt ? "saveChanges" : "save")}
+              {t(debt ? "saveChanges" : "saveDebt")}
             </SubmitButton>
           </DialogFooter>
         </form>

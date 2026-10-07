@@ -93,7 +93,7 @@ export function AddAccountForm({
     >
       <DialogTrigger asChild>
         <Button
-          variant={account ? "ghost" : "default"}
+          variant={account ? "ghost" : "outline"}
           size={account ? "sm" : "default"}
           aria-label={account ? t("edit") + " " + account.name : undefined}
         >
@@ -165,6 +165,7 @@ export function AddAccountForm({
               <Input
                 id={id + "-note"}
                 value={description}
+                maxLength={500}
                 onChange={(event) => setDescription(event.target.value)}
               />
             </Field>

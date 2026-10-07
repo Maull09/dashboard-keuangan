@@ -36,10 +36,10 @@ export const authMessages: Record<"en" | "id", Record<string, string>> = {
     authSessionLoading: "Checking your session...",
     unauthorized: "Your session has ended. Sign in again to continue.",
     forbidden: "This request is not allowed.",
-    landingTitle: "See every rupiah more clearly.",
+    landingTitle: "Make your next money decision clearer.",
     landingDescription:
-      "Record what comes in and goes out, then make decisions with clear balances, budgets, and goals.",
-    landingExplore: "Explore the workspace",
+      "Track every rupiah, understand your spending, and plan ahead with accounts, budgets, and goals in one place.",
+    landingExplore: "See how it works",
     landingFeatures: "Your records, ready for the next decision.",
     landingRecordsTitle: "See the full picture",
     landingRecords:
@@ -92,10 +92,10 @@ export const authMessages: Record<"en" | "id", Record<string, string>> = {
     authSessionLoading: "Memeriksa sesi Anda...",
     unauthorized: "Sesi Anda telah berakhir. Masuk kembali untuk melanjutkan.",
     forbidden: "Permintaan ini tidak diizinkan.",
-    landingTitle: "Lihat setiap rupiah dengan lebih jelas.",
+    landingTitle: "Kelola uang dengan lebih tenang.",
     landingDescription:
-      "Catat uang masuk dan keluar, lalu ambil keputusan dari saldo, anggaran, dan tujuan yang lebih jelas.",
-    landingExplore: "Jelajahi ruang kerja",
+      "Catat setiap rupiah, pahami pengeluaran, dan rencanakan langkah berikutnya dengan akun, anggaran, serta tujuan dalam satu tempat.",
+    landingExplore: "Lihat cara kerjanya",
     landingFeatures: "Catatan Anda, siap untuk keputusan berikutnya.",
     landingRecordsTitle: "Lihat gambaran utuh",
     landingRecords:

@@ -253,7 +253,14 @@ export function BudgetManager() {
             <EmptyState
               title={t("noBudget", { month: formatMonth(month) })}
               description={t("noBudgetHint")}
-            />
+            >
+              <Button
+                onClick={() => setOpen(true)}
+                disabled={Boolean(records.error)}
+              >
+                {t("addBudget")}
+              </Button>
+            </EmptyState>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {budgets.map((budget) => (
@@ -290,7 +297,7 @@ function BudgetCard({
   const percentage =
     effective > 0 ? Math.round((budget.spent / effective) * 100) : 0
   const tone =
-    percentage >= 100
+    budget.spent > effective
       ? "text-rose-700"
       : percentage >= 80
         ? "text-amber-700"
@@ -302,11 +309,13 @@ function BudgetCard({
           <CardTitle>{t(budget.category)}</CardTitle>
           <span className={"text-xs font-semibold " + tone}>
             {t(
-              percentage >= 100
+              budget.spent > effective
                 ? "overLimit"
-                : percentage >= 80
-                  ? "nearlyUsed"
-                  : "onTrack",
+                : budget.spent === effective
+                  ? "budgetAtLimit"
+                  : percentage >= 80
+                    ? "nearlyUsed"
+                    : "onTrack",
             )}{" "}
             · {percentage}%
           </span>

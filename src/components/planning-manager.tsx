@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
+import { AddAccountForm } from "./accounts-form"
 import {
   ConfirmDelete,
   EmptyState,
@@ -155,6 +156,7 @@ export function PlanningManager() {
             </Field>
             <SubmitButton
               busy={forecastBusy}
+              busyLabel="calculating"
               disabled={!payday || payday < getToday()}
             >
               {t("calculateForecast")}
@@ -163,7 +165,10 @@ export function PlanningManager() {
           <p className="text-xs text-muted-foreground">{t("forecastHint")}</p>
           <ErrorNotice message={forecastError} />
           {forecast && (
-            <div role="status" className="rounded-lg border border-brand-border bg-brand-soft p-5">
+            <div
+              role="status"
+              className="rounded-lg border border-brand-border bg-brand-soft p-5"
+            >
               <p className="text-sm text-brand-active">
                 {t("estimatedBalance", { date: formatDate(forecast.payday) })}
               </p>
@@ -201,15 +206,22 @@ export function PlanningManager() {
           {t("refreshing")}
         </p>
       )}
+      {!accountData.loading && !accountData.error && accounts.length === 0 && (
+        <EmptyState
+          title={t("noAccounts")}
+          description={t("accountCreateHint")}
+        >
+          <AddAccountForm />
+        </EmptyState>
+      )}
       {(records.error && !records.data) ||
       (accountData.error && !accountData.data) ? null : records.loading ||
         accountData.loading ? (
         <LoadingState />
       ) : !records.data?.length ? (
-        <EmptyState
-          title={t("noSchedules")}
-          description={t("noSchedulesHint")}
-        />
+        <EmptyState title={t("noSchedules")} description={t("noSchedulesHint")}>
+          {accounts.length > 0 && <AddSchedule accounts={accounts} />}
+        </EmptyState>
       ) : (
         <Card>
           <CardHeader>
@@ -261,7 +273,17 @@ export function PlanningManager() {
                         setError("")
                       }}
                     >
-                      {t("recordNow")}
+                      {item.lastExecutedDate === getToday()
+                        ? t("recordAlreadyDone")
+                        : item.startDate > getToday()
+                          ? t("scheduleNotStarted", {
+                              date: formatDate(item.startDate),
+                            })
+                          : item.endDate && item.endDate < getToday()
+                            ? t("scheduleEnded", {
+                                date: formatDate(item.endDate),
+                              })
+                            : t("recordNow")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -302,7 +324,7 @@ export function PlanningManager() {
           if (!value && !busy) setRecording(null)
         }}
       >
-        <DialogContent>
+        <DialogContent showCloseButton={!busy}>
           <DialogHeader>
             <DialogTitle>{t("recordNow")}</DialogTitle>
             <DialogDescription>{t("recordScheduleHint")}</DialogDescription>
@@ -433,6 +455,7 @@ function AddSchedule({
       <DialogTrigger asChild>
         <Button
           disabled={accounts.length === 0}
+          title={accounts.length === 0 ? t("accountCreateHint") : undefined}
           variant={schedule ? "ghost" : "default"}
           size={schedule ? "sm" : "default"}
           aria-label={schedule ? t("edit") + " " + schedule.name : undefined}
@@ -492,7 +515,9 @@ function AddSchedule({
                 <SelectContent>
                   <SelectItem value="income">{t("income")}</SelectItem>
                   <SelectItem value="expense">{t("expense")}</SelectItem>
-                  <SelectItem value="transfer">{t("transfer")}</SelectItem>
+                  <SelectItem value="transfer" disabled={accounts.length < 2}>
+                    {t("transfer")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -516,7 +541,15 @@ function AddSchedule({
               </Field>
             )}
             <Field id="schedule-account" label={t("account")} required>
-              <Select value={accountId} onValueChange={setAccountId} required>
+              <Select
+                value={accountId}
+                onValueChange={(value) => {
+                  setAccountId(value)
+                  if (value === destinationAccountId)
+                    setDestinationAccountId("")
+                }}
+                required
+              >
                 <SelectTrigger id="schedule-account">
                   <SelectValue placeholder={t("chooseAccount")} />
                 </SelectTrigger>

@@ -361,7 +361,9 @@ export function InvestmentsManager() {
                   <EmptyState
                     title={t("noWatchlist")}
                     description={t("noWatchlistHint")}
-                  />
+                  >
+                    <WatchlistForm />
+                  </EmptyState>
                 ) : (
                   <ul className="divide-y overflow-hidden rounded-xl border bg-white">
                     {data.watchlist.map((item) => (
@@ -423,7 +425,11 @@ export function InvestmentsManager() {
                   <EmptyState
                     title={t("noTrades")}
                     description={t("stockSymbolHint")}
-                  />
+                  >
+                    {data.accounts.length > 0 && (
+                      <StockTradeForm accounts={data.accounts} />
+                    )}
+                  </EmptyState>
                 ) : (
                   <div
                     role="region"
@@ -982,7 +988,7 @@ function WatchlistForm({
               {t("cancel")}
             </Button>
             <SubmitButton busy={busy} disabled={!/^[A-Z]{4}$/.test(symbol)}>
-              {t(item ? "saveChanges" : "addWatch")}
+              {t(item ? "saveChanges" : "saveWatch")}
             </SubmitButton>
           </DialogFooter>
         </form>

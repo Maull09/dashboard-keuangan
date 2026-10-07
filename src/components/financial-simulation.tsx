@@ -82,7 +82,12 @@ function PlannedCashflowList({
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{labels.hint}</p>
         </div>
-        <Button type="button" variant="outline" onClick={onAdd} disabled={!canAdd}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onAdd}
+          disabled={!canAdd}
+        >
           <Plus className="h-4 w-4" aria-hidden="true" />
           {labels.add}
         </Button>
@@ -97,7 +102,9 @@ function PlannedCashflowList({
               id={`${kind}-name-${index}`}
               value={entry.name}
               maxLength={120}
-              onChange={(event) => onUpdate(index, { name: event.target.value })}
+              onChange={(event) =>
+                onUpdate(index, { name: event.target.value })
+              }
               required
             />
           </Field>
@@ -110,7 +117,9 @@ function PlannedCashflowList({
               step="1"
               inputMode="numeric"
               value={entry.amount}
-              onChange={(event) => onUpdate(index, { amount: event.target.value })}
+              onChange={(event) =>
+                onUpdate(index, { amount: event.target.value })
+              }
               required
             />
           </Field>
@@ -121,7 +130,9 @@ function PlannedCashflowList({
               min={today}
               max={endDate}
               value={entry.date}
-              onChange={(event) => onUpdate(index, { date: event.target.value })}
+              onChange={(event) =>
+                onUpdate(index, { date: event.target.value })
+              }
               required
             />
           </Field>
@@ -191,10 +202,7 @@ export function FinancialSimulation() {
 
   function addIncome() {
     invalidate()
-    setIncomes((current) => [
-      ...current,
-      { name: "", amount: "", date: today },
-    ])
+    setIncomes((current) => [...current, { name: "", amount: "", date: today }])
   }
 
   function addExpense() {
@@ -207,7 +215,9 @@ export function FinancialSimulation() {
 
   function removeIncome(index: number) {
     invalidate()
-    setIncomes((current) => current.filter((_, itemIndex) => itemIndex !== index))
+    setIncomes((current) =>
+      current.filter((_, itemIndex) => itemIndex !== index),
+    )
   }
 
   function removeExpense(index: number) {
@@ -327,6 +337,11 @@ export function FinancialSimulation() {
             onUpdate={updateExpense}
             onRemove={removeExpense}
           />
+          {!canAddCashflow && (
+            <p className="text-sm text-muted-foreground">
+              {t("simulationItemLimit")}
+            </p>
+          )}
         </fieldset>
         <ErrorNotice message={error} />
         <Button type="submit" disabled={busy || invalidCashflow || !endDate}>
@@ -349,7 +364,9 @@ export function FinancialSimulation() {
             role="status"
             className="rounded-lg border border-brand-border bg-brand-soft p-4 text-sm text-brand-active"
           >
-            {t("simulationOnly")} {t("plannedIncomeCount", { count: result.extraIncomeCount })} {t("plannedExpenseCount", { count: result.extraExpenseCount })}
+            {t("simulationOnly")}{" "}
+            {t("plannedIncomeCount", { count: result.extraIncomeCount })}{" "}
+            {t("plannedExpenseCount", { count: result.extraExpenseCount })}
           </div>
           <dl className="grid gap-4 rounded-xl border bg-white p-5 sm:grid-cols-2 xl:grid-cols-3">
             {[
@@ -358,13 +375,19 @@ export function FinancialSimulation() {
               ["addedIncome", result.extraIncome, "text-emerald-700"],
               ["scheduledExpenses", result.scheduledExpense, "text-rose-700"],
               ["addedExpenses", result.extraExpense, "text-rose-700"],
-              ["projectedCash", result.scenario, result.scenario < 0 ? "text-rose-700" : "text-brand-active"],
+              [
+                "projectedCash",
+                result.scenario,
+                result.scenario < 0 ? "text-rose-700" : "text-brand-active",
+              ],
             ].map(([key, value, tone]) => (
               <div key={String(key)}>
                 <dt className="text-sm text-muted-foreground">
                   {t(String(key))}
                 </dt>
-                <dd className={`mt-2 text-xl font-semibold tabular-nums ${tone}`}>
+                <dd
+                  className={`mt-2 text-xl font-semibold tabular-nums ${tone}`}
+                >
                   {formatCurrency(Number(value))}
                 </dd>
               </div>
@@ -388,17 +411,23 @@ export function FinancialSimulation() {
               <caption className="sr-only">{t("monthlyProjection")}</caption>
               <thead className="bg-muted/50">
                 <tr>
-                  {["period", "income", "addedIncome", "expenses", "addedExpenses", "baseline", "projectedCash"].map(
-                    (key, index) => (
-                      <th
-                        scope="col"
-                        key={key}
-                        className={`p-3 font-medium text-muted-foreground ${index ? "text-right" : "text-left"}`}
-                      >
-                        {t(key)}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "period",
+                    "income",
+                    "addedIncome",
+                    "expenses",
+                    "addedExpenses",
+                    "baseline",
+                    "projectedCash",
+                  ].map((key, index) => (
+                    <th
+                      scope="col"
+                      key={key}
+                      className={`p-3 font-medium text-muted-foreground ${index ? "text-right" : "text-left"}`}
+                    >
+                      {t(key)}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>

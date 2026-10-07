@@ -34,12 +34,15 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       >
         {message && (
           <div className="flex items-start gap-3 rounded-xl border border-brand-border bg-white p-4 text-sm text-foreground shadow-lg">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+            <CheckCircle2
+              aria-hidden="true"
+              className="mt-0.5 h-5 w-5 shrink-0 text-brand"
+            />
             <p className="flex-1">{t(message)}</p>
             <button
               type="button"
-              aria-label={t("done")}
-              className="rounded p-1 hover:bg-muted"
+              aria-label={t("dismissNotice")}
+              className="-my-2 -mr-2 flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-muted"
               onClick={() => setMessage("")}
             >
               <X className="h-4 w-4" />
@@ -102,7 +105,7 @@ export function PageHeading({
   children?: React.ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="flex flex-wrap items-end justify-between gap-5">
       <div className="min-w-0 flex-1 basis-64">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {title}
@@ -112,7 +115,7 @@ export function PageHeading({
         </p>
       </div>
       {children && (
-        <div className="flex max-w-full flex-wrap items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-end gap-2">
           {children}
         </div>
       )}
@@ -127,7 +130,7 @@ export function LoadingState() {
       role="status"
       className="flex items-center gap-3 rounded-xl border bg-card p-6 text-sm text-muted-foreground"
     >
-      <Loader2 className="h-4 w-4 animate-spin" />
+      <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
       {t("loading")}
     </div>
   )
@@ -147,7 +150,7 @@ export function ErrorNotice({
       role="alert"
       className="flex flex-col gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 sm:flex-row sm:items-start"
     >
-      <AlertCircle className="h-5 w-5 shrink-0" />
+      <AlertCircle aria-hidden="true" className="h-5 w-5 shrink-0" />
       <p className="flex-1 leading-relaxed">{t(message)}</p>
       {onRetry && (
         <Button type="button" variant="outline" size="sm" onClick={onRetry}>
@@ -169,7 +172,10 @@ export function EmptyState({
 }) {
   return (
     <div className="rounded-xl border border-dashed bg-card px-5 py-10 text-center">
-      <Inbox className="mx-auto mb-3 h-7 w-7 text-muted-foreground" />
+      <Inbox
+        aria-hidden="true"
+        className="mx-auto mb-3 h-7 w-7 text-muted-foreground"
+      />
       <h2 className="font-semibold">{title}</h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
         {description}
@@ -183,9 +189,13 @@ export function EmptyState({
 
 export function SubmitButton({
   busy,
+  busyLabel = "saving",
   children,
   ...props
-}: React.ComponentProps<typeof Button> & { busy: boolean }) {
+}: React.ComponentProps<typeof Button> & {
+  busy: boolean
+  busyLabel?: string
+}) {
   const { t } = useLanguage()
   return (
     <Button
@@ -195,7 +205,7 @@ export function SubmitButton({
       aria-busy={busy}
     >
       {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-      {busy ? t("saving") : children}
+      {busy ? t(busyLabel) : children}
     </Button>
   )
 }

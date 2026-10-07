@@ -86,6 +86,23 @@ export function FinancialCalendar() {
             onChange={(event) => changeMonth(event.target.value)}
           />
         </Field>
+        <div className="md:hidden">
+          <Field
+            id="calendar-day"
+            label={t("date")}
+            hint={t("calendarDayHint")}
+          >
+            <Input
+              id="calendar-day"
+              type="date"
+              value={selectedDate}
+              min={month + "-01"}
+              max={month + "-" + String(days).padStart(2, "0")}
+              aria-describedby="calendar-day-hint"
+              onChange={(event) => setSelectedDate(event.target.value)}
+            />
+          </Field>
+        </div>
         <div className="flex gap-2">
           <Button
             variant="outline"

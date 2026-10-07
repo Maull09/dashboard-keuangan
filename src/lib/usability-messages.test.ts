@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest"
 import { usabilityMessages } from "./usability-messages"
+import { interfaceMessages } from "./interface-messages"
 
 describe("usability translations", () => {
   it("provides matching English and Indonesian keys and placeholders", () => {
-    expect(Object.keys(usabilityMessages.id).sort()).toEqual(
-      Object.keys(usabilityMessages.en).sort(),
-    )
-    for (const key of Object.keys(usabilityMessages.en)) {
-      expect(usabilityMessages.en[key].trim()).not.toBe("")
-      expect(usabilityMessages.id[key].trim()).not.toBe("")
-      expect(usabilityMessages.id[key].match(/\{\w+\}/g) ?? []).toEqual(
-        usabilityMessages.en[key].match(/\{\w+\}/g) ?? [],
+    for (const messages of [usabilityMessages, interfaceMessages]) {
+      expect(Object.keys(messages.id).sort()).toEqual(
+        Object.keys(messages.en).sort(),
       )
+      for (const key of Object.keys(messages.en)) {
+        expect(messages.en[key].trim()).not.toBe("")
+        expect(messages.id[key].trim()).not.toBe("")
+        expect(messages.id[key].match(/\{\w+\}/g) ?? []).toEqual(
+          messages.en[key].match(/\{\w+\}/g) ?? [],
+        )
+      }
     }
   })
 })
