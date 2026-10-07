@@ -25,7 +25,8 @@
 - Update `CHANGELOG.md` when a change is user-facing or otherwise worth noting for future reference.
 - Update `README.md` when the project's purpose, setup, architecture, or current state changes.
 - Update `docs/` when a change affects setup, configuration, operations, or troubleshooting and the repository maintains detailed documentation there.
-- Stage, commit and push changes in small, verifiable increments to github. Avoid large, unreviewable commits. Use branches for larger changes and pull requests for review when appropriate. Maintain a clear commit history with descriptive messages. Avoid "fixup" or "squash" commits unless they are part of a review process. Create the commit message and PR description to clearly describe the change, why it was made, and how it was verified.
+- Before staging, confirm that the requested change belongs to the current branch and its open PR. Do not add unrelated documentation, chores, or fixes to a feature branch; create or switch to a dedicated branch based on the current default branch unless the user explicitly asks to combine them.
+- Stage, commit, and push coherent changes in small, verifiable increments to GitHub. Keep each pull request focused on one purpose, use descriptive commit messages, and state what changed, why, and how it was verified. Avoid "fixup" or "squash" commits unless they are part of a review process.
 
 ## Skill Usage
 
@@ -34,7 +35,10 @@ Choose a skill when its purpose directly matches the task. Do not invoke a skill
 | Task | Required skill usage |
 | --- | --- |
 | Writing, reviewing, or refactoring code | Use `clean-code` and `karpathy-guidelines`. Keep changes small, readable, and verifiable. |
-| Building a new UI feature or materially redesigning a page, component, or visual system | Use `frontend-design` in addition to the code-quality skills. Define a brief, product-specific visual direction before implementation; verify responsiveness, accessibility, and visual hierarchy afterward. |
+| Implementing or reviewing backend code, API routes, database access, authentication, or server-side business logic | Also use `backend-patterns` alongside the applicable code-quality skills. Preserve explicit validation, authorization, error handling, and database boundaries. |
+| Reviewing changes for security issues or working on authentication, authorization, input handling, secrets, payments, or financial data | Also use `security-review` before completing the work. Treat its findings as recommendations subject to this repository's financial-data safety requirements. |
+| Designing, implementing, reviewing, or refactoring a user-facing interface | Use `design-principle` and `ui-ux-pro-max` in addition to the applicable code-quality skills. Establish the user, goal, activity, context, conceptual model, feedback, and usability target; record material UI assumptions rather than treating them as facts. Query `ui-ux-pro-max` narrowly: use a design-system search for a new page or system, or an explicit domain/stack search for a focused concern. Treat its results as recommendations; Finance Tracker clarity, financial safety, localization, and existing repository rules take priority. |
+| Building a new UI feature or materially redesigning a page, component, or visual system | Use `frontend-design` and `design-principle` in addition to the code-quality skills. Define a brief, product-specific visual direction before implementation; verify responsiveness, accessibility, task completion, and visual hierarchy afterward. |
 | Small visual correction with no design decision | Use the code-quality skills; `frontend-design` is optional. |
 
 Read the selected skill's instructions before acting. If skills conflict, follow the user's request and the repository's requirements first.
