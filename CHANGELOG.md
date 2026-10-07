@@ -2,6 +2,14 @@
 
 This log records notable project changes. Dates use the Asia/Jakarta time zone.
 
+## 2026-10-07
+
+### Yahoo Finance daily prices
+
+- Replaced Twelve Data with Yahoo Finance for IDX daily-price refreshes, using the `.JK` ticker suffix and no market-data API key.
+- Validated Yahoo's ticker, Jakarta exchange, IDR currency, daily-bar date, and whole-rupiah close before saving it. Empty current bars fall back to the newest valid close.
+- Removed Twelve Data configuration and setup guidance. Migration `0006_lonely_shockwave.sql` changes the default price source for future rows to Yahoo Finance; existing saved price-source labels are retained.
+
 ## 2026-10-03
 
 ### Four-decimal per-share prices

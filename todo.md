@@ -66,7 +66,7 @@
 - [ ] Test the workflows with representative users and assistive technologies.
 - [ ] Add recoverable deletion or undo for financial records.
 - [ ] Persist transaction filters when navigating away or sharing a view.
-- [ ] Configure an IDX-entitled `TWELVE_DATA_API_KEY` and verify actual daily prices.
+- [ ] Verify Yahoo Finance daily-price refreshes after deployment.
 - [ ] Set `CRON_SECRET`, deploy the price schedule, and verify authenticated daily execution.
 - [ ] Review legacy investment opening balances so they represent cash rather than stock value.
 - [ ] Add dividend, stock-split, and other corporate-action handling.

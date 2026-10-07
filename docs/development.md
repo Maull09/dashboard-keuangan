@@ -35,11 +35,13 @@ npm run db:migrate -- --check
 
 Drizzle schema definitions are in `src/db/schema.ts`; generated migrations are in `drizzle/`. The first migration preserves legacy transactions by assigning them to an `Uncategorized account`. Move them to their real account after migrating.
 
-Migration `0003_wild_ultimo.sql` adds stock portfolios, price history, watchlists, and sinking funds. Apply it before running this version, since cash queries now include the stock ledger. Optional daily pricing uses `TWELVE_DATA_API_KEY` and `CRON_SECRET`; see [investment and planning setup](investments-and-planning.md).
+Migration `0003_wild_ultimo.sql` adds stock portfolios, price history, watchlists, and sinking funds. Apply it before running this version, since cash queries now include the stock ledger. Daily prices use Yahoo Finance; scheduled refreshes use `CRON_SECRET`; see [investment and planning setup](investments-and-planning.md).
 
 Migration `0004_clumsy_jane_foster.sql` enables decimal trade quantities/prices and removes the whole-lot constraint. Existing trade values are preserved. Cash and partial-sale cost allocations now use cent precision; API validation rejects excess input precision instead of silently truncating it.
 
 Migration `0005_concerned_ego.sql` widens trade prices from `numeric(14, 2)` to `numeric(16, 4)`, preserving existing values and integer capacity. Apply it before recording four-decimal prices. Per-share prices display four decimal places; cash totals still round to two. Migration generation alone does not update Supabase.
+
+Migration `0006_lonely_shockwave.sql` changes the default source label for newly stored stock prices to Yahoo Finance. Existing price rows keep their original source label.
 
 ## Troubleshooting
 

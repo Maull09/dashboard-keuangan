@@ -20,7 +20,6 @@ export type PortfolioData = {
     note: string
     quote: StockPrice | null
   }>
-  pricesConfigured: boolean
 }
 
 export type FundEntry = {

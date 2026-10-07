@@ -6,7 +6,7 @@ The investment, net-worth, simulation, calendar, and sinking-fund views share th
 
 1. Back up the intended Supabase database and stop the app while updating its schema.
 2. Use the Supabase Direct connection URL or Session pooler (port 5432) in `DATABASE_URL` temporarily.
-3. Run `npm run db:migrate` to apply pending migrations, including `0003_wild_ultimo.sql`, `0004_clumsy_jane_foster.sql`, and `0005_concerned_ego.sql`.
+3. Run `npm run db:migrate` to apply pending migrations, including `0003_wild_ultimo.sql` through `0006_lonely_shockwave.sql`.
 4. Run `npm run db:migrate -- --check`, restore the runtime pooler URL, and restart the app.
 
 Existing tables with empty migration history need explicit, verified legacy adoption rather than replaying the initial migration. See the [database migration and recovery guide](database-migrations.md).
@@ -16,6 +16,8 @@ Migration 0003 adds six tables: instruments, trades, prices, watchlist entries, 
 Migration 0004 removes the whole-lot restriction and converts trade quantities/prices to fixed-precision PostgreSQL numeric columns without changing their existing values. Apply it before recording decimal trades.
 
 Migration 0005 widens trade prices from two to four decimal places without changing existing values or reducing integer capacity. Apply it before entering four-decimal prices; otherwise PostgreSQL can round stored prices to the old two-decimal scale.
+
+Migration 0006 changes the default price-source label for new rows to Yahoo Finance. It preserves all existing price rows and their source labels.
 
 Review legacy investment accounts before recording stock trades. Their opening balance must represent cash, not holdings. Do not leave a previous portfolio valuation in opening cash and then record the same holdings again. Enter actual trade history and the cash funding that existed before those purchases; backdated buys are checked against cash and earlier holdings. Back up and reconcile existing data before making manual corrections.
 
@@ -37,28 +39,27 @@ Stock splits, dividends, rights issues, short selling, non-IDR securities, and c
 
 ## Configure daily prices
 
-Use a Twelve Data key with **Indonesia Stock Exchange / XIDX** access. The provider lists IDX data as end-of-day with plan-specific access, so a generic free key is not enough to assume coverage. Confirm entitlement and usage rights before subscribing or deploying. See [official IDX coverage](https://twelvedata.com/exchanges/xidx?group=regulatory), [provider stock coverage](https://twelvedata.com/stocks), and [IDX market-data services](https://www.idx.id/id/produk/layanan-data-bei/).
+Daily prices use Yahoo Finance's chart data for the IDX ticker suffix `.JK`, for example `BBCA.JK`. No market-data API key is required. Yahoo Finance availability and daily-bar timing are external dependencies, so treat quotes as informational and check their displayed date before relying on a valuation.
 
-Set server-only environment variables:
+Set this server-only environment variable to enable the scheduled job:
 
 ```env
-TWELVE_DATA_API_KEY=your_provider_key_with_IDX_access
 CRON_SECRET=your_generated_long_random_secret
 ```
 
-Do not use a `NEXT_PUBLIC_` prefix or commit real keys. Restart the local server after changing `.env`; add the same variables to the deployment environment.
+Do not use a `NEXT_PUBLIC_` prefix or commit the secret. Restart the local server after changing `.env`; add the same variable to the deployment environment.
 
-The server requests the latest daily `time_series` close for active holdings and watchlist tickers using `mic_code=XIDX`, `interval=1day`, and `outputsize=1`. It validates the returned ticker, exchange, currency, date, and positive whole-rupiah price before saving it. See [official request guidance](https://support.twelvedata.com/en/articles/5620512-how-to-create-a-request) and [EOD data semantics and licensing](https://support.twelvedata.com/en/articles/12682324-end-of-day-eod-pricing-market-data).
+The server requests the last five daily bars for active holdings and watchlist tickers, then saves the newest valid close. It validates the `.JK` ticker, Jakarta exchange, IDR currency, date, and positive whole-rupiah price before saving it.
 
 Prices update in three ways:
 
-- Opening Investments automatically makes one refresh request when a key is configured.
+- Opening Investments automatically makes one refresh request.
 - **Update daily prices** requests a refresh on demand.
 - On Vercel, `vercel.json` schedules `/api/jobs/stock-prices` at `30 13 * * *`: daily at 13:30 UTC / 20:30 Asia/Jakarta. The job requires `Authorization: Bearer <CRON_SECRET>`. Configure the deployment secret before enabling the job. On another host, configure your own scheduler to call that endpoint with the authorization header.
 
-A successful fetch is cached for 15 minutes. Requests are sequential, stop on access/quota errors, and stop starting new provider calls after a 40-second processing window. Each fetch has a 15-second timeout; the routes request a 60-second hosting limit. Responses distinguish updated, cached, failed, and pending tickers. Retry pending tickers after quota resets or the previous request finishes; large watchlists may require multiple runs and an appropriate hosting/provider plan.
+A successful fetch is cached for 15 minutes. Requests are sequential, stop on rate-limit errors, and stop starting new provider calls after a 40-second processing window. Each fetch has a 15-second timeout; the routes request a 60-second hosting limit. Responses distinguish updated, cached, failed, and pending tickers. Retry pending tickers after a rate limit resets or the previous request finishes; large watchlists may require multiple runs.
 
-The UI shows the **actual price date**, not the fetch date. Holidays, EOD availability, entitlement, network errors, and quota limits can leave older closes visible. Failed updates never overwrite a saved price with zero or a fabricated value. Daily scheduling is not a guarantee of same-day confirmed data. Live provider access still needs verification with your own key and entitlement.
+The UI shows the **actual price date**, not the fetch date. Holidays, daily-bar availability, network errors, and rate limits can leave older closes visible. Failed updates never overwrite a saved price with zero or a fabricated value. Daily scheduling is not a guarantee of same-day confirmed data.
 
 ## Net worth
 

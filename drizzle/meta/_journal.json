@@ -43,6 +43,13 @@
       "when": 1791044480650,
       "tag": "0005_concerned_ego",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791368920207,
+      "tag": "0006_lonely_shockwave",
+      "breakpoints": true
     }
   ]
 }

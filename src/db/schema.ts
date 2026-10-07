@@ -221,7 +221,7 @@ export const stockPrices = pgTable(
       .references(() => stockInstruments.symbol),
     price: bigint("price", { mode: "number" }).notNull(),
     date: date("date").notNull(),
-    source: text("source").notNull().default("Twelve Data"),
+    source: text("source").notNull().default("Yahoo Finance"),
     fetchedAt: timestamp("fetched_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -13,7 +13,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 - Recurring transactions with optional end dates, transfers, guarded manual recording, payday forecasts, and account reconciliation.
 - IDX stock portfolios with editable buy/sell records, fees, weighted-average cost, realized/unrealized gains, and an editable watchlist.
 - Decimal stock quantities and purchase/sale prices: fractional lots and shares are supported, with four-decimal per-share prices and average cost, and cent-precision cash accounting.
-- Daily stock closes from Twelve Data, with manual refresh and a protected scheduled job; provider configuration and IDX entitlement are required.
+- Daily stock closes from Yahoo Finance, with manual refresh and a protected scheduled job.
 - Net worth combining cash, stock valuations, receivables, and unpaid debts without counting allocations twice.
 - Read-only simulations comparing scheduled cash flow with an extra monthly installment.
 - A monthly financial calendar for recurring income/payments, debt deadlines, and sinking-fund targets.
@@ -57,20 +57,19 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Existing installations also need migrations `0003_wild_ultimo.sql`, `0004_clumsy_jane_foster.sql`, and `0005_concerned_ego.sql` before starting this version. They add investment/sinking-fund tables, decimal stock quantities/prices, and four-decimal trade prices; generating migrations does not apply them to Supabase.
+Existing installations also need migrations `0003_wild_ultimo.sql` through `0006_lonely_shockwave.sql` before starting this version. They add investment/sinking-fund tables, decimal stock quantities/prices, and the Yahoo Finance price-source default; generating migrations does not apply them to Supabase.
 
 If application tables already exist but migration history is empty, normal migration stops without replaying old SQL. Follow the [database migration and recovery guide](docs/database-migrations.md) to back up and adopt the verified legacy schema. The runner reports pending migrations and verifies the resulting schema instead of treating a silent exit as success.
 
-### Optional daily stock prices
+### Optional scheduled daily prices
 
 Add these server-only variables to `.env` and your deployment environment, then restart the app:
 
 ```env
-TWELVE_DATA_API_KEY=your_provider_key_with_IDX_access
 CRON_SECRET=your_generated_long_random_secret
 ```
 
-Manual trade recording works without a market-data key. Automatic valuation needs an API plan with IDX access; do not assume a free key includes it. Quotes are end-of-day, not live. Opening Investments requests an update; `vercel.json` also schedules a protected update at 13:30 UTC daily (20:30 Asia/Jakarta) on Vercel. Other hosts need their own scheduler.
+Yahoo Finance pricing needs no API key. Quotes are daily values, not live prices, and availability is not guaranteed. Opening Investments requests an update; `vercel.json` also schedules a protected update at 13:30 UTC daily (20:30 Asia/Jakarta) on Vercel. Other hosts need their own scheduler.
 
 See [investment and planning setup](docs/investments-and-planning.md) for provider coverage, scheduling, migration steps, and limitations.
 

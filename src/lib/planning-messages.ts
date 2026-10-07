@@ -76,8 +76,6 @@ const en = {
   eodHint:
     "End-of-day prices, not real-time quotes. Check the price date; older prices remain visible when updates fail.",
   refreshPrices: "Update daily prices",
-  pricesSetupHint:
-    "Automatic prices need a server-side TWELVE_DATA_API_KEY with IDX access. Manual trade recording works without it.",
   priceUpdateResult:
     "{updated} updated, {cached} cached, {failed} failed, {pending} pending.",
   tradeSaved: "Stock trade recorded. Cash and holdings updated.",
@@ -110,10 +108,6 @@ const en = {
     "The allocation exceeds the target, or the target is below the existing allocation.",
   linkedFundTransaction:
     "This expense belongs to a sinking fund and cannot be changed independently of its fund history.",
-  pricesNotConfigured:
-    "Daily prices are not configured. Add TWELVE_DATA_API_KEY to the server environment.",
-  priceAccessRequired:
-    "The market-data provider rejected access. Check the API key and its IDX data entitlement.",
   pricesRateLimited:
     "The market-data limit was reached. Existing prices were kept; wait for your provider quota to reset, then retry.",
   invalidMarketPrice:
@@ -274,8 +268,6 @@ const id: Record<keyof typeof en, string> = {
   eodHint:
     "Harga akhir hari, bukan real-time. Periksa tanggalnya; harga lama tetap ditampilkan bila pembaruan gagal.",
   refreshPrices: "Perbarui harga harian",
-  pricesSetupHint:
-    "Harga otomatis membutuhkan TWELVE_DATA_API_KEY di server dengan akses BEI. Pencatatan transaksi manual tetap bisa digunakan.",
   priceUpdateResult:
     "{updated} diperbarui, {cached} tersimpan, {failed} gagal, {pending} tertunda.",
   tradeSaved: "Transaksi saham dicatat. Kas dan kepemilikan diperbarui.",
@@ -309,10 +301,6 @@ const id: Record<keyof typeof en, string> = {
     "Alokasi melebihi target, atau target lebih kecil daripada alokasi yang sudah ada.",
   linkedFundTransaction:
     "Pengeluaran ini terkait sinking fund dan tidak dapat diubah terpisah dari riwayat dananya.",
-  pricesNotConfigured:
-    "Harga harian belum dikonfigurasi. Tambahkan TWELVE_DATA_API_KEY ke environment server.",
-  priceAccessRequired:
-    "Penyedia data menolak akses. Periksa API key dan izin data BEI pada paketnya.",
   pricesRateLimited:
     "Batas data pasar tercapai. Harga sebelumnya tetap disimpan; tunggu kuota penyedia pulih, lalu coba lagi.",
   invalidMarketPrice:

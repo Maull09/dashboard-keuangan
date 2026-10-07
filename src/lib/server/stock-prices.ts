@@ -4,11 +4,9 @@ import { stockPrices, stockTrades, stockWatchlist } from "@/db/schema"
 import { calculateHoldings } from "../investments"
 import { FinanceError, type FinanceErrorCode } from "../finance-errors"
 import { getToday } from "../finance"
-import { parseDailyStockPrice } from "../stock-price-parser"
+import { parseYahooDailyStockPrice } from "../stock-price-parser"
 
 export async function refreshDailyStockPrices() {
-  const key = process.env.TWELVE_DATA_API_KEY
-  if (!key) throw new FinanceError("pricesNotConfigured", 503)
   const [trades, watchlist, prices] = await Promise.all([
     db.select().from(stockTrades),
     db.select().from(stockWatchlist),
@@ -44,13 +42,12 @@ export async function refreshDailyStockPrices() {
       continue
     }
     try {
-      const url = new URL("https://api.twelvedata.com/time_series")
+      const url = new URL(
+        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.JK`,
+      )
       url.search = new URLSearchParams({
-        symbol,
-        mic_code: "XIDX",
-        interval: "1day",
-        outputsize: "1",
-        apikey: key,
+        interval: "1d",
+        range: "5d",
       }).toString()
       const response = await fetch(url, {
         cache: "no-store",
@@ -58,10 +55,8 @@ export async function refreshDailyStockPrices() {
       })
       if (response.status === 429)
         throw new FinanceError("pricesRateLimited", 429)
-      if (response.status === 401 || response.status === 403)
-        throw new FinanceError("priceAccessRequired", 503)
       if (!response.ok) throw new FinanceError("serviceUnavailable", 502)
-      const quote = parseDailyStockPrice(
+      const quote = parseYahooDailyStockPrice(
         await response.json(),
         symbol,
         getToday(),
@@ -82,7 +77,7 @@ export async function refreshDailyStockPrices() {
       const code =
         error instanceof FinanceError ? error.code : "serviceUnavailable"
       failures.push({ symbol, code })
-      if (code === "pricesRateLimited" || code === "priceAccessRequired") {
+      if (code === "pricesRateLimited") {
         pending = symbols.length - index - 1
         break
       }

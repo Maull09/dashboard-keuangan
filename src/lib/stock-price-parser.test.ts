@@ -1,30 +1,54 @@
 import { describe, expect, it } from "vitest"
-import { parseDailyStockPrice } from "./stock-price-parser"
+import { parseYahooDailyStockPrice } from "./stock-price-parser"
 
 const response = {
-  meta: { symbol: "BBCA", mic_code: "XIDX", currency: "IDR", interval: "1day" },
-  values: [{ datetime: "2026-10-02", close: "8500.00" }],
-  status: "ok",
+  chart: {
+    result: [
+      {
+        meta: {
+          symbol: "BBCA.JK",
+          currency: "IDR",
+          exchangeName: "JKT",
+          instrumentType: "EQUITY",
+          dataGranularity: "1d",
+        },
+        timestamp: [1790906400],
+        indicators: { quote: [{ close: [8500] }] },
+      },
+    ],
+    error: null,
+  },
 }
 
 describe("daily stock quote integrity", () => {
   it("keeps the actual price date, not the fetch date", () => {
-    expect(parseDailyStockPrice(response, "BBCA", "2026-10-03")).toEqual({
+    expect(parseYahooDailyStockPrice(response, "BBCA", "2026-10-03")).toEqual({
       symbol: "BBCA",
       price: 8500,
       date: "2026-10-02",
-      source: "Twelve Data",
+      source: "Yahoo Finance",
     })
   })
   it.each([
-    { symbol: "AAPL" },
-    { mic_code: "XNAS" },
+    { symbol: "AAPL.JK" },
+    { exchangeName: "NMS" },
     { currency: "USD" },
-    { interval: "1min" },
+    { dataGranularity: "1m" },
   ])("rejects mismatched market metadata: %s", (meta) => {
     expect(() =>
-      parseDailyStockPrice(
-        { ...response, meta: { ...response.meta, ...meta } },
+      parseYahooDailyStockPrice(
+        {
+          ...response,
+          chart: {
+            ...response.chart,
+            result: [
+              {
+                ...response.chart.result[0],
+                meta: { ...response.chart.result[0].meta, ...meta },
+              },
+            ],
+          },
+        },
         "BBCA",
         "2026-10-03",
       ),
@@ -34,8 +58,19 @@ describe("daily stock quote integrity", () => {
     "rejects invalid IDR quotes: %s",
     (close) => {
       expect(() =>
-        parseDailyStockPrice(
-          { ...response, values: [{ datetime: "2026-10-02", close }] },
+        parseYahooDailyStockPrice(
+          {
+            ...response,
+            chart: {
+              ...response.chart,
+              result: [
+                {
+                  ...response.chart.result[0],
+                  indicators: { quote: [{ close: [close] }] },
+                },
+              ],
+            },
+          },
           "BBCA",
           "2026-10-03",
         ),
@@ -44,30 +79,52 @@ describe("daily stock quote integrity", () => {
   )
   it("rejects future quote dates and empty data", () => {
     expect(() =>
-      parseDailyStockPrice(
-        { ...response, values: [{ datetime: "2026-10-04", close: "8500" }] },
+      parseYahooDailyStockPrice(
+        {
+          ...response,
+          chart: {
+            ...response.chart,
+            result: [
+              { ...response.chart.result[0], timestamp: [1791079200] },
+            ],
+          },
+        },
         "BBCA",
         "2026-10-03",
       ),
     ).toThrow("invalidMarketPrice")
-    expect(() => parseDailyStockPrice({}, "BBCA", "2026-10-03")).toThrow(
-      "invalidMarketPrice",
-    )
+    expect(() =>
+      parseYahooDailyStockPrice({}, "BBCA", "2026-10-03"),
+    ).toThrow("invalidMarketPrice")
   })
-  it.each([
-    [403, "priceAccessRequired"],
-    [429, "pricesRateLimited"],
-    [404, "invalidMarketPrice"],
-  ])(
-    "reports provider error %s without exposing its response",
-    (code, message) => {
-      expect(() =>
-        parseDailyStockPrice(
-          { status: "error", code, message: "private provider response" },
-          "BBCA",
-          "2026-10-03",
-        ),
-      ).toThrow(String(message))
-    },
-  )
+  it("uses the newest available close when the current daily bar is empty", () => {
+    expect(
+      parseYahooDailyStockPrice(
+        {
+          ...response,
+          chart: {
+            ...response.chart,
+            result: [
+              {
+                ...response.chart.result[0],
+                timestamp: [1790820000, 1790906400],
+                indicators: { quote: [{ close: [8400, null] }] },
+              },
+            ],
+          },
+        },
+        "BBCA",
+        "2026-10-03",
+      ),
+    ).toMatchObject({ price: 8400, date: "2026-10-01" })
+  })
+  it("rejects provider errors without exposing their response", () => {
+    expect(() =>
+      parseYahooDailyStockPrice(
+        { chart: { result: null, error: { description: "private response" } } },
+        "BBCA",
+        "2026-10-03",
+      ),
+    ).toThrow("invalidMarketPrice")
+  })
 })

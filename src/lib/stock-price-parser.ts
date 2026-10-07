@@ -1,7 +1,19 @@
 import { isDate } from "./finance"
 import { FinanceError } from "./finance-errors"
 
-export function parseDailyStockPrice(
+function jakartaDate(timestamp: number) {
+  const values = new Intl.DateTimeFormat("en", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(timestamp * 1000))
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    values.find((value) => value.type === type)?.value
+  return `${part("year")}-${part("month")}-${part("day")}`
+}
+
+export function parseYahooDailyStockPrice(
   value: unknown,
   symbol: string,
   today: string,
@@ -9,36 +21,59 @@ export function parseDailyStockPrice(
   if (!value || typeof value !== "object")
     throw new FinanceError("invalidMarketPrice", 502)
   const data = value as {
-    status?: string
-    code?: number
-    meta?: {
-      symbol?: string
-      mic_code?: string
-      currency?: string
-      interval?: string
+    chart?: {
+      error?: unknown
+      result?: Array<{
+        meta?: {
+          symbol?: string
+          currency?: string
+          exchangeName?: string
+          instrumentType?: string
+          dataGranularity?: string
+        }
+        timestamp?: unknown[]
+        indicators?: { quote?: Array<{ close?: unknown[] }> }
+      }>
     }
-    values?: Array<{ close?: string; datetime?: string }>
   }
-  if (data.status === "error") {
-    if (data.code === 401 || data.code === 403)
-      throw new FinanceError("priceAccessRequired", 503)
-    if (data.code === 429) throw new FinanceError("pricesRateLimited", 429)
-    throw new FinanceError("invalidMarketPrice", 502)
-  }
-  const price = Number(data.values?.[0]?.close)
-  const date = data.values?.[0]?.datetime
+  const quote = data.chart?.result?.[0]
+  const meta = quote?.meta
+  const timestamps = quote?.timestamp
+  const closes = quote?.indicators?.quote?.[0]?.close
   if (
-    data.meta?.symbol !== symbol ||
-    data.meta.mic_code !== "XIDX" ||
-    data.meta.currency !== "IDR" ||
-    data.meta.interval !== "1day" ||
-    !Number.isSafeInteger(price) ||
-    price <= 0 ||
-    price > 1_000_000_000 ||
-    !isDate(date) ||
-    date > today ||
-    date < "1900-01-01"
+    data.chart?.error ||
+    meta?.symbol !== `${symbol}.JK` ||
+    meta.currency !== "IDR" ||
+    meta.exchangeName !== "JKT" ||
+    meta.instrumentType !== "EQUITY" ||
+    meta.dataGranularity !== "1d" ||
+    !Array.isArray(timestamps) ||
+    !Array.isArray(closes) ||
+    timestamps.length !== closes.length
   )
     throw new FinanceError("invalidMarketPrice", 502)
-  return { symbol, price, date, source: "Twelve Data" }
+
+  for (let index = closes.length - 1; index >= 0; index--) {
+    const timestamp = timestamps[index]
+    const price = closes[index]
+    if (price === null) continue
+    if (
+      typeof timestamp !== "number" ||
+      typeof price !== "number" ||
+      !Number.isSafeInteger(timestamp) ||
+      !Number.isSafeInteger(price)
+    )
+      throw new FinanceError("invalidMarketPrice", 502)
+    const date = jakartaDate(timestamp)
+    if (
+      price <= 0 ||
+      price > 1_000_000_000 ||
+      !isDate(date) ||
+      date > today ||
+      date < "1900-01-01"
+    )
+      throw new FinanceError("invalidMarketPrice", 502)
+    return { symbol, price, date, source: "Yahoo Finance" }
+  }
+  throw new FinanceError("invalidMarketPrice", 502)
 }
