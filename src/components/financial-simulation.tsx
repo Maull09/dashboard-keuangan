@@ -8,9 +8,15 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { getNextMonthStart, getToday } from "@/lib/finance"
 import { jsonBody, requestJson } from "@/lib/client-api"
-import type { PlannedExpense, SimulationData } from "@/lib/planning-types"
+import { useRemoteData } from "@/lib/use-remote-data"
+import type {
+  PlannedCashflow,
+  SimulationBalanceData,
+  SimulationData,
+} from "@/lib/planning-types"
 
-type ExpenseDraft = Omit<PlannedExpense, "amount"> & { amount: string }
+type CashflowDraft = Omit<PlannedCashflow, "amount"> & { amount: string }
+type CashflowKind = "income" | "expense"
 
 function endOfNextMonth() {
   const nextMonth = getNextMonthStart(getToday().slice(0, 7)).slice(0, 7)
@@ -25,16 +31,128 @@ function maximumProjectionDate() {
     .slice(0, 10)
 }
 
+function PlannedCashflowList({
+  kind,
+  entries,
+  today,
+  endDate,
+  canAdd,
+  onAdd,
+  onUpdate,
+  onRemove,
+}: {
+  kind: CashflowKind
+  entries: CashflowDraft[]
+  today: string
+  endDate: string
+  canAdd: boolean
+  onAdd: () => void
+  onUpdate: (index: number, update: Partial<CashflowDraft>) => void
+  onRemove: (index: number) => void
+}) {
+  const { t } = useLanguage()
+  const labels =
+    kind === "income"
+      ? {
+          title: t("addedIncome"),
+          hint: t("additionalIncomeHint"),
+          add: t("addIncome"),
+          remove: t("removeIncome"),
+          name: t("incomeName"),
+          amount: t("incomeAmount"),
+          date: t("incomeDate"),
+        }
+      : {
+          title: t("addedExpenses"),
+          hint: t("additionalExpenseHint"),
+          add: t("addExpense"),
+          remove: t("removeExpense"),
+          name: t("expenseName"),
+          amount: t("expenseAmount"),
+          date: t("expenseDate"),
+        }
+  const titleId = `added-${kind}-title`
+
+  return (
+    <section aria-labelledby={titleId} className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id={titleId} className="font-semibold">
+            {labels.title}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">{labels.hint}</p>
+        </div>
+        <Button type="button" variant="outline" onClick={onAdd} disabled={!canAdd}>
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {labels.add}
+        </Button>
+      </div>
+      {entries.map((entry, index) => (
+        <div
+          key={index}
+          className="grid gap-3 rounded-lg border bg-slate-50 p-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end"
+        >
+          <Field id={`${kind}-name-${index}`} label={labels.name} required>
+            <Input
+              id={`${kind}-name-${index}`}
+              value={entry.name}
+              maxLength={120}
+              onChange={(event) => onUpdate(index, { name: event.target.value })}
+              required
+            />
+          </Field>
+          <Field id={`${kind}-amount-${index}`} label={labels.amount} required>
+            <Input
+              id={`${kind}-amount-${index}`}
+              type="number"
+              min="1"
+              max="2147483647"
+              step="1"
+              inputMode="numeric"
+              value={entry.amount}
+              onChange={(event) => onUpdate(index, { amount: event.target.value })}
+              required
+            />
+          </Field>
+          <Field id={`${kind}-date-${index}`} label={labels.date} required>
+            <Input
+              id={`${kind}-date-${index}`}
+              type="date"
+              min={today}
+              max={endDate}
+              value={entry.date}
+              onChange={(event) => onUpdate(index, { date: event.target.value })}
+              required
+            />
+          </Field>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+            onClick={() => onRemove(index)}
+            aria-label={labels.remove}
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </div>
+      ))}
+    </section>
+  )
+}
+
 export function FinancialSimulation() {
   const { t, formatCurrency, formatMonth } = useLanguage()
   const [endDate, setEndDate] = useState(endOfNextMonth())
-  const [expenses, setExpenses] = useState<ExpenseDraft[]>([])
+  const [incomes, setIncomes] = useState<CashflowDraft[]>([])
+  const [expenses, setExpenses] = useState<CashflowDraft[]>([])
   const [result, setResult] = useState<SimulationData | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [stale, setStale] = useState(false)
   const controller = useRef<AbortController | null>(null)
   const compared = useRef(false)
+  const balance = useRemoteData<SimulationBalanceData>("/api/simulation")
   const today = getToday()
 
   function invalidate() {
@@ -53,13 +171,30 @@ export function FinancialSimulation() {
     }
   }, [])
 
-  function updateExpense(index: number, update: Partial<ExpenseDraft>) {
+  function updateIncome(index: number, update: Partial<CashflowDraft>) {
     invalidate()
-    setExpenses((current) =>
-      current.map((expense, expenseIndex) =>
-        expenseIndex === index ? { ...expense, ...update } : expense,
+    setIncomes((current) =>
+      current.map((income, itemIndex) =>
+        itemIndex === index ? { ...income, ...update } : income,
       ),
     )
+  }
+
+  function updateExpense(index: number, update: Partial<CashflowDraft>) {
+    invalidate()
+    setExpenses((current) =>
+      current.map((expense, itemIndex) =>
+        itemIndex === index ? { ...expense, ...update } : expense,
+      ),
+    )
+  }
+
+  function addIncome() {
+    invalidate()
+    setIncomes((current) => [
+      ...current,
+      { name: "", amount: "", date: today },
+    ])
   }
 
   function addExpense() {
@@ -70,27 +205,33 @@ export function FinancialSimulation() {
     ])
   }
 
+  function removeIncome(index: number) {
+    invalidate()
+    setIncomes((current) => current.filter((_, itemIndex) => itemIndex !== index))
+  }
+
   function removeExpense(index: number) {
     invalidate()
     setExpenses((current) =>
-      current.filter((_, expenseIndex) => expenseIndex !== index),
+      current.filter((_, itemIndex) => itemIndex !== index),
     )
   }
 
-  const invalidExpense = expenses.some(
-    (expense) =>
-      !expense.name.trim() ||
-      Number(expense.amount) <= 0 ||
-      !Number.isInteger(Number(expense.amount)) ||
-      !expense.date ||
-      expense.date < today ||
-      expense.date > endDate,
+  const additionalCashflows = [...incomes, ...expenses]
+  const invalidCashflow = additionalCashflows.some(
+    (cashflow) =>
+      !cashflow.name.trim() ||
+      Number(cashflow.amount) <= 0 ||
+      !Number.isInteger(Number(cashflow.amount)) ||
+      !cashflow.date ||
+      cashflow.date < today ||
+      cashflow.date > endDate,
   )
-  const canAddExpense = expenses.length < 20
+  const canAddCashflow = additionalCashflows.length < 20
 
   async function calculate(event: React.FormEvent) {
     event.preventDefault()
-    if (busy || invalidExpense || !endDate) return
+    if (busy || invalidCashflow || !endDate) return
     const request = new AbortController()
     controller.current = request
     compared.current = true
@@ -100,7 +241,11 @@ export function FinancialSimulation() {
     setStale(false)
     try {
       const data = await requestJson<SimulationData>("/api/simulation", {
-        ...jsonBody("POST", { endDate, extraExpenses: expenses }),
+        ...jsonBody("POST", {
+          endDate,
+          extraIncomes: incomes,
+          extraExpenses: expenses,
+        }),
         signal: request.signal,
       })
       if (!request.signal.aborted) setResult(data)
@@ -117,6 +262,27 @@ export function FinancialSimulation() {
         title={t("simulation")}
         description={t("simulationDescription")}
       />
+      <section
+        aria-label={t("currentCash")}
+        className="rounded-xl border bg-white p-5"
+      >
+        <p className="text-sm text-muted-foreground">{t("currentCash")}</p>
+        {balance.loading ? (
+          <p role="status" className="mt-2 text-lg font-semibold">
+            {t("loading")}
+          </p>
+        ) : balance.data ? (
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-teal-800">
+            {formatCurrency(balance.data.currentBalance)}
+          </p>
+        ) : null}
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          {t("currentCashHint")}
+        </p>
+        <div className="mt-3">
+          <ErrorNotice message={balance.error} onRetry={balance.reload} />
+        </div>
+      </section>
       <form
         onSubmit={calculate}
         className="space-y-5 rounded-xl border bg-white p-5"
@@ -141,98 +307,29 @@ export function FinancialSimulation() {
           <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm leading-relaxed text-teal-950">
             {t("calculatorHint")}
           </div>
-          <section aria-labelledby="added-expenses-title" className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 id="added-expenses-title" className="font-semibold">
-                  {t("addedExpenses")}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t("additionalExpenseHint")}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addExpense}
-                disabled={!canAddExpense}
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                {t("addExpense")}
-              </Button>
-            </div>
-            {expenses.map((expense, index) => (
-              <div
-                key={index}
-                className="grid gap-3 rounded-lg border bg-slate-50 p-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end"
-              >
-                <Field
-                  id={`expense-name-${index}`}
-                  label={t("expenseName")}
-                  required
-                >
-                  <Input
-                    id={`expense-name-${index}`}
-                    value={expense.name}
-                    maxLength={120}
-                    onChange={(event) =>
-                      updateExpense(index, { name: event.target.value })
-                    }
-                    required
-                  />
-                </Field>
-                <Field
-                  id={`expense-amount-${index}`}
-                  label={t("expenseAmount")}
-                  required
-                >
-                  <Input
-                    id={`expense-amount-${index}`}
-                    type="number"
-                    min="1"
-                    max="2147483647"
-                    step="1"
-                    inputMode="numeric"
-                    value={expense.amount}
-                    onChange={(event) =>
-                      updateExpense(index, { amount: event.target.value })
-                    }
-                    required
-                  />
-                </Field>
-                <Field
-                  id={`expense-date-${index}`}
-                  label={t("expenseDate")}
-                  required
-                >
-                  <Input
-                    id={`expense-date-${index}`}
-                    type="date"
-                    min={today}
-                    max={endDate}
-                    value={expense.date}
-                    onChange={(event) =>
-                      updateExpense(index, { date: event.target.value })
-                    }
-                    required
-                  />
-                </Field>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-rose-700 hover:bg-rose-50 hover:text-rose-800"
-                  onClick={() => removeExpense(index)}
-                  aria-label={t("removeExpense")}
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </div>
-            ))}
-          </section>
+          <PlannedCashflowList
+            kind="income"
+            entries={incomes}
+            today={today}
+            endDate={endDate}
+            canAdd={canAddCashflow}
+            onAdd={addIncome}
+            onUpdate={updateIncome}
+            onRemove={removeIncome}
+          />
+          <PlannedCashflowList
+            kind="expense"
+            entries={expenses}
+            today={today}
+            endDate={endDate}
+            canAdd={canAddCashflow}
+            onAdd={addExpense}
+            onUpdate={updateExpense}
+            onRemove={removeExpense}
+          />
         </fieldset>
         <ErrorNotice message={error} />
-        <Button type="submit" disabled={busy || invalidExpense || !endDate}>
+        <Button type="submit" disabled={busy || invalidCashflow || !endDate}>
           {busy ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
@@ -252,12 +349,13 @@ export function FinancialSimulation() {
             role="status"
             className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm text-teal-900"
           >
-            {t("simulationOnly")} {t("plannedExpenseCount", { count: result.extraExpenseCount })}
+            {t("simulationOnly")} {t("plannedIncomeCount", { count: result.extraIncomeCount })} {t("plannedExpenseCount", { count: result.extraExpenseCount })}
           </div>
-          <dl className="grid gap-4 rounded-xl border bg-white p-5 sm:grid-cols-2 xl:grid-cols-5">
+          <dl className="grid gap-4 rounded-xl border bg-white p-5 sm:grid-cols-2 xl:grid-cols-3">
             {[
               ["currentCash", result.currentBalance, ""],
               ["scheduledIncome", result.scheduledIncome, "text-emerald-700"],
+              ["addedIncome", result.extraIncome, "text-emerald-700"],
               ["scheduledExpenses", result.scheduledExpense, "text-rose-700"],
               ["addedExpenses", result.extraExpense, "text-rose-700"],
               ["projectedCash", result.scenario, result.scenario < 0 ? "text-rose-700" : "text-teal-800"],
@@ -286,11 +384,11 @@ export function FinancialSimulation() {
             tabIndex={0}
             className="overflow-x-auto rounded-xl border bg-white"
           >
-            <table className="w-full min-w-[650px] text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <caption className="sr-only">{t("monthlyProjection")}</caption>
               <thead className="bg-muted/50">
                 <tr>
-                  {["period", "income", "expenses", "addedExpenses", "baseline", "projectedCash"].map(
+                  {["period", "income", "addedIncome", "expenses", "addedExpenses", "baseline", "projectedCash"].map(
                     (key, index) => (
                       <th
                         scope="col"
@@ -309,16 +407,21 @@ export function FinancialSimulation() {
                     <td className="whitespace-nowrap p-3">
                       {formatMonth(row.month)}
                     </td>
-                    {[row.income, row.expense, row.extraExpense, row.baseline, row.scenario].map(
-                      (amount, index) => (
-                        <td
-                          key={index}
-                          className={`p-3 text-right tabular-nums ${amount < 0 ? "text-rose-700" : ""}`}
-                        >
-                          {formatCurrency(amount)}
-                        </td>
-                      ),
-                    )}
+                    {[
+                      row.income,
+                      row.extraIncome,
+                      row.expense,
+                      row.extraExpense,
+                      row.baseline,
+                      row.scenario,
+                    ].map((amount, index) => (
+                      <td
+                        key={index}
+                        className={`p-3 text-right tabular-nums ${amount < 0 ? "text-rose-700" : ""}`}
+                      >
+                        {formatCurrency(amount)}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>

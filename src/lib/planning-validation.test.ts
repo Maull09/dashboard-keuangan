@@ -202,20 +202,28 @@ describe("financial planning validation", () => {
     expect(
       parseSimulation({
         endDate: "2026-11-30",
+        extraIncomes: [
+          { name: "Bonus", amount: "100000", date: "2026-10-10" },
+        ],
         extraExpenses: [
           { name: "Phone", amount: "500000", date: "2026-10-10" },
         ],
-      }).extraExpenses,
-    ).toEqual([{ name: "Phone", amount: 500000, date: "2026-10-10" }])
+      }),
+    ).toMatchObject({
+      extraIncomes: [{ name: "Bonus", amount: 100000, date: "2026-10-10" }],
+      extraExpenses: [{ name: "Phone", amount: 500000, date: "2026-10-10" }],
+    })
     expect(() =>
       parseSimulation({
         endDate: "2036-01-01",
+        extraIncomes: [],
         extraExpenses: [],
       }),
     ).toThrow("invalidInput")
     expect(() =>
       parseSimulation({
         endDate: "2026-10-31",
+        extraIncomes: [],
         extraExpenses: [
           { name: "Phone", amount: 500000, date: "2026-11-01" },
         ],

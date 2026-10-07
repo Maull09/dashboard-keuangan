@@ -9,7 +9,7 @@ const en = {
     "Net worth adds cash, valued stocks, and receivables, then subtracts unpaid debts. Money allocated to goals or sinking funds is already included in cash.",
   helpSimulation: "Calculate planned spending safely",
   helpSimulationBody:
-    "See scheduled income and expenses, then add several planned expenses to estimate your cash. The calculator never creates real transactions or schedules.",
+    "See your current cash and scheduled cash flow, then add several planned incomes and expenses to estimate your cash. The calculator never creates real transactions or schedules.",
   helpCalendar: "See upcoming financial dates",
   helpCalendarBody:
     "Browse recurring schedules, debt deadlines, and fund targets by month. These are planned dates, not proof of payment; reminders can overlap with recurring schedules.",
@@ -28,7 +28,7 @@ const en = {
   calendarDescription:
     "Recurring payments, income, debt deadlines, and planned fund targets in one place.",
   simulationDescription:
-    "Combine scheduled calendar cash flow with several planned expenses. Nothing is saved to your real transactions.",
+    "Combine your current cash and scheduled calendar cash flow with planned incomes and expenses. Nothing is saved to your real transactions.",
   fundsDescription:
     "Set money aside for predictable expenses such as annual insurance, vehicle tax, or a holiday.",
   totalBalance: "Cash across accounts",
@@ -154,6 +154,16 @@ const en = {
     "The baseline includes active recurring schedules. Unscheduled spending, debt deadlines, and future investment changes are not automatically included.",
   calculatorHint:
     "Active recurring income and expenses from your financial calendar are included from today to the selected date. Debt deadlines and fund targets remain reminders only, so they are excluded to avoid double-counting.",
+  currentCashHint:
+    "This is your recorded cash across accounts and the starting point for the projection.",
+  addedIncome: "Added income",
+  additionalIncomeHint:
+    "Add one-off income to see its effect before recording it.",
+  addIncome: "Add income",
+  removeIncome: "Remove income",
+  incomeName: "Income name",
+  incomeAmount: "Amount (IDR)",
+  incomeDate: "Income date",
   addedExpenses: "Added expenses",
   additionalExpenseHint:
     "Add one-off expenses to see their effect before recording them.",
@@ -170,6 +180,7 @@ const en = {
   scenario: "With extra payment",
   scenarioDifference: "Change in balance",
   plannedExpenseCount: "{count} planned expense(s) added.",
+  plannedIncomeCount: "{count} planned income(s) added.",
   simulationOnly: "Preview only. No transactions or schedules were created.",
   simulationStale:
     "Your input or financial data changed. Run the comparison again.",
@@ -219,7 +230,7 @@ const id: Record<keyof typeof en, string> = {
     "Kekayaan bersih menjumlahkan kas, saham yang sudah dinilai, dan piutang, lalu mengurangi sisa utang. Alokasi tujuan dan sinking funds sudah termasuk kas.",
   helpSimulation: "Hitung rencana pengeluaran dengan aman",
   helpSimulationBody:
-    "Lihat pemasukan dan pengeluaran terjadwal, lalu tambahkan beberapa rencana pengeluaran untuk memperkirakan kas. Kalkulator tidak membuat transaksi atau jadwal asli.",
+    "Lihat kas saat ini dan arus kas terjadwal, lalu tambahkan beberapa rencana pemasukan dan pengeluaran untuk memperkirakan kas. Kalkulator tidak membuat transaksi atau jadwal asli.",
   helpCalendar: "Lihat tanggal keuangan mendatang",
   helpCalendarBody:
     "Telusuri jadwal rutin, jatuh tempo utang, dan target dana per bulan. Ini tanggal rencana, bukan bukti pembayaran; pengingat bisa beririsan dengan jadwal rutin.",
@@ -238,7 +249,7 @@ const id: Record<keyof typeof en, string> = {
   calendarDescription:
     "Pembayaran rutin, pemasukan, jatuh tempo utang, dan target dana dalam satu tempat.",
   simulationDescription:
-    "Gabungkan arus kas kalender terjadwal dengan beberapa rencana pengeluaran. Transaksi asli tidak berubah.",
+    "Gabungkan kas saat ini dan arus kas kalender terjadwal dengan rencana pemasukan dan pengeluaran. Transaksi asli tidak berubah.",
   fundsDescription:
     "Sisihkan uang untuk kebutuhan terencana seperti premi tahunan, pajak kendaraan, atau liburan.",
   totalBalance: "Kas seluruh akun",
@@ -365,6 +376,16 @@ const id: Record<keyof typeof en, string> = {
     "Dasar perhitungan memakai jadwal rutin aktif. Belanja di luar jadwal, jatuh tempo utang, dan perubahan investasi mendatang tidak otomatis termasuk.",
   calculatorHint:
     "Pemasukan dan pengeluaran rutin aktif dari kalender keuangan dihitung dari hari ini sampai tanggal pilihan. Jatuh tempo utang dan target dana tetap menjadi pengingat, jadi tidak dihitung agar tidak terhitung dua kali.",
+  currentCashHint:
+    "Ini adalah kas tercatat dari seluruh akun dan menjadi titik awal proyeksi.",
+  addedIncome: "Pemasukan tambahan",
+  additionalIncomeHint:
+    "Tambahkan pemasukan satu kali untuk melihat dampaknya sebelum dicatat.",
+  addIncome: "Tambah pemasukan",
+  removeIncome: "Hapus pemasukan",
+  incomeName: "Nama pemasukan",
+  incomeAmount: "Nominal (IDR)",
+  incomeDate: "Tanggal pemasukan",
   addedExpenses: "Pengeluaran tambahan",
   additionalExpenseHint:
     "Tambahkan pengeluaran satu kali untuk melihat dampaknya sebelum dicatat.",
@@ -381,6 +402,7 @@ const id: Record<keyof typeof en, string> = {
   scenario: "Dengan tambahan cicilan",
   scenarioDifference: "Perubahan saldo",
   plannedExpenseCount: "{count} rencana pengeluaran ditambahkan.",
+  plannedIncomeCount: "{count} rencana pemasukan ditambahkan.",
   simulationOnly:
     "Hanya pratinjau. Tidak ada transaksi atau jadwal yang dibuat.",
   simulationStale:

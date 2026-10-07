@@ -1,5 +1,5 @@
 import { getNextMonthStart } from "./finance"
-import type { PlannedExpense } from "./planning-types"
+import type { PlannedCashflow } from "./planning-types"
 
 export type Schedule = {
   id: number
@@ -87,7 +87,8 @@ export function simulateCashflow(
   schedules: Schedule[],
   today: string,
   endDate: string,
-  extraExpenses: PlannedExpense[],
+  extraIncomes: PlannedCashflow[],
+  extraExpenses: PlannedCashflow[],
 ) {
   const scheduled = schedules.flatMap((schedule) =>
     scheduleOccurrences(schedule, today, endDate),
@@ -104,15 +105,19 @@ export function simulateCashflow(
     const expense = occurrences
       .filter((item) => item.type === "expense")
       .reduce((total, item) => total + item.amount, 0)
+    const extraIncome = extraIncomes
+      .filter((item) => item.date.startsWith(month))
+      .reduce((total, item) => total + item.amount, 0)
     const extraExpense = extraExpenses
       .filter((item) => item.date.startsWith(month))
       .reduce((total, item) => total + item.amount, 0)
     baseline += income - expense
-    scenario += income - expense - extraExpense
+    scenario += income + extraIncome - expense - extraExpense
     rows.push({
       month,
       income,
       expense,
+      extraIncome,
       extraExpense,
       baseline,
       scenario,
@@ -131,6 +136,8 @@ export function simulateCashflow(
     scheduledExpense: scheduled
       .filter((item) => item.type === "expense")
       .reduce((total, item) => total + item.amount, 0),
+    extraIncome: extraIncomes.reduce((total, item) => total + item.amount, 0),
+    extraIncomeCount: extraIncomes.length,
     extraExpense: extraExpenses.reduce((total, item) => total + item.amount, 0),
     extraExpenseCount: extraExpenses.length,
     rows,

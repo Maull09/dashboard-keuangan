@@ -69,7 +69,7 @@ Debt and receivable amounts assume their outstanding principal was already repre
 
 ## Read-only expense calculator
 
-Choose a projection end date up to two years ahead. The calculator starts from current recorded cash, then includes remaining recurring income and expenses from the financial calendar, such as a scheduled salary or rent. Add up to 20 dated, one-off planned expenses to test several purchases at once. The result separates current cash, scheduled income, scheduled expenses, added expenses, and projected cash, with a monthly table and negative-balance warnings.
+Choose a projection end date up to two years ahead. The calculator shows and starts from current recorded cash, then includes remaining recurring income and expenses from the financial calendar, such as a scheduled salary or rent. Add up to 20 dated, one-off planned incomes and expenses combined to test several changes at once. The result separates current cash, scheduled income, added income, scheduled expenses, added expenses, and projected cash, with a monthly table and negative-balance warnings.
 
 Transfers do not change total cash. Already-executed occurrences and schedules outside their start/end dates are excluded. The calculator creates no transactions, trades, schedules, or fund entries. Changing inputs or financial data invalidates the previous result.
 
