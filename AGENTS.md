@@ -19,14 +19,27 @@
 - Run the smallest relevant check, test, type check, lint command, or build after a change when available.
 - Report what changed and which verification was actually run.
 
-## Documentation and Progress
+## Documentation
 
-- Update `todo.md` when it exists or the repository uses it to track progress and decisions.
-- Update `CHANGELOG.md` when a change is user-facing or otherwise worth noting for future reference.
-- Update `README.md` when the project's purpose, setup, architecture, or current state changes.
-- Update `docs/` when a change affects setup, configuration, operations, or troubleshooting and the repository maintains detailed documentation there.
-- Before staging, confirm that the requested change belongs to the current branch and its open PR. Do not add unrelated documentation, chores, or fixes to a feature branch; create or switch to a dedicated branch based on the current default branch unless the user explicitly asks to combine them.
-- Stage, commit, and push coherent changes in small, verifiable increments to GitHub. Keep each pull request focused on one purpose, use descriptive commit messages, and state what changed, why, and how it was verified. Avoid "fixup" or "squash" commits unless they are part of a review process.
+- Update only the source-of-truth document made inaccurate by the change. Do not update `README.md`, `CHANGELOG.md`, `todo.md`, or unrelated files in `docs/` merely because they exist.
+- Update `README.md` only for material purpose, setup, architecture, or current-state changes. Update a focused document in `docs/` only for lasting setup, configuration, operations, or troubleshooting guidance.
+- Update `CHANGELOG.md` only for user-facing, release-worthy changes. Update `todo.md` only for meaningful progress, decisions, or newly discovered follow-up work.
+- Preserve historical entries and unrelated documentation. Do not rewrite, duplicate, or overwrite existing guidance unless the request specifically requires it.
+
+## Git Workflow
+
+### Start
+
+- Start Git work by fetching the remote and identifying the current default branch. Update the local default branch with a fast-forward-only pull before creating a dedicated, descriptively named branch from it. Do not start feature work from a stale branch, an unrelated open PR, or a branch with uncommitted changes.
+
+### Validate
+
+- Before staging, confirm that the requested change belongs to the current branch and its intended PR. Check for an existing PR or already-merged equivalent change before opening another one. Do not add unrelated documentation, chores, or fixes to a feature branch unless the user explicitly asks to combine them.
+- Before committing, run every available applicable local gate: any configured pre-commit hook, lint, focused tests (or the full test suite when appropriate), TypeScript checking, and a production build for application changes. Run a relevant security check such as `npm audit --omit=dev` when dependencies, server code, secrets, authentication, input handling, or financial-data handling are affected. Report unresolved findings; never run automatic security fixes without approval.
+
+### Submit
+
+- Stage only the requested files after reviewing both the working diff and staged diff. Make small, descriptive commits that each pass their relevant checks. Push the branch, create or update one focused PR targeting the current default branch, and state what changed, why, and the checks that actually passed. Avoid "fixup" or "squash" commits unless they are part of a review process.
 
 ## Skill Usage
 
