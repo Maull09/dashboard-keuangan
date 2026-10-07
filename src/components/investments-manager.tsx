@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useId } from "react"
+import { useCallback, useEffect, useRef, useState, useId } from "react"
 import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { AddAccountForm } from "./accounts-form"
@@ -66,7 +66,7 @@ export function InvestmentsManager() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState("")
 
-  async function updatePrices() {
+  const updatePrices = useCallback(async () => {
     if (priceBusy) return
     setPriceBusy(true)
     setPriceError("")
@@ -84,14 +84,14 @@ export function InvestmentsManager() {
     } finally {
       setPriceBusy(false)
     }
-  }
+  }, [priceBusy])
 
   useEffect(() => {
-    if (data?.pricesConfigured && !priceAttempted.current) {
+    if (data && !priceAttempted.current) {
       priceAttempted.current = true
       void updatePrices()
     }
-  }, [data?.pricesConfigured])
+  }, [data, updatePrices])
 
   async function remove() {
     if (!deleting || deleteBusy) return
@@ -124,7 +124,7 @@ export function InvestmentsManager() {
       >
         <Button
           variant="outline"
-          disabled={priceBusy || records.loading || !data?.pricesConfigured}
+          disabled={priceBusy || records.loading || !data}
           onClick={() => void updatePrices()}
         >
           <RefreshCw
@@ -145,11 +145,6 @@ export function InvestmentsManager() {
       ) : (
         data && (
           <>
-            {!data.pricesConfigured && (
-              <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                {t("pricesSetupHint")}
-              </p>
-            )}
             <ErrorNotice message={priceError} />
             {priceResult && (
               <p role="status" className="text-sm text-muted-foreground">
@@ -192,7 +187,7 @@ export function InvestmentsManager() {
               </p>
             )}
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {t("eodHint")}
+              {t("pricesSourceHint")} {t("eodHint")}
             </p>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="max-w-full">

@@ -48,7 +48,6 @@ export async function GET() {
             ?.name ?? item.symbol,
         quote: latest.get(item.symbol) ?? null,
       })),
-      pricesConfigured: Boolean(process.env.TWELVE_DATA_API_KEY),
     })
   })
 }

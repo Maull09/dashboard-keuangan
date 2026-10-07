@@ -70,7 +70,7 @@ describe("recurring calendar and projections", () => {
       ).map((item) => item.date),
     ).toEqual(["2026-10-31"])
   })
-  it("compares an additional monthly payment without changing schedules", () => {
+  it("calculates multiple planned income and expenses without changing schedules", () => {
     const schedules = [
       salary,
       { ...salary, id: 2, name: "Rent", type: "expense", amount: 1000000 },
@@ -80,18 +80,29 @@ describe("recurring calendar and projections", () => {
       2000000,
       schedules,
       "2026-01-01",
-      "2026-01-15",
       "2026-03-31",
-      500000,
+      [
+        { name: "Bonus", amount: 1000000, date: "2026-01-10" },
+        { name: "Cashback", amount: 100000, date: "2026-03-20" },
+      ],
+      [
+        { name: "Phone", amount: 500000, date: "2026-01-15" },
+        { name: "Travel", amount: 300000, date: "2026-03-20" },
+      ],
     )
     expect(result).toMatchObject({
       baseline: 14000000,
-      scenario: 12500000,
-      difference: -1500000,
-      payments: 3,
+      scenario: 14300000,
+      difference: 300000,
+      scheduledIncome: 15000000,
+      scheduledExpense: 3000000,
+      extraIncome: 1100000,
+      extraIncomeCount: 2,
+      extraExpense: 800000,
+      extraExpenseCount: 2,
     })
     expect(result.rows.map((row) => row.scenario)).toEqual([
-      5500000, 9000000, 12500000,
+      6500000, 10500000, 14300000,
     ])
     expect(JSON.stringify(schedules)).toBe(original)
   })
@@ -101,9 +112,9 @@ describe("recurring calendar and projections", () => {
         1000000,
         [{ ...salary, type: "transfer" }],
         "2026-01-01",
-        "2026-01-01",
         "2026-01-31",
-        100000,
+        [],
+        [{ name: "Lunch", amount: 100000, date: "2026-01-01" }],
       ).scenario,
     ).toBe(900000)
   })

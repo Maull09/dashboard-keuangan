@@ -159,17 +159,37 @@ export function parseRecurring(value: unknown) {
 export function parseSimulation(value: unknown) {
   const body = recordInput(value)
   const today = getToday()
+  const endDate = body.endDate
   if (
-    !isDate(body.startDate) ||
-    !isDate(body.endDate) ||
-    body.startDate < today ||
-    body.endDate < body.startDate ||
-    Date.parse(body.endDate) - Date.parse(today) > 730 * 86400000
+    !isDate(endDate) ||
+    endDate < today ||
+    Date.parse(endDate) - Date.parse(today) > 730 * 86400000
   )
     throw new FinanceError("invalidInput")
+  const projectionEndDate = endDate
+  if (!Array.isArray(body.extraIncomes) || !Array.isArray(body.extraExpenses))
+    throw new FinanceError("invalidInput")
+  if (body.extraIncomes.length + body.extraExpenses.length > 20)
+    throw new FinanceError("invalidInput")
+  function parsePlannedCashflows(value: unknown[]) {
+    return value.map((cashflow) => {
+      const input = recordInput(cashflow)
+      if (
+        !isDate(input.date) ||
+        input.date < today ||
+        input.date > projectionEndDate
+      )
+        throw new FinanceError("invalidInput")
+      return {
+        name: textInput(input.name),
+        amount: integerInput(input.amount, 1, 2_147_483_647),
+        date: input.date,
+      }
+    })
+  }
   return {
-    startDate: body.startDate,
-    endDate: body.endDate,
-    monthlyPayment: integerInput(body.monthlyPayment, 1, 2_147_483_647),
+    endDate: projectionEndDate,
+    extraIncomes: parsePlannedCashflows(body.extraIncomes),
+    extraExpenses: parsePlannedCashflows(body.extraExpenses),
   }
 }

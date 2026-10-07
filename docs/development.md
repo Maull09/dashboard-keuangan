@@ -22,6 +22,7 @@ Use `npm ci` to install the exact versions in the committed lockfile. Use `npm i
 ```bash
 npm install
 npm run dev
+npm run lint
 npm run build
 npm test
 npm run db:generate
@@ -35,11 +36,13 @@ npm run db:migrate -- --check
 
 Drizzle schema definitions are in `src/db/schema.ts`; generated migrations are in `drizzle/`. The first migration preserves legacy transactions by assigning them to an `Uncategorized account`. Move them to their real account after migrating.
 
-Migration `0003_wild_ultimo.sql` adds stock portfolios, price history, watchlists, and sinking funds. Apply it before running this version, since cash queries now include the stock ledger. Optional daily pricing uses `TWELVE_DATA_API_KEY` and `CRON_SECRET`; see [investment and planning setup](investments-and-planning.md).
+Migration `0003_wild_ultimo.sql` adds stock portfolios, price history, watchlists, and sinking funds. Apply it before running this version, since cash queries now include the stock ledger. Daily pricing uses Yahoo Finance without an API key; the scheduled endpoint still requires `CRON_SECRET`. See [investment and planning setup](investments-and-planning.md).
 
 Migration `0004_clumsy_jane_foster.sql` enables decimal trade quantities/prices and removes the whole-lot constraint. Existing trade values are preserved. Cash and partial-sale cost allocations now use cent precision; API validation rejects excess input precision instead of silently truncating it.
 
 Migration `0005_concerned_ego.sql` widens trade prices from `numeric(14, 2)` to `numeric(16, 4)`, preserving existing values and integer capacity. Apply it before recording four-decimal prices. Per-share prices display four decimal places; cash totals still round to two. Migration generation alone does not update Supabase.
+
+Switching daily prices from Twelve Data to Yahoo Finance requires updated npm dependencies and an application restart, not another migration. The price writer explicitly stores `Yahoo Finance` as its source; historical quotes keep their source until that same ticker/date is successfully refreshed. The historical database source default is unchanged. The old Twelve Data environment key can be removed locally; it is no longer read by the app.
 
 ## Troubleshooting
 
@@ -47,4 +50,5 @@ Migration `0005_concerned_ego.sql` widens trade prices from `numeric(14, 2)` to 
 - **Missing `stock_trades`:** run `npm run db:migrate -- --check`, then follow the [migration and recovery guide](database-migrations.md). Successful account queries do not prove that all feature tables exist.
 - **Migration fails:** make sure the connection targets the intended database. Use Direct connection or the Session pooler for migration work. Do not force schema pushes, drop application tables, or invent migration history to suppress an error.
 - **Build fails:** run `npm install`, then retry `npm run build`.
+- **Lint fails:** run `npm run lint` to identify the reported source file and rule. Next.js 16 uses the ESLint CLI rather than `next lint`.
 - **Tests fail:** run `npm test` to identify the failed financial scenario.

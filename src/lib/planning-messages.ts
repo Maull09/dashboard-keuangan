@@ -7,9 +7,9 @@ const en = {
   helpNetWorth: "Avoid counting assets twice",
   helpNetWorthBody:
     "Net worth adds cash, valued stocks, and receivables, then subtracts unpaid debts. Money allocated to goals or sinking funds is already included in cash.",
-  helpSimulation: "Try a scenario safely",
+  helpSimulation: "Calculate planned spending safely",
   helpSimulationBody:
-    "Compare scheduled cash flow with an extra monthly payment. Simulation never creates real transactions or schedules; rerun it after changing inputs or financial data.",
+    "See your current cash and scheduled cash flow, then add several planned incomes and expenses to estimate your cash. The calculator never creates real transactions or schedules.",
   helpCalendar: "See upcoming financial dates",
   helpCalendarBody:
     "Browse recurring schedules, debt deadlines, and fund targets by month. These are planned dates, not proof of payment; reminders can overlap with recurring schedules.",
@@ -19,7 +19,7 @@ const en = {
   investments: "Investments",
   netWorth: "Net worth",
   calendar: "Financial calendar",
-  simulation: "Simulation",
+  simulation: "Expense calculator",
   funds: "Sinking funds",
   investmentsDescription:
     "Track IDX stocks, cash in your brokerage accounts, and investment gains in IDR.",
@@ -28,7 +28,7 @@ const en = {
   calendarDescription:
     "Recurring payments, income, debt deadlines, and planned fund targets in one place.",
   simulationDescription:
-    "Compare your scheduled cash flow with an extra monthly payment. Nothing is saved to your real transactions.",
+    "Combine your current cash and scheduled calendar cash flow with planned incomes and expenses. Nothing is saved to your real transactions.",
   fundsDescription:
     "Set money aside for predictable expenses such as annual insurance, vehicle tax, or a holiday.",
   totalBalance: "Cash across accounts",
@@ -76,8 +76,8 @@ const en = {
   eodHint:
     "End-of-day prices, not real-time quotes. Check the price date; older prices remain visible when updates fail.",
   refreshPrices: "Update daily prices",
-  pricesSetupHint:
-    "Automatic prices need a server-side TWELVE_DATA_API_KEY with IDX access. Manual trade recording works without it.",
+  pricesSourceHint:
+    "Daily prices use Yahoo Finance through an unofficial integration, without an API key. Availability is not guaranteed; quotes may be delayed.",
   priceUpdateResult:
     "{updated} updated, {cached} cached, {failed} failed, {pending} pending.",
   tradeSaved: "Stock trade recorded. Cash and holdings updated.",
@@ -110,14 +110,14 @@ const en = {
     "The allocation exceeds the target, or the target is below the existing allocation.",
   linkedFundTransaction:
     "This expense belongs to a sinking fund and cannot be changed independently of its fund history.",
-  pricesNotConfigured:
-    "Daily prices are not configured. Add TWELVE_DATA_API_KEY to the server environment.",
+  marketDataUnavailable:
+    "Yahoo Finance could not be reached or returned unreadable data. Your saved prices were kept. Try again later; this is a market-data error, not a database connection error.",
   priceAccessRequired:
-    "The market-data provider rejected access. Check the API key and its IDX data entitlement.",
+    "Yahoo Finance temporarily rejected access. Saved prices were kept. Wait and retry; this integration does not require an API key.",
   pricesRateLimited:
     "The market-data limit was reached. Existing prices were kept; wait for your provider quota to reset, then retry.",
   invalidMarketPrice:
-    "No valid daily IDR price was returned for this IDX symbol. Check the ticker and provider coverage.",
+    "Yahoo Finance returned no valid completed daily IDR close for this IDX ticker. Check its .JK listing and price date; saved prices were kept.",
   knownNetWorth: "Known subtotal",
   cashAssets: "Cash assets",
   stockAssets: "Valued stocks",
@@ -147,17 +147,40 @@ const en = {
   monthPrevious: "Previous month",
   monthNext: "Next month",
   today: "Today",
-  monthlyPayment: "Extra monthly payment (IDR)",
-  firstPayment: "First payment date",
   simulateUntil: "Project through",
-  runSimulation: "Compare scenarios",
-  comparing: "Comparing...",
+  calculateExpenses: "Calculate projection",
+  calculating: "Calculating...",
   simulationHint:
     "The baseline includes active recurring schedules. Unscheduled spending, debt deadlines, and future investment changes are not automatically included.",
+  calculatorHint:
+    "Active recurring income and expenses from your financial calendar are included from today to the selected date. Debt deadlines and fund targets remain reminders only, so they are excluded to avoid double-counting.",
+  currentCashHint:
+    "This is your recorded cash across accounts and the starting point for the projection.",
+  addedIncome: "Added income",
+  additionalIncomeHint:
+    "Add one-off income to see its effect before recording it.",
+  addIncome: "Add income",
+  removeIncome: "Remove income",
+  incomeName: "Income name",
+  incomeAmount: "Amount (IDR)",
+  incomeDate: "Income date",
+  addedExpenses: "Added expenses",
+  additionalExpenseHint:
+    "Add one-off expenses to see their effect before recording them.",
+  addExpense: "Add expense",
+  removeExpense: "Remove expense",
+  expenseName: "Expense name",
+  expenseAmount: "Amount (IDR)",
+  expenseDate: "Expense date",
+  currentCash: "Current cash",
+  scheduledIncome: "Scheduled income",
+  scheduledExpenses: "Scheduled expenses",
+  projectedCash: "Projected cash",
   baseline: "Without extra payment",
   scenario: "With extra payment",
   scenarioDifference: "Change in balance",
-  simulatedPayments: "{count} hypothetical payment(s)",
+  plannedExpenseCount: "{count} planned expense(s) added.",
+  plannedIncomeCount: "{count} planned income(s) added.",
   simulationOnly: "Preview only. No transactions or schedules were created.",
   simulationStale:
     "Your input or financial data changed. Run the comparison again.",
@@ -205,9 +228,9 @@ const id: Record<keyof typeof en, string> = {
   helpNetWorth: "Hindari menghitung aset dua kali",
   helpNetWorthBody:
     "Kekayaan bersih menjumlahkan kas, saham yang sudah dinilai, dan piutang, lalu mengurangi sisa utang. Alokasi tujuan dan sinking funds sudah termasuk kas.",
-  helpSimulation: "Coba skenario dengan aman",
+  helpSimulation: "Hitung rencana pengeluaran dengan aman",
   helpSimulationBody:
-    "Bandingkan arus kas terjadwal dengan tambahan cicilan bulanan. Simulasi tidak membuat transaksi atau jadwal asli; jalankan lagi setelah input atau data keuangan berubah.",
+    "Lihat kas saat ini dan arus kas terjadwal, lalu tambahkan beberapa rencana pemasukan dan pengeluaran untuk memperkirakan kas. Kalkulator tidak membuat transaksi atau jadwal asli.",
   helpCalendar: "Lihat tanggal keuangan mendatang",
   helpCalendarBody:
     "Telusuri jadwal rutin, jatuh tempo utang, dan target dana per bulan. Ini tanggal rencana, bukan bukti pembayaran; pengingat bisa beririsan dengan jadwal rutin.",
@@ -217,7 +240,7 @@ const id: Record<keyof typeof en, string> = {
   investments: "Investasi",
   netWorth: "Kekayaan bersih",
   calendar: "Kalender keuangan",
-  simulation: "Simulasi",
+  simulation: "Kalkulator pengeluaran",
   funds: "Sinking funds",
   investmentsDescription:
     "Pantau saham BEI, kas akun sekuritas, dan hasil investasi dalam IDR.",
@@ -226,7 +249,7 @@ const id: Record<keyof typeof en, string> = {
   calendarDescription:
     "Pembayaran rutin, pemasukan, jatuh tempo utang, dan target dana dalam satu tempat.",
   simulationDescription:
-    "Bandingkan arus kas terjadwal dengan tambahan cicilan bulanan. Transaksi asli tidak berubah.",
+    "Gabungkan kas saat ini dan arus kas kalender terjadwal dengan rencana pemasukan dan pengeluaran. Transaksi asli tidak berubah.",
   fundsDescription:
     "Sisihkan uang untuk kebutuhan terencana seperti premi tahunan, pajak kendaraan, atau liburan.",
   totalBalance: "Kas seluruh akun",
@@ -274,8 +297,8 @@ const id: Record<keyof typeof en, string> = {
   eodHint:
     "Harga akhir hari, bukan real-time. Periksa tanggalnya; harga lama tetap ditampilkan bila pembaruan gagal.",
   refreshPrices: "Perbarui harga harian",
-  pricesSetupHint:
-    "Harga otomatis membutuhkan TWELVE_DATA_API_KEY di server dengan akses BEI. Pencatatan transaksi manual tetap bisa digunakan.",
+  pricesSourceHint:
+    "Harga harian berasal dari Yahoo Finance melalui integrasi tidak resmi, tanpa API key. Ketersediaan tidak dijamin; harga dapat tertunda.",
   priceUpdateResult:
     "{updated} diperbarui, {cached} tersimpan, {failed} gagal, {pending} tertunda.",
   tradeSaved: "Transaksi saham dicatat. Kas dan kepemilikan diperbarui.",
@@ -309,14 +332,14 @@ const id: Record<keyof typeof en, string> = {
     "Alokasi melebihi target, atau target lebih kecil daripada alokasi yang sudah ada.",
   linkedFundTransaction:
     "Pengeluaran ini terkait sinking fund dan tidak dapat diubah terpisah dari riwayat dananya.",
-  pricesNotConfigured:
-    "Harga harian belum dikonfigurasi. Tambahkan TWELVE_DATA_API_KEY ke environment server.",
+  marketDataUnavailable:
+    "Yahoo Finance tidak dapat dihubungi atau mengirim data yang tidak terbaca. Harga tersimpan tetap dipertahankan. Coba lagi nanti; ini kesalahan layanan harga, bukan koneksi database.",
   priceAccessRequired:
-    "Penyedia data menolak akses. Periksa API key dan izin data BEI pada paketnya.",
+    "Yahoo Finance menolak akses sementara. Harga tersimpan tetap dipertahankan. Tunggu lalu coba lagi; integrasi ini tidak memerlukan API key.",
   pricesRateLimited:
     "Batas data pasar tercapai. Harga sebelumnya tetap disimpan; tunggu kuota penyedia pulih, lalu coba lagi.",
   invalidMarketPrice:
-    "Tidak ada harga harian IDR yang valid untuk kode BEI ini. Periksa kode dan cakupan penyedia data.",
+    "Yahoo Finance tidak mengirim harga penutupan harian IDR yang valid untuk kode BEI ini. Periksa listing .JK dan tanggal harganya; harga tersimpan tetap dipertahankan.",
   knownNetWorth: "Subtotal yang diketahui",
   cashAssets: "Aset kas",
   stockAssets: "Saham yang sudah dinilai",
@@ -346,17 +369,40 @@ const id: Record<keyof typeof en, string> = {
   monthPrevious: "Bulan sebelumnya",
   monthNext: "Bulan berikutnya",
   today: "Hari ini",
-  monthlyPayment: "Tambahan cicilan bulanan (IDR)",
-  firstPayment: "Tanggal cicilan pertama",
   simulateUntil: "Proyeksikan hingga",
-  runSimulation: "Bandingkan skenario",
-  comparing: "Membandingkan...",
+  calculateExpenses: "Hitung proyeksi",
+  calculating: "Menghitung...",
   simulationHint:
     "Dasar perhitungan memakai jadwal rutin aktif. Belanja di luar jadwal, jatuh tempo utang, dan perubahan investasi mendatang tidak otomatis termasuk.",
+  calculatorHint:
+    "Pemasukan dan pengeluaran rutin aktif dari kalender keuangan dihitung dari hari ini sampai tanggal pilihan. Jatuh tempo utang dan target dana tetap menjadi pengingat, jadi tidak dihitung agar tidak terhitung dua kali.",
+  currentCashHint:
+    "Ini adalah kas tercatat dari seluruh akun dan menjadi titik awal proyeksi.",
+  addedIncome: "Pemasukan tambahan",
+  additionalIncomeHint:
+    "Tambahkan pemasukan satu kali untuk melihat dampaknya sebelum dicatat.",
+  addIncome: "Tambah pemasukan",
+  removeIncome: "Hapus pemasukan",
+  incomeName: "Nama pemasukan",
+  incomeAmount: "Nominal (IDR)",
+  incomeDate: "Tanggal pemasukan",
+  addedExpenses: "Pengeluaran tambahan",
+  additionalExpenseHint:
+    "Tambahkan pengeluaran satu kali untuk melihat dampaknya sebelum dicatat.",
+  addExpense: "Tambah pengeluaran",
+  removeExpense: "Hapus pengeluaran",
+  expenseName: "Nama pengeluaran",
+  expenseAmount: "Nominal (IDR)",
+  expenseDate: "Tanggal pengeluaran",
+  currentCash: "Kas saat ini",
+  scheduledIncome: "Pemasukan terjadwal",
+  scheduledExpenses: "Pengeluaran terjadwal",
+  projectedCash: "Kas proyeksi",
   baseline: "Tanpa tambahan cicilan",
   scenario: "Dengan tambahan cicilan",
   scenarioDifference: "Perubahan saldo",
-  simulatedPayments: "{count} cicilan hipotetis",
+  plannedExpenseCount: "{count} rencana pengeluaran ditambahkan.",
+  plannedIncomeCount: "{count} rencana pemasukan ditambahkan.",
   simulationOnly:
     "Hanya pratinjau. Tidak ada transaksi atau jadwal yang dibuat.",
   simulationStale:

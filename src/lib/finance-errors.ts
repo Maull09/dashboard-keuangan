@@ -9,7 +9,7 @@ export const financeErrorCodes = [
   "fundBalanceExceeded",
   "fundTargetExceeded",
   "linkedFundTransaction",
-  "pricesNotConfigured",
+  "marketDataUnavailable",
   "priceAccessRequired",
   "pricesRateLimited",
   "invalidMarketPrice",

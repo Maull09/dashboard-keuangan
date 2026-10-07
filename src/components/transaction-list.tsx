@@ -45,6 +45,7 @@ const colors = {
   expense: "text-rose-700 bg-rose-50",
   transfer: "text-sky-700 bg-sky-50",
 }
+const noAccounts: Account[] = []
 
 export function TransactionList() {
   const { t, formatCurrency, formatDate } = useLanguage()
@@ -78,7 +79,7 @@ export function TransactionList() {
   })
   const records = useRemoteData<TransactionPage>("/api/transactions?" + params)
   const accountData = useRemoteData<Account[]>("/api/accounts")
-  const accounts = accountData.data ?? []
+  const accounts = accountData.data ?? noAccounts
   const accountsById = useMemo(
     () => new Map(accounts.map((item) => [item.id, item.name])),
     [accounts],

@@ -7,9 +7,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -32,6 +29,7 @@ import { NetWorth } from "@/components/net-worth"
 import { FinancialCalendar } from "@/components/financial-calendar"
 import { FinancialSimulation } from "@/components/financial-simulation"
 import { SinkingFunds } from "@/components/sinking-funds"
+import { ReportDistribution } from "@/components/report-distribution"
 import { Sidebar, navigationItems } from "@/components/sidebar"
 import { QuickGuide } from "@/components/quick-guide"
 import { useLanguage } from "@/components/language-provider"
@@ -146,7 +144,6 @@ export default function FinanceTracker() {
     </div>
   )
 }
-
 function Dashboard() {
   const { locale, t, formatCurrency } = useLanguage()
   const records = useRemoteData<DashboardData>(
@@ -346,7 +343,6 @@ function Dashboard() {
     </div>
   )
 }
-
 function Metric({
   label,
   amount,
@@ -422,13 +418,13 @@ function Reports() {
         data && (
           <>
             <div className="grid gap-5 xl:grid-cols-2">
-              <Distribution
+              <ReportDistribution
                 title={t("expensesByCategory")}
                 description={t("expensesByCategoryDescription")}
                 data={expenses}
                 empty={t("noExpenseData")}
               />
-              <Distribution
+              <ReportDistribution
                 title={t("incomeSources")}
                 description={t("incomeSourcesDescription")}
                 data={incomes}
@@ -493,66 +489,3 @@ function Reports() {
   )
 }
 
-function Distribution({
-  title,
-  description,
-  data,
-  empty,
-}: {
-  title: string
-  description: string
-  data: Array<{ name: string; value: number; color: string }>
-  empty: string
-}) {
-  const { t, formatCurrency } = useLanguage()
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {data.length === 0 ? (
-          <div className="flex min-h-60 items-center justify-center text-sm text-muted-foreground">
-            {empty}
-          </div>
-        ) : (
-          <>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart accessibilityLayer>
-                <Pie
-                  isAnimationActive={false}
-                  data={data}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={58}
-                  outerRadius={85}
-                  paddingAngle={2}
-                >
-                  {data.map((item) => (
-                    <Cell key={item.name} fill={item.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-            <ul
-              aria-label={t("category")}
-              className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs"
-            >
-              {data.map((item) => (
-                <li key={item.name} className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  {item.name}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
