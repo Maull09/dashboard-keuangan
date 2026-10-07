@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server"
 import { desc } from "drizzle-orm"
-import { db } from "@/db"
 import { stockInstruments, stockPrices, stockWatchlist } from "@/db/schema"
 import { calculateHoldings, investmentTotals } from "@/lib/investments"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { readLedger, readReservations } from "@/lib/server/ledger"
 
 export async function GET() {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const [ledger, reservations, instruments, prices, watchlist] =
       await Promise.all([
-        readLedger(),
-        readReservations(),
+        readLedger(db),
+        readReservations(db),
         db.select().from(stockInstruments),
         db.select().from(stockPrices).orderBy(desc(stockPrices.date)),
         db.select().from(stockWatchlist),

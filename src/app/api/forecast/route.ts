@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { db } from "@/db"
 import { recurringTransactions } from "@/db/schema"
 import { calculateForecast } from "@/lib/calculations"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { getToday, isDate } from "@/lib/finance"
 import { readLedger } from "@/lib/server/ledger"
 import { scheduleOccurrences } from "@/lib/planning"
 
 export async function GET(request: NextRequest) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const payday = new URL(request.url).searchParams.get("payday")
     const today = getToday()
 
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ code: "invalidInput" }, { status: 400 })
 
     const [ledger, recurring] = await Promise.all([
-      readLedger(),
+      readLedger(db),
       db.select().from(recurringTransactions),
     ])
     const currentBalance = ledger.cashBalance

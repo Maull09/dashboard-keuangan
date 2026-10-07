@@ -12,6 +12,18 @@ export async function requestJson<T>(
     throw new Error("networkError")
   }
   if (!response.ok) {
+    if (response.status === 401) {
+      if (typeof window !== "undefined")
+        window.location.replace(
+          "/sign-in?next=" +
+            encodeURIComponent(
+              window.location.pathname +
+                window.location.search +
+                window.location.hash,
+            ),
+        )
+      throw new Error("unauthorized")
+    }
     const body = await response.json().catch(() => null)
     if (body && financeErrorCodes.includes(body.code))
       throw new Error(body.code)

@@ -14,6 +14,8 @@ function normalizeDefault(value) {
   if (value === undefined || value === null) return null
   return String(value)
     .replace(/::[\w." ]+(?:\[\])?/g, "")
+    .replace(/\bNULLIF\(/gi, "nullif(")
+    .replace(/^\((nullif\(.*\))\)$/, "$1")
     .trim()
 }
 

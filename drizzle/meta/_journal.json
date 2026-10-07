@@ -43,6 +43,27 @@
       "when": 1791044480650,
       "tag": "0005_concerned_ego",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791388797797,
+      "tag": "0006_auth_ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791389088791,
+      "tag": "0007_auth_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791399115225,
+      "tag": "0008_yahoo_price_default",
+      "breakpoints": true
     }
   ]
 }

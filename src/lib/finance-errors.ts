@@ -1,4 +1,6 @@
 export const financeErrorCodes = [
+  "unauthorized",
+  "forbidden",
   "invalidInput",
   "recordMissing",
   "recordConflict",

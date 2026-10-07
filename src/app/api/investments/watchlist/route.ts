@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/db"
 import { stockInstruments, stockWatchlist } from "@/db/schema"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { recordInput, symbolInput, textInput } from "@/lib/planning-validation"
 import { FinanceError } from "@/lib/finance-errors"
 
 export async function POST(request: NextRequest) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const body = recordInput(await request.json())
     const symbol = symbolInput(body.symbol)
     const name = textInput(body.name ?? symbol)
@@ -15,7 +14,7 @@ export async function POST(request: NextRequest) {
       await connection
         .insert(stockInstruments)
         .values({ symbol, name })
-        .onConflictDoUpdate({ target: stockInstruments.symbol, set: { name } })
+        .onConflictDoNothing()
       const [item] = await connection
         .insert(stockWatchlist)
         .values({ symbol, note })

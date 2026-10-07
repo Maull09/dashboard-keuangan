@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/db"
 import {
   recurringTransactions,
   debts,
   debtPayments,
   sinkingFunds,
 } from "@/db/schema"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { FinanceError } from "@/lib/finance-errors"
 import { isMonth, getNextMonthStart } from "@/lib/finance"
 import { scheduleOccurrences } from "@/lib/planning"
 
 export async function GET(request: NextRequest) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const month = new URL(request.url).searchParams.get("month")
     if (
       !isMonth(month) ||

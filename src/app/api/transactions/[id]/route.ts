@@ -1,18 +1,17 @@
 import { eq } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
-import { db } from "@/db"
 import { transactions, sinkingFundEntries, debtPayments } from "@/db/schema"
 import { accountsExist } from "@/lib/accounts"
 import { parseTransactionInput } from "@/lib/validation"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { integerInput } from "@/lib/planning-validation"
 import { FinanceError } from "@/lib/finance-errors"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const id = integerInput((await params).id, 1, 2_147_483_647)
     const input = parseTransactionInput(await request.json())
 
@@ -20,7 +19,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       !Number.isSafeInteger(id) ||
       id <= 0 ||
       !input ||
-      !(await accountsExist(input.accountId, input.destinationAccountId))
+      !(await accountsExist(db, input.accountId, input.destinationAccountId))
     ) {
       return NextResponse.json(
         { error: "Data transaksi tidak valid" },
@@ -61,7 +60,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(_: NextRequest, { params }: RouteContext) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const id = integerInput((await params).id, 1, 2_147_483_647)
 
     if (!Number.isSafeInteger(id) || id <= 0) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { readLedger } from "@/lib/server/ledger"
 import { tradeCashChange } from "@/lib/investments"
 import {
@@ -17,7 +17,7 @@ import {
 } from "@/lib/finance"
 
 export async function GET(request: NextRequest) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const locale =
       new URL(request.url).searchParams.get("locale") === "en" ? "en" : "id"
     const {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       transactions: allTransactions,
       trades,
       cashBalance,
-    } = await readLedger()
+    } = await readLedger(db)
     const requestedMonth = new URL(request.url).searchParams.get("month")
     const currentMonth = isMonth(requestedMonth)
       ? requestedMonth

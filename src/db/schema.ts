@@ -1,6 +1,14 @@
+import {
+  ownerPolicy,
+  privateAccessPolicy,
+  marketReadPolicy,
+  marketInsertPolicy,
+  marketUpdatePolicy,
+} from "./ownership"
 // src/db/schema.ts
 import {
   pgTable,
+  uuid,
   serial,
   text,
   integer,
@@ -37,138 +45,257 @@ export const recurringFrequencyEnum = pgEnum("recurring_frequency", [
   "monthly",
 ])
 
-export const debts = pgTable("debts", {
-  id: serial("id").primaryKey(),
-  type: text("type").notNull(), // "utang" | "piutang"
-  name: text("name").notNull(),
-  amount: integer("amount").notNull(),
-  description: text("description"),
-  status: debtStatusEnum("status").notNull().default("unpaid"),
-  dueDate: date("due_date"),
-  paidDate: date("paid_date"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const debts = pgTable(
+  "debts",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    type: text("type").notNull(), // "utang" | "piutang"
+    name: text("name").notNull(),
+    amount: integer("amount").notNull(),
+    description: text("description"),
+    status: debtStatusEnum("status").notNull().default("unpaid"),
+    dueDate: date("due_date"),
+    paidDate: date("paid_date"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("debts", []),
+    index("debts_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const accounts = pgTable("accounts", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  type: accountTypeEnum("type").notNull(),
-  initialBalance: integer("initial_balance").notNull().default(0),
-  description: text("description"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const accounts = pgTable(
+  "accounts",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    type: accountTypeEnum("type").notNull(),
+    initialBalance: integer("initial_balance").notNull().default(0),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("accounts", []),
+    index("accounts_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const transactions = pgTable("transactions", {
-  id: serial("id").primaryKey(),
-  type: transactionTypeEnum("type").notNull(),
-  amount: integer("amount").notNull(),
-  category: text("category").notNull(),
-  description: text("description"),
-  date: date("date").notNull(),
-  accountId: integer("account_id")
-    .references(() => accounts.id)
-    .notNull(),
-  destinationAccountId: integer("destination_account_id").references(
-    () => accounts.id,
-  ),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const transactions = pgTable(
+  "transactions",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    type: transactionTypeEnum("type").notNull(),
+    amount: integer("amount").notNull(),
+    category: text("category").notNull(),
+    description: text("description"),
+    date: date("date").notNull(),
+    accountId: integer("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    destinationAccountId: integer("destination_account_id").references(
+      () => accounts.id,
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("transactions", [
+      ["account_id", "accounts"],
+      ["destination_account_id", "accounts"],
+    ]),
+    index("transactions_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const budgets = pgTable("budgets", {
-  id: serial("id").primaryKey(),
-  category: text("category").notNull(),
-  budget: integer("budget").notNull(),
-  spent: integer("spent").notNull().default(0),
-  period: budgetPeriodEnum("period").notNull().default("monthly"),
-  periodStart: date("period_start").notNull(),
-  rolloverEnabled: boolean("rollover_enabled").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const budgets = pgTable(
+  "budgets",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    category: text("category").notNull(),
+    budget: integer("budget").notNull(),
+    spent: integer("spent").notNull().default(0),
+    period: budgetPeriodEnum("period").notNull().default("monthly"),
+    periodStart: date("period_start").notNull(),
+    rolloverEnabled: boolean("rollover_enabled").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("budgets", []),
+    index("budgets_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const recurringTransactions = pgTable("recurring_transactions", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  type: transactionTypeEnum("type").notNull(),
-  amount: integer("amount").notNull(),
-  category: text("category").notNull(),
-  description: text("description"),
-  accountId: integer("account_id")
-    .references(() => accounts.id)
-    .notNull(),
-  destinationAccountId: integer("destination_account_id").references(
-    () => accounts.id,
-  ),
-  frequency: recurringFrequencyEnum("frequency").notNull().default("monthly"),
-  startDate: date("start_date").notNull(),
-  endDate: date("end_date"),
-  lastExecutedDate: date("last_executed_date"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const recurringTransactions = pgTable(
+  "recurring_transactions",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    type: transactionTypeEnum("type").notNull(),
+    amount: integer("amount").notNull(),
+    category: text("category").notNull(),
+    description: text("description"),
+    accountId: integer("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    destinationAccountId: integer("destination_account_id").references(
+      () => accounts.id,
+    ),
+    frequency: recurringFrequencyEnum("frequency").notNull().default("monthly"),
+    startDate: date("start_date").notNull(),
+    endDate: date("end_date"),
+    lastExecutedDate: date("last_executed_date"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("recurring_transactions", [
+      ["account_id", "accounts"],
+      ["destination_account_id", "accounts"],
+    ]),
+    index("recurring_transactions_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const goalContributions = pgTable("goal_contributions", {
-  id: serial("id").primaryKey(),
-  goalId: integer("goal_id")
-    .references(() => goals.id)
-    .notNull(),
-  accountId: integer("account_id")
-    .references(() => accounts.id)
-    .notNull(),
-  amount: integer("amount").notNull(),
-  date: date("date").notNull(),
-  note: text("note"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const goalContributions = pgTable(
+  "goal_contributions",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    goalId: integer("goal_id")
+      .references(() => goals.id)
+      .notNull(),
+    accountId: integer("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    amount: integer("amount").notNull(),
+    date: date("date").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("goal_contributions", [
+      ["goal_id", "goals"],
+      ["account_id", "accounts"],
+    ]),
+    index("goal_contributions_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const debtPayments = pgTable("debt_payments", {
-  id: serial("id").primaryKey(),
-  debtId: integer("debt_id")
-    .references(() => debts.id)
-    .notNull(),
-  accountId: integer("account_id")
-    .references(() => accounts.id)
-    .notNull(),
-  amount: integer("amount").notNull(),
-  date: date("date").notNull(),
-  note: text("note"),
-  transactionId: integer("transaction_id")
-    .references(() => transactions.id)
-    .notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const debtPayments = pgTable(
+  "debt_payments",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    debtId: integer("debt_id")
+      .references(() => debts.id)
+      .notNull(),
+    accountId: integer("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    amount: integer("amount").notNull(),
+    date: date("date").notNull(),
+    note: text("note"),
+    transactionId: integer("transaction_id")
+      .references(() => transactions.id)
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("debt_payments", [
+      ["debt_id", "debts"],
+      ["account_id", "accounts"],
+      ["transaction_id", "transactions"],
+    ]),
+    index("debt_payments_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const reconciliations = pgTable("reconciliations", {
-  id: serial("id").primaryKey(),
-  accountId: integer("account_id")
-    .references(() => accounts.id)
-    .notNull(),
-  actualBalance: integer("actual_balance").notNull(),
-  date: date("date").notNull(),
-  note: text("note"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const reconciliations = pgTable(
+  "reconciliations",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    accountId: integer("account_id")
+      .references(() => accounts.id)
+      .notNull(),
+    actualBalance: integer("actual_balance").notNull(),
+    date: date("date").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("reconciliations", [["account_id", "accounts"]]),
+    index("reconciliations_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const goals = pgTable("goals", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  targetAmount: integer("target_amount").notNull(),
-  currentAmount: integer("current_amount").notNull().default(0),
-  targetDate: date("target_date").notNull(),
-  category: text("category").notNull().default("other"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const goals = pgTable(
+  "goals",
+  {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    targetAmount: integer("target_amount").notNull(),
+    currentAmount: integer("current_amount").notNull().default(0),
+    targetDate: date("target_date").notNull(),
+    category: text("category").notNull().default("other"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("goals", []),
+    index("goals_user_id_idx").on(table.userId),
+  ],
+).enableRLS()
 
-export const stockInstruments = pgTable("stock_instruments", {
-  symbol: text("symbol").primaryKey(),
-  name: text("name").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
+export const stockInstruments = pgTable(
+  "stock_instruments",
+  {
+    symbol: text("symbol").primaryKey(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  () => [marketReadPolicy(), marketInsertPolicy()],
+).enableRLS()
 
 export const stockTrades = pgTable(
   "stock_trades",
   {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
     id: serial("id").primaryKey(),
     symbol: text("symbol")
       .notNull()
@@ -195,6 +322,10 @@ export const stockTrades = pgTable(
       .defaultNow(),
   },
   (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("stock_trades", [["account_id", "accounts"]]),
+    index("stock_trades_user_id_idx").on(table.userId),
+
     index("stock_trades_account_symbol_date_idx").on(
       table.accountId,
       table.symbol,
@@ -210,7 +341,7 @@ export const stockTrades = pgTable(
       sql`${table.price} > 0 and ${table.fees} >= 0`,
     ),
   ],
-)
+).enableRLS()
 
 export const stockPrices = pgTable(
   "stock_prices",
@@ -221,30 +352,53 @@ export const stockPrices = pgTable(
       .references(() => stockInstruments.symbol),
     price: bigint("price", { mode: "number" }).notNull(),
     date: date("date").notNull(),
-    source: text("source").notNull().default("Twelve Data"),
+    source: text("source").notNull().default("Yahoo Finance"),
     fetchedAt: timestamp("fetched_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
+    marketReadPolicy(),
+    marketInsertPolicy(),
+    marketUpdatePolicy(),
+
     uniqueIndex("stock_prices_symbol_date_idx").on(table.symbol, table.date),
     check("stock_prices_positive_price", sql`${table.price} > 0`),
   ],
-)
+).enableRLS()
 
-export const stockWatchlist = pgTable("stock_watchlist", {
-  symbol: text("symbol")
-    .primaryKey()
-    .references(() => stockInstruments.symbol),
-  note: text("note").notNull().default(""),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
+export const stockWatchlist = pgTable(
+  "stock_watchlist",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
+    symbol: text("symbol")
+      .notNull()
+      .references(() => stockInstruments.symbol),
+    note: text("note").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("stock_watchlist", []),
+    index("stock_watchlist_user_id_idx").on(table.userId),
+    uniqueIndex("stock_watchlist_user_symbol_idx").on(
+      table.userId,
+      table.symbol,
+    ),
+  ],
+).enableRLS()
 
 export const sinkingFunds = pgTable(
   "sinking_funds",
   {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     accountId: integer("account_id")
@@ -258,13 +412,20 @@ export const sinkingFunds = pgTable(
       .defaultNow(),
   },
   (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("sinking_funds", [["account_id", "accounts"]]),
+    index("sinking_funds_user_id_idx").on(table.userId),
+
     check("sinking_funds_positive_target", sql`${table.targetAmount} > 0`),
   ],
-)
+).enableRLS()
 
 export const sinkingFundEntries = pgTable(
   "sinking_fund_entries",
   {
+    userId: uuid("user_id").default(
+      sql`nullif(current_setting('app.user_id', true), '')::uuid`,
+    ),
     id: serial("id").primaryKey(),
     fundId: integer("fund_id")
       .notNull()
@@ -279,6 +440,13 @@ export const sinkingFundEntries = pgTable(
       .defaultNow(),
   },
   (table) => [
+    privateAccessPolicy(),
+    ownerPolicy("sinking_fund_entries", [
+      ["fund_id", "sinking_funds"],
+      ["transaction_id", "transactions"],
+    ]),
+    index("sinking_fund_entries_user_id_idx").on(table.userId),
+
     index("sinking_fund_entries_fund_idx").on(table.fundId),
     uniqueIndex("sinking_fund_entries_transaction_idx").on(table.transactionId),
     check(
@@ -291,4 +459,4 @@ export const sinkingFundEntries = pgTable(
       sql`(${table.kind} = 'spend') = (${table.transactionId} is not null)`,
     ),
   ],
-)
+).enableRLS()

@@ -12,10 +12,9 @@ import {
 } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
-import { db } from "@/db"
 import { transactions } from "@/db/schema"
 import { accountsExist } from "@/lib/accounts"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { parseTransactionInput } from "@/lib/validation"
 import {
   findEnglishCategoryMatches,
@@ -23,7 +22,7 @@ import {
 } from "@/lib/transaction-filters"
 
 export async function GET(request: NextRequest) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const params = new URL(request.url).searchParams
     const pageValue = Number(params.get("page"))
     const limitValue = Number(params.get("limit") ?? 25)
@@ -104,16 +103,19 @@ export async function GET(request: NextRequest) {
   })
 }
 export async function POST(request: NextRequest) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const input = parseTransactionInput(await request.json())
 
     if (
       !input ||
-      !(await accountsExist(input.accountId, input.destinationAccountId))
+      !(await accountsExist(db, input.accountId, input.destinationAccountId))
     )
       return NextResponse.json({ code: "invalidInput" }, { status: 400 })
 
-    const [transaction] = await db.insert(transactions).values(input).returning()
+    const [transaction] = await db
+      .insert(transactions)
+      .values(input)
+      .returning()
     return NextResponse.json(transaction, { status: 201 })
   })
 }

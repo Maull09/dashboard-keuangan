@@ -1,8 +1,7 @@
 import { eq } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/db"
 import { stockInstruments, stockWatchlist } from "@/db/schema"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { recordInput, symbolInput, textInput } from "@/lib/planning-validation"
 import { FinanceError } from "@/lib/finance-errors"
 
@@ -10,7 +9,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ symbol: string }> },
 ) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const symbol = symbolInput((await params).symbol)
     const body = recordInput(await request.json())
     if (body.symbol != null && symbolInput(body.symbol) !== symbol)
@@ -38,7 +37,7 @@ export async function DELETE(
   _: NextRequest,
   { params }: { params: Promise<{ symbol: string }> },
 ) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const symbol = symbolInput((await params).symbol)
     const [item] = await db
       .delete(stockWatchlist)

@@ -1,0 +1,15 @@
+export const ownedTables = [
+  "accounts",
+  "budgets",
+  "debts",
+  "goals",
+  "transactions",
+  "recurring_transactions",
+  "goal_contributions",
+  "debt_payments",
+  "reconciliations",
+  "stock_trades",
+  "stock_watchlist",
+  "sinking_funds",
+  "sinking_fund_entries",
+]

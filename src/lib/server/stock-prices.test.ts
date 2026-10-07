@@ -24,6 +24,14 @@ const state = vi.hoisted(() => ({
 vi.mock("./yahoo-prices", () => ({ readYahooDailyPrice: state.readPrice }))
 vi.mock("@/db", () => ({
   db: {
+    transaction: async (action: (connection: unknown) => Promise<unknown>) => action({
+      insert: () => ({ values: (quote: (typeof state.writes)[number]) => ({
+        onConflictDoUpdate: async () => {
+          if (state.writeError) throw new Error("private database error")
+          state.writes.push(quote)
+        },
+      }) }),
+    }),
     select: () => ({
       from: (table: unknown) => {
         if (table === stockTrades) return Promise.resolve([])
@@ -32,14 +40,6 @@ vi.mock("@/db", () => ({
           return { orderBy: () => Promise.resolve(state.prices) }
         throw new Error("Unexpected read")
       },
-    }),
-    insert: () => ({
-      values: (quote: (typeof state.writes)[number]) => ({
-        onConflictDoUpdate: async () => {
-          if (state.writeError) throw new Error("private database error")
-          state.writes.push(quote)
-        },
-      }),
     }),
   },
 }))

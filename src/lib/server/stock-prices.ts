@@ -5,11 +5,13 @@ import { calculateHoldings } from "../investments"
 import { FinanceError, type FinanceErrorCode } from "../finance-errors"
 import { readYahooDailyPrice } from "./yahoo-prices"
 
-export async function refreshDailyStockPrices() {
+export async function refreshDailyStockPrices(
+  connection: Pick<typeof db, "select" | "transaction"> = db,
+) {
   const [trades, watchlist, prices] = await Promise.all([
-    db.select().from(stockTrades),
-    db.select().from(stockWatchlist),
-    db.select().from(stockPrices).orderBy(desc(stockPrices.date)),
+    connection.select().from(stockTrades),
+    connection.select().from(stockWatchlist),
+    connection.select().from(stockPrices).orderBy(desc(stockPrices.date)),
   ])
   const symbols = [
     ...new Set([
@@ -43,7 +45,7 @@ export async function refreshDailyStockPrices() {
     }
     try {
       const quote = await readYahooDailyPrice(symbol)
-      await db
+      await connection.transaction(async (priceConnection) => priceConnection
         .insert(stockPrices)
         .values(quote)
         .onConflictDoUpdate({
@@ -53,7 +55,7 @@ export async function refreshDailyStockPrices() {
             fetchedAt: new Date(),
             source: quote.source,
           },
-        })
+        }))
       updated++
     } catch (error) {
       const code =
