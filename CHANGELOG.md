@@ -9,6 +9,7 @@ This log records notable project changes. Dates use the Asia/Jakarta time zone.
 - Reworked the read-only simulation into an expense calculator that starts with recorded cash, pulls active recurring income and expenses from the financial calendar, and accepts up to 20 dated planned expenses.
 - Added a clear cash-flow breakdown and monthly projection table, including negative-balance warnings. Planned expenses are never recorded as transactions or schedules.
 - Kept debt/receivable deadlines and sinking-fund targets out of the calculator because those calendar reminders can overlap with recurring schedules or do not themselves move cash. Updated English and Indonesian UI copy and planning documentation accordingly.
+- Added the live current-cash starting balance and multiple dated planned-income rows, so the projection now accounts for both expected inflows and outflows.
 
 Verification: 200 automated tests, TypeScript checking, ESLint, and a production build passed.
 

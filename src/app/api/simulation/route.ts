@@ -7,6 +7,13 @@ import { simulateCashflow } from "@/lib/planning"
 import { getToday } from "@/lib/finance"
 import { readLedger } from "@/lib/server/ledger"
 
+export async function GET() {
+  return financeResponse(async () => {
+    const ledger = await readLedger()
+    return NextResponse.json({ currentBalance: ledger.cashBalance })
+  })
+}
+
 export async function POST(request: NextRequest) {
   return financeResponse(async () => {
     const input = parseSimulation(await request.json())
@@ -21,6 +28,7 @@ export async function POST(request: NextRequest) {
         schedules,
         getToday(),
         input.endDate,
+        input.extraIncomes,
         input.extraExpenses,
       ),
     })

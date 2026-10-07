@@ -15,7 +15,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 - Decimal stock quantities and purchase/sale prices: fractional lots and shares are supported, with four-decimal per-share prices and average cost, and cent-precision cash accounting.
 - Daily IDX stock closes from Yahoo Finance, with manual refresh, visible quote dates/sources, and a protected scheduled job. No market-data API key is required; the integration is unofficial and availability is not guaranteed.
 - Net worth combining cash, stock valuations, receivables, and unpaid debts without counting allocations twice.
-- A read-only expense calculator combining recurring calendar cash flow with multiple dated planned expenses.
+- A read-only expense calculator combining current cash and recurring calendar cash flow with multiple dated planned incomes and expenses.
 - A monthly financial calendar for recurring income/payments, debt deadlines, and sinking-fund targets.
 - Account-linked sinking funds with allocation/release history, suggested monthly savings, and linked expense recording.
 - English and Indonesian user interface localization.
@@ -103,7 +103,7 @@ See [investment and planning setup](docs/investments-and-planning.md) for provid
 
 Start by adding an account and its opening balance, then record your income, expenses, or transfers. Use the navigation to review budgets, goals, debts, reports, and recurring schedules. **Quick guide** in the header explains the main workflows.
 
-For stocks, create an account of type **Investment**, fund it with cash, and record actual buys/sells in **Investments**. **Net worth** combines cash and current stock valuations. **Expense calculator** projects recurring calendar income/expenses plus several dated planned expenses without recording them; **Financial calendar** shows planned dates; **Sinking funds** reserves money for expected expenses.
+For stocks, create an account of type **Investment**, fund it with cash, and record actual buys/sells in **Investments**. **Net worth** combines cash and current stock valuations. **Expense calculator** pulls current recorded cash, projects recurring calendar income/expenses, and includes several dated planned incomes/expenses without recording them; **Financial calendar** shows planned dates; **Sinking funds** reserves money for expected expenses.
 
 Use **Edit** and **Delete** on individual financial records. In Investments, **Manage trades** opens **Trade history**, where you can correct the ticker, account, side, quantity, price, fees, date, or note. Saving recalculates cash, holdings, and gains; invalid share/cash histories are rejected. Watchlist editing changes the company name and note, not the ticker.
 
