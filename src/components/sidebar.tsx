@@ -11,7 +11,7 @@ import {
   Wallet,
   ChartCandlestick,
   CalendarDays,
-  FlaskConical,
+  Calculator,
   PiggyBank,
   Scale,
 } from "lucide-react"
@@ -45,7 +45,7 @@ export const navigationItems = [
   { key: "investments", icon: ChartCandlestick },
   { key: "netWorth", icon: Scale },
   { key: "calendar", icon: CalendarDays },
-  { key: "simulation", icon: FlaskConical },
+  { key: "simulation", icon: Calculator },
   { key: "funds", icon: PiggyBank },
 ]
 

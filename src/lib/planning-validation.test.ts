@@ -198,26 +198,27 @@ describe("financial planning validation", () => {
       }),
     ).toThrow("invalidInput")
   })
-  it("limits simulation dates and requires a positive recurring amount", () => {
+  it("limits calculator dates and validates planned expenses", () => {
     expect(
       parseSimulation({
-        startDate: "2026-10-03",
         endDate: "2026-11-30",
-        monthlyPayment: "500000",
-      }).monthlyPayment,
-    ).toBe(500000)
+        extraExpenses: [
+          { name: "Phone", amount: "500000", date: "2026-10-10" },
+        ],
+      }).extraExpenses,
+    ).toEqual([{ name: "Phone", amount: 500000, date: "2026-10-10" }])
     expect(() =>
       parseSimulation({
-        startDate: "2026-10-03",
         endDate: "2036-01-01",
-        monthlyPayment: 500000,
+        extraExpenses: [],
       }),
     ).toThrow("invalidInput")
     expect(() =>
       parseSimulation({
-        startDate: "2026-10-03",
-        endDate: "2026-10-02",
-        monthlyPayment: 500000,
+        endDate: "2026-10-31",
+        extraExpenses: [
+          { name: "Phone", amount: 500000, date: "2026-11-01" },
+        ],
       }),
     ).toThrow("invalidInput")
   })
