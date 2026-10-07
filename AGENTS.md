@@ -25,7 +25,8 @@
 - Update `CHANGELOG.md` when a change is user-facing or otherwise worth noting for future reference.
 - Update `README.md` when the project's purpose, setup, architecture, or current state changes.
 - Update `docs/` when a change affects setup, configuration, operations, or troubleshooting and the repository maintains detailed documentation there.
-- Stage, commit and push changes in small, verifiable increments to github. Avoid large, unreviewable commits. Use branches for larger changes and pull requests for review when appropriate. Maintain a clear commit history with descriptive messages. Avoid "fixup" or "squash" commits unless they are part of a review process. Create the commit message and PR description to clearly describe the change, why it was made, and how it was verified.
+- Before staging, confirm that the requested change belongs to the current branch and its open PR. Do not add unrelated documentation, chores, or fixes to a feature branch; create or switch to a dedicated branch based on the current default branch unless the user explicitly asks to combine them.
+- Stage, commit, and push coherent changes in small, verifiable increments to GitHub. Keep each pull request focused on one purpose, use descriptive commit messages, and state what changed, why, and how it was verified. Avoid "fixup" or "squash" commits unless they are part of a review process.
 
 ## Skill Usage
 
