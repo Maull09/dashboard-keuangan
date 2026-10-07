@@ -52,15 +52,21 @@ export type CalendarEvent = {
   source: string
 }
 export type CalendarData = { month: string; events: CalendarEvent[] }
+export type PlannedExpense = {
+  name: string
+  amount: number
+  date: string
+}
 export type SimulationData = {
-  startDate: string
   endDate: string
-  monthlyPayment: number
   currentBalance: number
   baseline: number
   scenario: number
   difference: number
-  payments: number
+  scheduledIncome: number
+  scheduledExpense: number
+  extraExpense: number
+  extraExpenseCount: number
   rows: Array<{
     month: string
     income: number

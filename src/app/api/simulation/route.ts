@@ -20,9 +20,8 @@ export async function POST(request: NextRequest) {
         ledger.cashBalance,
         schedules,
         getToday(),
-        input.startDate,
         input.endDate,
-        input.monthlyPayment,
+        input.extraExpenses,
       ),
     })
   })
