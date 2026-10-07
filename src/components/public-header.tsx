@@ -13,7 +13,7 @@ export function PublicHeader() {
         href="/"
         className="flex min-h-11 items-center gap-3 font-semibold tracking-tight"
       >
-        <span className="rounded-lg bg-teal-700 p-2 text-white">
+        <span className="rounded-lg bg-brand p-2 text-white">
           <Landmark className="size-5" aria-hidden="true" />
         </span>
         Finance Tracker

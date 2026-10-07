@@ -73,11 +73,7 @@ const en = {
   unpriced: "Not valued yet",
   unpricedHint:
     "{count} holding(s) have no market price. The portfolio total is incomplete; recorded cost is not substituted for market value.",
-  eodHint:
-    "End-of-day prices, not real-time quotes. Check the price date; older prices remain visible when updates fail.",
   refreshPrices: "Update daily prices",
-  pricesSourceHint:
-    "Daily prices use Yahoo Finance through an unofficial integration, without an API key. Availability is not guaranteed; quotes may be delayed.",
   priceUpdateResult:
     "{updated} updated, {cached} cached, {failed} failed, {pending} pending.",
   tradeSaved: "Stock trade recorded. Cash and holdings updated.",
@@ -294,11 +290,7 @@ const id: Record<keyof typeof en, string> = {
   unpriced: "Belum dinilai",
   unpricedHint:
     "{count} kepemilikan belum memiliki harga pasar. Total portofolio belum lengkap; modal tidak dipakai sebagai pengganti nilai pasar.",
-  eodHint:
-    "Harga akhir hari, bukan real-time. Periksa tanggalnya; harga lama tetap ditampilkan bila pembaruan gagal.",
   refreshPrices: "Perbarui harga harian",
-  pricesSourceHint:
-    "Harga harian berasal dari Yahoo Finance melalui integrasi tidak resmi, tanpa API key. Ketersediaan tidak dijamin; harga dapat tertunda.",
   priceUpdateResult:
     "{updated} diperbarui, {cached} tersimpan, {failed} gagal, {pending} tertunda.",
   tradeSaved: "Transaksi saham dicatat. Kas dan kepemilikan diperbarui.",

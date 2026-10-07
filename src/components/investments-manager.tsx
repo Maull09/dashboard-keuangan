@@ -186,9 +186,6 @@ export function InvestmentsManager() {
                 {t("unpricedHint", { count: data.totals.unpricedCount })}
               </p>
             )}
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {t("pricesSourceHint")} {t("eodHint")}
-            </p>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="max-w-full">
                 <TabsTrigger value="portfolio">{t("portfolio")}</TabsTrigger>
@@ -339,7 +336,7 @@ export function InvestmentsManager() {
                                       "p-4 text-right tabular-nums " +
                                       ((holding.unrealizedGain ?? 0) < 0
                                         ? "text-rose-700"
-                                        : "text-teal-700")
+                                        : "text-brand-active")
                                     }
                                   >
                                     {showMoney(holding.unrealizedGain)}
@@ -508,7 +505,7 @@ export function InvestmentsManager() {
                                 "p-3 text-right tabular-nums " +
                                 (trade.side === "buy"
                                   ? "text-rose-700"
-                                  : "text-teal-700")
+                                  : "text-brand-active")
                               }
                             >
                               {formatCurrency(tradeCashChange(trade))}

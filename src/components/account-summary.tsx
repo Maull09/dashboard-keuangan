@@ -178,7 +178,7 @@ function ReconcileAccount({ account }: { account: Summary }) {
           {difference !== null && (
             <p
               role="status"
-              className="flex items-start gap-2 rounded-lg bg-teal-50 p-3 text-sm text-teal-900"
+              className="flex items-start gap-2 rounded-lg bg-brand-soft p-3 text-sm text-brand-active"
             >
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               {difference === 0

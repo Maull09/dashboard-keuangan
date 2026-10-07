@@ -272,7 +272,7 @@ export function FinancialSimulation() {
             {t("loading")}
           </p>
         ) : balance.data ? (
-          <p className="mt-2 text-2xl font-semibold tabular-nums text-teal-800">
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-brand-active">
             {formatCurrency(balance.data.currentBalance)}
           </p>
         ) : null}
@@ -304,7 +304,7 @@ export function FinancialSimulation() {
               />
             </Field>
           </div>
-          <div className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm leading-relaxed text-teal-950">
+          <div className="rounded-lg border border-brand-border bg-brand-soft p-4 text-sm leading-relaxed text-foreground">
             {t("calculatorHint")}
           </div>
           <PlannedCashflowList
@@ -347,7 +347,7 @@ export function FinancialSimulation() {
         <section className="space-y-5" aria-label={t("monthlyProjection")}>
           <div
             role="status"
-            className="rounded-lg border border-teal-200 bg-teal-50 p-4 text-sm text-teal-900"
+            className="rounded-lg border border-brand-border bg-brand-soft p-4 text-sm text-brand-active"
           >
             {t("simulationOnly")} {t("plannedIncomeCount", { count: result.extraIncomeCount })} {t("plannedExpenseCount", { count: result.extraExpenseCount })}
           </div>
@@ -358,7 +358,7 @@ export function FinancialSimulation() {
               ["addedIncome", result.extraIncome, "text-emerald-700"],
               ["scheduledExpenses", result.scheduledExpense, "text-rose-700"],
               ["addedExpenses", result.extraExpense, "text-rose-700"],
-              ["projectedCash", result.scenario, result.scenario < 0 ? "text-rose-700" : "text-teal-800"],
+              ["projectedCash", result.scenario, result.scenario < 0 ? "text-rose-700" : "text-brand-active"],
             ].map(([key, value, tone]) => (
               <div key={String(key)}>
                 <dt className="text-sm text-muted-foreground">

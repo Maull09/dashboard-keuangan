@@ -36,15 +36,15 @@ export const authMessages: Record<"en" | "id", Record<string, string>> = {
     authSessionLoading: "Checking your session...",
     unauthorized: "Your session has ended. Sign in again to continue.",
     forbidden: "This request is not allowed.",
-    landingTitle: "Make sense of your money.",
+    landingTitle: "See every rupiah more clearly.",
     landingDescription:
-      "Track your spending, plan your budget, and keep your financial goals in view.",
-    landingExplore: "See how it works",
-    landingFeatures: "A place for every financial decision.",
-    landingRecordsTitle: "Know where it goes",
+      "Record what comes in and goes out, then make decisions with clear balances, budgets, and goals.",
+    landingExplore: "Explore the workspace",
+    landingFeatures: "Your records, ready for the next decision.",
+    landingRecordsTitle: "See the full picture",
     landingRecords:
       "Record income, expenses, and transfers across your accounts. See balances calculated from your records.",
-    landingPlansTitle: "Give your money a plan",
+    landingPlansTitle: "Plan what comes next",
     landingPlans:
       "Set spending limits, save toward goals, and keep track of debts and receivables.",
     landingExample: "Example spending report",
@@ -53,7 +53,7 @@ export const authMessages: Record<"en" | "id", Record<string, string>> = {
     landingFood: "Food & groceries",
     landingTransport: "Transport",
     landingBills: "Bills",
-    landingFooter: "Personal finances, clearly recorded.",
+    landingFooter: "Personal finance, made easier to act on.",
   },
   id: {
     signIn: "Masuk",
@@ -92,15 +92,15 @@ export const authMessages: Record<"en" | "id", Record<string, string>> = {
     authSessionLoading: "Memeriksa sesi Anda...",
     unauthorized: "Sesi Anda telah berakhir. Masuk kembali untuk melanjutkan.",
     forbidden: "Permintaan ini tidak diizinkan.",
-    landingTitle: "Kenali alur uang Anda.",
+    landingTitle: "Lihat setiap rupiah dengan lebih jelas.",
     landingDescription:
-      "Catat pengeluaran, susun anggaran, dan pantau tujuan keuangan Anda dalam satu tempat.",
-    landingExplore: "Lihat cara kerjanya",
-    landingFeatures: "Tempat untuk setiap keputusan keuangan.",
-    landingRecordsTitle: "Ketahui ke mana uang pergi",
+      "Catat uang masuk dan keluar, lalu ambil keputusan dari saldo, anggaran, dan tujuan yang lebih jelas.",
+    landingExplore: "Jelajahi ruang kerja",
+    landingFeatures: "Catatan Anda, siap untuk keputusan berikutnya.",
+    landingRecordsTitle: "Lihat gambaran utuh",
     landingRecords:
       "Catat pemasukan, pengeluaran, dan transfer antar akun. Lihat saldo yang dihitung dari catatan Anda.",
-    landingPlansTitle: "Beri uang Anda rencana",
+    landingPlansTitle: "Rencanakan langkah berikutnya",
     landingPlans:
       "Tetapkan batas belanja, sisihkan dana untuk tujuan, dan pantau utang serta piutang.",
     landingExample: "Contoh laporan pengeluaran",
@@ -109,6 +109,6 @@ export const authMessages: Record<"en" | "id", Record<string, string>> = {
     landingFood: "Makanan & belanja",
     landingTransport: "Transportasi",
     landingBills: "Tagihan",
-    landingFooter: "Keuangan pribadi, tercatat dengan jelas.",
+    landingFooter: "Keuangan pribadi yang lebih mudah ditindaklanjuti.",
   },
 }

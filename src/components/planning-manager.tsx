@@ -163,8 +163,8 @@ export function PlanningManager() {
           <p className="text-xs text-muted-foreground">{t("forecastHint")}</p>
           <ErrorNotice message={forecastError} />
           {forecast && (
-            <div role="status" className="rounded-lg border bg-teal-50 p-5">
-              <p className="text-sm text-teal-900">
+            <div role="status" className="rounded-lg border border-brand-border bg-brand-soft p-5">
+              <p className="text-sm text-brand-active">
                 {t("estimatedBalance", { date: formatDate(forecast.payday) })}
               </p>
               <p
@@ -172,12 +172,12 @@ export function PlanningManager() {
                   "mt-2 text-3xl font-semibold tabular-nums " +
                   (forecast.forecastBalance < 0
                     ? "text-rose-700"
-                    : "text-teal-950")
+                    : "text-foreground")
                 }
               >
                 {formatCurrency(forecast.forecastBalance)}
               </p>
-              <p className="mt-3 text-xs text-teal-800">
+              <p className="mt-3 text-xs text-brand-active">
                 {t("currentBalance", {
                   amount: formatCurrency(forecast.currentBalance),
                 })}{" "}

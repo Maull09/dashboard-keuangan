@@ -103,7 +103,7 @@ export function AuthForm({
       <main className="mx-auto max-w-md px-5 pb-16 pt-8 sm:pt-14">
         <Link
           href="/"
-          className="inline-flex min-h-11 items-center text-sm text-teal-800 underline underline-offset-4"
+          className="inline-flex min-h-11 items-center text-sm text-brand-active underline underline-offset-4"
         >
           {t("authBackHome")}
         </Link>
@@ -215,7 +215,7 @@ export function AuthForm({
             <Button
               type="submit"
               disabled={busy}
-              className="min-h-12 w-full bg-teal-700 text-white hover:bg-teal-800"
+              className="min-h-12 w-full bg-brand text-white hover:bg-brand-active"
             >
               {t(busy ? "authWorking" : signingUp ? "signUp" : "signIn")}
             </Button>
@@ -242,7 +242,7 @@ export function AuthForm({
           </p>
         )}
         {resent && (
-          <p role="status" className="mt-4 text-sm text-teal-800">
+          <p role="status" className="mt-4 text-sm text-brand-active">
             {t("authResent")}
           </p>
         )}
@@ -250,7 +250,7 @@ export function AuthForm({
           <p className="mt-8 text-sm text-slate-600">
             {t(signingUp ? "authHasAccount" : "authNoAccount")}{" "}
             <Link
-              className="inline-flex min-h-11 items-center font-medium text-teal-800 underline underline-offset-4"
+              className="inline-flex min-h-11 items-center font-medium text-brand-active underline underline-offset-4"
               href={`${signingUp ? "/sign-in" : "/sign-up"}?next=${encodeURIComponent(target)}`}
             >
               {t(signingUp ? "signIn" : "signUp")}

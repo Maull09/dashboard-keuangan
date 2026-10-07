@@ -43,7 +43,7 @@ export function NetWorth() {
               <p
                 className={
                   "mt-3 break-words text-4xl font-semibold tracking-tight tabular-nums " +
-                  (data.knownNetWorth < 0 ? "text-rose-700" : "text-teal-950")
+                  (data.knownNetWorth < 0 ? "text-rose-700" : "text-foreground")
                 }
               >
                 {formatCurrency(data.knownNetWorth)}

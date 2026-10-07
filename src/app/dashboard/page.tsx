@@ -55,8 +55,8 @@ import { useRemoteData } from "@/lib/use-remote-data"
 import type { DashboardData } from "@/lib/types"
 
 const chartColors = [
-  "#0f766e",
-  "#2563eb",
+  "#0052ff",
+  "#4771ff",
   "#d97706",
   "#be123c",
   "#7c3aed",
@@ -80,7 +80,7 @@ export default function FinanceTracker() {
     return () => window.removeEventListener("hashchange", navigate)
   }, [])
   return (
-    <div className="flex min-h-dvh bg-slate-50 text-slate-950">
+    <div className="flex min-h-dvh bg-background text-foreground">
       <a
         href="#main-content"
         onClick={(event) => {
@@ -189,19 +189,19 @@ function Dashboard() {
               className="overflow-hidden rounded-xl border bg-white"
             >
               <div className="grid divide-y sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-4">
-                <div className="bg-teal-50/70 p-5 sm:p-6">
-                  <p className="text-sm text-teal-900">{t("totalBalance")}</p>
+                <div className="bg-brand-soft p-5 sm:p-6">
+                  <p className="text-sm text-brand-active">{t("totalBalance")}</p>
                   <p
                     className={
                       "mt-3 break-words text-3xl font-semibold tracking-tight tabular-nums " +
                       (data.runningBalance < 0
                         ? "text-rose-700"
-                        : "text-teal-950")
+                        : "text-foreground")
                     }
                   >
                     {formatCurrency(data.runningBalance)}
                   </p>
-                  <p className="mt-3 text-xs text-teal-800">
+                  <p className="mt-3 text-xs text-brand-active">
                     {t("accountBalanceDescription")}
                   </p>
                 </div>
@@ -327,8 +327,8 @@ function Dashboard() {
                         isAnimationActive={false}
                         type="monotone"
                         dataKey="balance"
-                        stroke="#0f766e"
-                        fill="#0f766e"
+                        stroke="#0052ff"
+                        fill="#0052ff"
                         fillOpacity={0.1}
                         name={t("balance")}
                       />
