@@ -138,7 +138,7 @@ function DebtCard({ debt, accounts }: { debt: Debt; accounts: Account[] }) {
             className={
               "shrink-0 rounded-md px-2 py-1 text-xs font-medium " +
               (debt.status === "paid"
-                ? "bg-teal-50 text-teal-800"
+                ? "bg-brand-soft text-brand-active"
                 : "bg-amber-50 text-amber-800")
             }
           >

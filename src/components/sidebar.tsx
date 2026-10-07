@@ -16,6 +16,9 @@ import {
   Scale,
 } from "lucide-react"
 import { useLanguage } from "./language-provider"
+import { useAuth } from "./auth-provider"
+import { useState } from "react"
+import { Button } from "./ui/button"
 import { AddAccountForm } from "./accounts-form"
 import { ErrorNotice } from "./feedback"
 import {
@@ -59,12 +62,26 @@ export function Sidebar({
   onClose: () => void
 }) {
   const { locale, setLocale, t } = useLanguage()
+  const { user, signOut } = useAuth()
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState(false)
+  async function handleSignOut() {
+    setSigningOut(true)
+    setSignOutError(false)
+    try {
+      await signOut()
+    } catch {
+      setSignOutError(true)
+    } finally {
+      setSigningOut(false)
+    }
+  }
   const accounts = useRemoteData<Account[]>("/api/accounts")
   function content(mobile: boolean) {
     return (
       <div className="flex h-full flex-col">
         <div className="flex h-16 shrink-0 items-center gap-3 border-b px-5">
-          <div className="rounded-lg bg-teal-700 p-2 text-white">
+          <div className="rounded-lg bg-brand p-2 text-white">
             <Landmark className="h-5 w-5" />
           </div>
           <div>
@@ -88,7 +105,7 @@ export function Sidebar({
                   className={
                     "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors " +
                     (activeTab === key
-                      ? "bg-teal-50 font-semibold text-teal-800"
+                      ? "bg-brand-soft font-semibold text-brand-active"
                       : "text-slate-600 hover:bg-muted hover:text-foreground")
                   }
                 >
@@ -129,6 +146,22 @@ export function Sidebar({
           </div>
         </nav>
         <div className="border-t p-5">
+          <p className="mb-2 break-words text-xs text-slate-600">
+            {user?.email}
+          </p>
+          <Button
+            variant="outline"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="mb-4 min-h-11 w-full"
+          >
+            {t(signingOut ? "authWorking" : "signOut")}
+          </Button>
+          {signOutError && (
+            <p role="alert" className="mb-3 text-sm text-red-800">
+              {t("authFailed")}
+            </p>
+          )}
           <label
             className="mb-2 block text-xs font-medium text-muted-foreground"
             htmlFor={mobile ? "mobile-language" : "desktop-language"}

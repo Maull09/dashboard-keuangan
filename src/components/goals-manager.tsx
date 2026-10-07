@@ -347,7 +347,7 @@ function GoalCard({ goal, accounts }: { goal: Goal; accounts: Account[] }) {
                 ? "bg-rose-50 text-rose-800"
                 : status === "urgent"
                   ? "bg-amber-50 text-amber-800"
-                  : "bg-teal-50 text-teal-800")
+                  : "bg-brand-soft text-brand-active")
             }
           >
             {t(status)}

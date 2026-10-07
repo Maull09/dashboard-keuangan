@@ -176,7 +176,7 @@ export function TransactionForm({
               </Select>
             </Field>
             {type === "transfer" && (
-              <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-900">
+              <p className="rounded-lg bg-brand-soft p-3 text-sm text-brand-active">
                 {t("transferHint")}
               </p>
             )}

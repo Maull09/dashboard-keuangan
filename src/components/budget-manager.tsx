@@ -162,7 +162,7 @@ export function BudgetManager() {
             </Field>
             <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm leading-relaxed">
               <input
-                className="mt-1 accent-teal-700"
+                className="mt-1 accent-brand"
                 type="checkbox"
                 checked={rollover}
                 onChange={(event) => setRollover(event.target.checked)}
@@ -201,17 +201,19 @@ export function BudgetManager() {
         title={t("budgetTitle")}
         description={t("budgetDescription")}
       >
-        <Field id="budget-month" label={t("period")}>
-          <Input
-            id="budget-month"
-            type="month"
-            value={month}
-            onChange={(event) => {
-              if (event.target.value) setMonth(event.target.value)
-            }}
-          />
-        </Field>
-        {add}
+        <div className="flex flex-wrap items-end gap-3">
+          <Field id="budget-month" label={t("period")}>
+            <Input
+              id="budget-month"
+              type="month"
+              value={month}
+              onChange={(event) => {
+                if (event.target.value) setMonth(event.target.value)
+              }}
+            />
+          </Field>
+          {add}
+        </div>
       </PageHeading>
       <ErrorNotice message={records.error} onRetry={records.reload} />
       {records.refreshing && (
@@ -292,7 +294,7 @@ function BudgetCard({
       ? "text-rose-700"
       : percentage >= 80
         ? "text-amber-700"
-        : "text-teal-700"
+        : "text-brand-active"
   return (
     <Card>
       <CardHeader>

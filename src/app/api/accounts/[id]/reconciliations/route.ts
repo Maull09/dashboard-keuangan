@@ -1,7 +1,6 @@
 import { desc, eq } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
-import { db } from "@/db"
 import {
   accounts,
   reconciliations,
@@ -9,14 +8,14 @@ import {
   stockTrades,
 } from "@/db/schema"
 import { calculateAccountBalance } from "@/lib/calculations"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { getToday, isDate } from "@/lib/finance"
 import { tradeCashChange } from "@/lib/investments"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
 export async function GET(_: NextRequest, { params }: RouteContext) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const accountId = Number((await params).id)
     const data = await db
       .select()
@@ -28,7 +27,7 @@ export async function GET(_: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const accountId = Number((await params).id)
     const body = await request.json()
     const actualBalance = Number(body.actualBalance)

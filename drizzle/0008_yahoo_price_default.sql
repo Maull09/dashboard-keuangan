@@ -1,0 +1,1 @@
+ALTER TABLE "stock_prices" ALTER COLUMN "source" SET DEFAULT 'Yahoo Finance';

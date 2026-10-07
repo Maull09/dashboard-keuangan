@@ -4,6 +4,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
 ## Features
 
+- Email/password signup, email confirmation, cookie sessions, sign in/out, a public landing page, and private per-user financial data.
 - Accounts with editable opening balances and details, income, expenses, transfers, and guarded deletion.
 - Searchable and paginated transaction history with database-wide type, account, and date-range filters, matching totals, and edit/delete actions.
 - Monthly budgets, optional rollover, reports, and month-over-month spending insights.
@@ -40,6 +41,8 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
    ```env
    DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=require
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
    ```
 
 4. Back up any existing database. Temporarily use Supabase **Direct connection** or the **Session pooler** (port 5432, useful on IPv4-only networks), then run:
@@ -55,7 +58,7 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
    npm run dev
    ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Configure Supabase email confirmation and redirect URLs using the [authentication setup guide](docs/authentication.md), then create an account and sign in. Existing financial data must be explicitly assigned to its confirmed owner after applying migrations `0006_auth_ownership` and `0007_auth_policies`.
 
 Existing installations also need migrations `0003_wild_ultimo.sql`, `0004_clumsy_jane_foster.sql`, and `0005_concerned_ego.sql` before starting this version. They add investment/sinking-fund tables, decimal stock quantities/prices, and four-decimal trade prices; generating migrations does not apply them to Supabase.
 

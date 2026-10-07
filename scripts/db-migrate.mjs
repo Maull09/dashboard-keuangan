@@ -6,6 +6,7 @@ import pg from "pg"
 import { drizzle } from "drizzle-orm/node-postgres"
 import { migrate } from "drizzle-orm/node-postgres/migrator"
 import { readMigrationFiles } from "drizzle-orm/migrator"
+import { verifyAuthReadiness } from "./auth-readiness.mjs"
 import {
   loadSnapshot,
   quoteIdentifier,
@@ -81,6 +82,7 @@ export async function runMigrations(
       throw new Error("Database is not ready: " + issues.join("; "))
     if (!history.some((row) => Number(row.created_at) === journal.at(-1).when))
       throw new Error("Schema exists but the latest migration is not recorded.")
+    await verifyAuthReadiness(client)
     console.log(
       `Database check passed: ${Object.keys(latestSnapshot.tables).length} application tables; ${history.length} recorded migrations.`,
     )
@@ -142,6 +144,7 @@ export async function runMigrations(
       "Migration finished but schema verification failed: " + issues.join("; "),
     )
   const completed = await readMigrationHistory(client)
+  await verifyAuthReadiness(client)
   if (!completed.some((row) => Number(row.created_at) === journal.at(-1).when))
     throw new Error(
       "The latest migration was not recorded. Database setup is incomplete.",

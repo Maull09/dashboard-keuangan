@@ -26,6 +26,12 @@
 - Update `CHANGELOG.md` only for user-facing, release-worthy changes. Update `todo.md` only for meaningful progress, decisions, or newly discovered follow-up work.
 - Preserve historical entries and unrelated documentation. Do not rewrite, duplicate, or overwrite existing guidance unless the request specifically requires it.
 
+## Design System
+
+- Read `DESIGN.md` before designing, implementing, reviewing, or refactoring any user-facing interface.
+- Treat `DESIGN.md` as the source of truth for Finance Tracker's visual tokens, typography, layout rhythm, component states, and product voice. Keep UI code aligned with it.
+- Update `DESIGN.md` before implementation when a lasting visual direction, token, or component rule changes. User requests and the financial-clarity requirements in this file take precedence if they conflict.
+
 ## Git Workflow
 
 ### Start
@@ -69,3 +75,13 @@ This section is intentionally project-specific. Replace or remove it when copyin
 - Database schema definitions live in `src/db/schema.ts`; API route handlers live in `src/app/api/`; reusable UI components live in `src/components/`.
 - Treat financial amounts and transaction history as user data: validate inputs, avoid unintended data changes, and keep API behavior explicit.
 - Favor financial clarity over decoration: amounts, trends, warnings, and primary actions must remain easy to scan on desktop and mobile.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

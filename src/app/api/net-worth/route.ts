@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server"
-import { db } from "@/db"
 import { debts, debtPayments, stockPrices } from "@/db/schema"
 import { calculateHoldings, investmentTotals } from "@/lib/investments"
-import { financeResponse } from "@/lib/api-response"
+import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { readLedger, readReservations } from "@/lib/server/ledger"
 
 export async function GET() {
-  return financeResponse(async () => {
+  return authenticatedResponse(async (db) => {
     const [ledger, reservations, allDebts, payments, prices] =
       await Promise.all([
-        readLedger(),
-        readReservations(),
+        readLedger(db),
+        readReservations(db),
         db.select().from(debts),
         db.select().from(debtPayments),
         db.select().from(stockPrices),

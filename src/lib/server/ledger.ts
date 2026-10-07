@@ -1,4 +1,4 @@
-import { db } from "@/db"
+import type { UserDatabase } from "@/lib/server/authenticated-response"
 import {
   accounts,
   transactions,
@@ -11,9 +11,9 @@ import { calculateAccountBalance } from "../calculations"
 import { totalTradeCashChange } from "../investments"
 import { fundBalance } from "../planning"
 
-export type ReadConnection = Pick<typeof db, "select">
+export type ReadConnection = Pick<UserDatabase, "select">
 
-export async function readLedger(connection: ReadConnection = db) {
+export async function readLedger(connection: ReadConnection) {
   const [allAccounts, allTransactions, trades] = await Promise.all([
     connection.select().from(accounts),
     connection.select().from(transactions),
@@ -47,7 +47,7 @@ export async function readLedger(connection: ReadConnection = db) {
   }
 }
 
-export async function readReservations(connection: ReadConnection = db) {
+export async function readReservations(connection: ReadConnection) {
   const [funds, entries, contributions] = await Promise.all([
     connection.select().from(sinkingFunds),
     connection.select().from(sinkingFundEntries),

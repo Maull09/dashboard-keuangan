@@ -17,11 +17,11 @@ import { getCurrentMonth, getToday, isMonth } from "@/lib/finance"
 import type { CalendarData } from "@/lib/planning-types"
 
 const eventColors: Record<string, string> = {
-  income: "bg-teal-50 text-teal-900",
+  income: "bg-brand-soft text-brand-active",
   expense: "bg-rose-50 text-rose-900",
   transfer: "bg-sky-50 text-sky-900",
   debtDue: "bg-amber-50 text-amber-900",
-  receivableDue: "bg-teal-50 text-teal-900",
+  receivableDue: "bg-brand-soft text-brand-active",
   fundDue: "bg-slate-100 text-slate-900",
 }
 
@@ -157,7 +157,7 @@ export function FinancialCalendar() {
                             className={
                               "block min-h-28 w-full space-y-2 p-2 text-left hover:bg-muted/50 " +
                               (selectedDate === date
-                                ? "bg-teal-50 ring-2 ring-inset ring-teal-700"
+                                ? "bg-brand-soft ring-2 ring-inset ring-brand"
                                 : "")
                             }
                           >
@@ -165,7 +165,7 @@ export function FinancialCalendar() {
                               className={
                                 "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold " +
                                 (date === getToday()
-                                  ? "bg-teal-700 text-white"
+                                  ? "bg-brand text-white"
                                   : "")
                               }
                             >

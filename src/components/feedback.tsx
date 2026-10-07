@@ -33,8 +33,8 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
         className="fixed bottom-4 right-4 left-4 z-50 sm:left-auto sm:max-w-md"
       >
         {message && (
-          <div className="flex items-start gap-3 rounded-xl border border-teal-200 bg-white p-4 text-sm text-teal-950 shadow-lg">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal-700" />
+          <div className="flex items-start gap-3 rounded-xl border border-brand-border bg-white p-4 text-sm text-foreground shadow-lg">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
             <p className="flex-1">{t(message)}</p>
             <button
               type="button"
