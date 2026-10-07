@@ -1,4 +1,5 @@
 import { getNextMonthStart } from "./finance"
+import type { PlannedCashflow } from "./planning-types"
 
 export type Schedule = {
   id: number
@@ -85,25 +86,12 @@ export function simulateCashflow(
   currentBalance: number,
   schedules: Schedule[],
   today: string,
-  startDate: string,
   endDate: string,
-  monthlyPayment: number,
+  extraIncomes: PlannedCashflow[],
+  extraExpenses: PlannedCashflow[],
 ) {
   const scheduled = schedules.flatMap((schedule) =>
     scheduleOccurrences(schedule, today, endDate),
-  )
-  const hypothetical = scheduleOccurrences(
-    {
-      id: 0,
-      name: "Simulation",
-      type: "expense",
-      amount: monthlyPayment,
-      frequency: "monthly",
-      startDate,
-      accountId: 0,
-    },
-    today,
-    endDate,
   )
   const rows = []
   let month = today.slice(0, 7)
@@ -117,15 +105,19 @@ export function simulateCashflow(
     const expense = occurrences
       .filter((item) => item.type === "expense")
       .reduce((total, item) => total + item.amount, 0)
-    const extraExpense = hypothetical
+    const extraIncome = extraIncomes
+      .filter((item) => item.date.startsWith(month))
+      .reduce((total, item) => total + item.amount, 0)
+    const extraExpense = extraExpenses
       .filter((item) => item.date.startsWith(month))
       .reduce((total, item) => total + item.amount, 0)
     baseline += income - expense
-    scenario += income - expense - extraExpense
+    scenario += income + extraIncome - expense - extraExpense
     rows.push({
       month,
       income,
       expense,
+      extraIncome,
       extraExpense,
       baseline,
       scenario,
@@ -138,7 +130,16 @@ export function simulateCashflow(
     baseline,
     scenario,
     difference: scenario - baseline,
-    payments: hypothetical.length,
+    scheduledIncome: scheduled
+      .filter((item) => item.type === "income")
+      .reduce((total, item) => total + item.amount, 0),
+    scheduledExpense: scheduled
+      .filter((item) => item.type === "expense")
+      .reduce((total, item) => total + item.amount, 0),
+    extraIncome: extraIncomes.reduce((total, item) => total + item.amount, 0),
+    extraIncomeCount: extraIncomes.length,
+    extraExpense: extraExpenses.reduce((total, item) => total + item.amount, 0),
+    extraExpenseCount: extraExpenses.length,
     rows,
   }
 }

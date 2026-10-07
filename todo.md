@@ -2,6 +2,7 @@
 
 ## Completed
 
+- [x] Add a read-only expense calculator that pulls current cash, combines recurring calendar income/expenses with multiple dated planned incomes/expenses, and keeps non-cash calendar reminders out of totals.
 - [x] Add an accessible numeric fallback for report pie charts, structured errors for all current API routes, a working ESLint CLI, a fixed Turbopack root, explicit PostgreSQL types for CI, and CI verification.
 - [x] Standardize remaining GET handlers on safe structured API errors.
 - [x] Replace the unsupported `next lint` script with a configured lint command.

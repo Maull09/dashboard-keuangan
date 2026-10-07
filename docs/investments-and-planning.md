@@ -67,13 +67,13 @@ If an active holding has no price, full net worth and portfolio market-value tot
 
 Debt and receivable amounts assume their outstanding principal was already represented appropriately in your original cash records. Creating an obligation does not by itself invent a cash disbursement or receipt.
 
-## Read-only simulation
+## Read-only expense calculator
 
-Choose an extra monthly payment, its first date, and an end date up to two years ahead. The baseline starts from current recorded cash and expands remaining recurring income/expenses. The scenario subtracts hypothetical monthly payments. Results show monthly ending balances, the cumulative difference, and negative-balance warnings.
+Choose a projection end date up to two years ahead. The calculator shows and starts from current recorded cash, then includes remaining recurring income and expenses from the financial calendar, such as a scheduled salary or rent. Add up to 20 dated, one-off planned incomes and expenses combined to test several changes at once. The result separates current cash, scheduled income, added income, scheduled expenses, added expenses, and projected cash, with a monthly table and negative-balance warnings.
 
-The first payment day remains the monthly anchor; short months clamp to their last day without shifting subsequent months. Transfers do not change total cash. Already-executed occurrences and schedules outside their start/end dates are excluded.
+Transfers do not change total cash. Already-executed occurrences and schedules outside their start/end dates are excluded. The calculator creates no transactions, trades, schedules, or fund entries. Changing inputs or financial data invalidates the previous result.
 
-Simulation creates no transactions, trades, schedules, or fund entries. Changing inputs or financial data invalidates the previous comparison. Unscheduled spending, unpaid-debt reminders, dividends, future trades, interest, inflation, and market-price changes are not forecast automatically. Month-end warnings do not detect every possible intramonth cash shortage. Existing records form the current balance, including any future-dated records entered by the user.
+Debt/receivable deadlines and sinking-fund targets shown in the calendar remain excluded from the calculation: a deadline can overlap with a recurring payment, and a fund target does not itself move cash. Add a separate planned expense only when you want to model its cash impact. Dividends, future trades, interest, inflation, and market-price changes are not forecast automatically. Month-end warnings do not detect every possible intramonth cash shortage. Existing records form the current balance, including any future-dated records entered by the user.
 
 ## Financial calendar
 
