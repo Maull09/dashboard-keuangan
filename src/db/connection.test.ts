@@ -17,6 +17,17 @@ describe("databaseConnectionOptions", () => {
     })
   })
 
+  it("normalizes a single-line PEM certificate", () => {
+    const options = databaseConnectionOptions(
+      "postgresql://user:password@db.example.test:5432/postgres",
+      "-----BEGIN CERTIFICATE-----certificate-data-----END CERTIFICATE-----",
+    )
+
+    expect(options.ssl.ca).toBe(
+      "-----BEGIN CERTIFICATE-----\ncertificate-data\n-----END CERTIFICATE-----",
+    )
+  })
+
   it("rejects malformed connection URLs without exposing them", () => {
     expect(() => databaseConnectionOptions("not a URL")).toThrow(
       "DATABASE_URL must be a valid connection URL",
