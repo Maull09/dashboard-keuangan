@@ -72,7 +72,9 @@ export function DebtManager() {
         accounts.loading ? (
         <LoadingState />
       ) : !records.data?.length ? (
-        <EmptyState title={t("noDebts")} description={t("noDebtsHint")} />
+        <EmptyState title={t("noDebts")} description={t("noDebtsHint")}>
+          <AddDebtForm />
+        </EmptyState>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {records.data.map((debt) => (
@@ -183,7 +185,7 @@ function DebtCard({ debt, accounts }: { debt: Debt; accounts: Account[] }) {
                 {t("recordPayment")}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent showCloseButton={!busy}>
               <DialogHeader>
                 <DialogTitle>
                   {t("recordPayment")} · {debt.name}

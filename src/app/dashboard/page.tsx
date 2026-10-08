@@ -18,6 +18,7 @@ import {
   Calendar,
   Menu,
   RefreshCw,
+  ArrowRight,
 } from "lucide-react"
 import { AccountSummary } from "@/components/account-summary"
 import { BudgetManager } from "@/components/budget-manager"
@@ -34,6 +35,8 @@ import { Sidebar, navigationItems } from "@/components/sidebar"
 import { QuickGuide } from "@/components/quick-guide"
 import { useLanguage } from "@/components/language-provider"
 import { TransactionList } from "@/components/transaction-list"
+import { TransactionForm } from "@/components/transaction-form"
+import { AddAccountForm } from "@/components/accounts-form"
 import {
   EmptyState,
   ErrorNotice,
@@ -52,7 +55,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { getCurrentMonth } from "@/lib/finance"
 import { useRemoteData } from "@/lib/use-remote-data"
-import type { DashboardData } from "@/lib/types"
+import type { Account, DashboardData } from "@/lib/types"
 
 const chartColors = [
   "#0052ff",
@@ -74,6 +77,8 @@ export default function FinanceTracker() {
       setTab(
         navigationItems.some((item) => item.key === next) ? next : "dashboard",
       )
+      window.scrollTo({ top: 0 })
+      document.getElementById("main-content")?.focus({ preventScroll: true })
     }
     navigate()
     window.addEventListener("hashchange", navigate)
@@ -101,12 +106,12 @@ export default function FinanceTracker() {
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              className="rounded-lg p-2 hover:bg-muted md:hidden"
+              className="flex size-11 shrink-0 items-center justify-center rounded-lg hover:bg-muted md:hidden"
               onClick={() => setSidebarOpen(true)}
               aria-label={t("openMenu")}
               aria-expanded={sidebarOpen}
             >
-              <Menu className="h-5 w-5" />
+              <Menu aria-hidden="true" className="h-5 w-5" />
             </button>
             <span className="truncate text-sm font-semibold">{t(tab)}</span>
           </div>
@@ -150,11 +155,12 @@ function Dashboard() {
     "/api/dashboard?locale=" + locale,
   )
   const data = records.data
+  const accounts = useRemoteData<Account[]>("/api/accounts")
   return (
     <div className="space-y-6">
       <PageHeading
         title={t("moneyAtAGlance")}
-        description={t("dashboardDescription")}
+        description={t("dashboardDescriptionShort")}
       >
         <Button
           variant="outline"
@@ -169,9 +175,11 @@ function Dashboard() {
           />
           {t(records.loading || records.refreshing ? "refreshing" : "refresh")}
         </Button>
-        <Button asChild>
-          <a href="#transactions">{t("addTransaction")}</a>
-        </Button>
+        {accounts.data?.length ? (
+          <TransactionForm accounts={accounts.data} onSaved={() => {}} />
+        ) : !accounts.loading && !accounts.error ? (
+          <AddAccountForm />
+        ) : null}
       </PageHeading>
       <ErrorNotice message={records.error} onRetry={records.reload} />
       {records.refreshing && (
@@ -190,7 +198,9 @@ function Dashboard() {
             >
               <div className="grid divide-y sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-4">
                 <div className="bg-brand-soft p-5 sm:p-6">
-                  <p className="text-sm text-brand-active">{t("totalBalance")}</p>
+                  <p className="text-sm text-brand-active">
+                    {t("totalBalance")}
+                  </p>
                   <p
                     className={
                       "mt-3 break-words text-3xl font-semibold tracking-tight tabular-nums " +
@@ -219,7 +229,19 @@ function Dashboard() {
                 />
                 <Metric
                   label={t("monthlySavingRate")}
-                  amount={data.savingRate + "%"}
+                  amount={
+                    data.income > 0
+                      ? new Intl.NumberFormat(
+                          locale === "id" ? "id-ID" : "en-US",
+                          { style: "percent", maximumFractionDigits: 1 },
+                        ).format(data.savingRate / 100)
+                      : t("notAvailable")
+                  }
+                  hint={t(
+                    data.income > 0
+                      ? "savingsRateHint"
+                      : "savingsRateUnavailable",
+                  )}
                   tone={
                     data.savingRate < 0 ? "text-rose-700" : "text-foreground"
                   }
@@ -233,11 +255,11 @@ function Dashboard() {
               <Button asChild variant="ghost" size="sm">
                 <a href="#budget">{t("viewBudget")}</a>
               </Button>
+              <Button asChild variant="ghost" size="sm">
+                <a href="#netWorth">{t("viewNetWorth")}</a>
+              </Button>
             </div>
             <AccountSummary />
-            <Button asChild variant="outline">
-              <a href="#netWorth">{t("viewNetWorth")}</a>
-            </Button>
             <div className="grid gap-5 xl:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -337,6 +359,14 @@ function Dashboard() {
                 </CardContent>
               </Card>
             </div>
+            <div className="flex justify-end">
+              <Button asChild variant="link">
+                <a href="#reports">
+                  {t("exploreReports")}
+                  <ArrowRight aria-hidden="true" />
+                </a>
+              </Button>
+            </div>
           </>
         )
       )}
@@ -348,11 +378,13 @@ function Metric({
   amount,
   icon,
   tone,
+  hint,
 }: {
   label: string
   amount: string
   icon?: React.ReactNode
   tone: string
+  hint?: string
 }) {
   return (
     <div className="border-border p-5 sm:border-l sm:p-6">
@@ -368,6 +400,11 @@ function Metric({
       >
         {amount}
       </p>
+      {hint && (
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+          {hint}
+        </p>
+      )}
     </div>
   )
 }

@@ -96,9 +96,9 @@ const en = {
   openingBalanceHint:
     "Your balance before the first transaction. Leave empty for zero.",
   networkError:
-    "Could not connect. Check your connection and try again. Your input is still here.",
+    "Could not connect. Check your connection and try again.",
   serviceUnavailable:
-    "Your records could not be loaded. Try again in a moment. If this continues, check the database connection.",
+    "Your records could not be loaded. Try again in a moment.",
   invalidInput:
     "Check the amount, date, and selected account, then try again. Your input is still here.",
   recordConflict:
@@ -234,39 +234,39 @@ const id: Record<keyof typeof en, string> = {
     "Jadwal ini belum mulai atau sudah selesai. Periksa tanggal mulai/selesai sebelum mencatat pembayaran.",
   scheduleAlreadyRecorded:
     "Jadwal ini sudah dicatat hari ini. Periksa riwayat transaksi agar pembayaran tidak tercatat dua kali.",
-  helpManage: "Edit detail tanpa merusak riwayat",
+  helpManage: "Ubah detail tanpa merusak riwayat",
   helpManageBody:
-    "Gunakan Edit/Hapus di setiap akun, anggaran, tujuan, utang, atau jadwal. Di Investasi, buka Kelola transaksi saham untuk koreksi transaksi. Riwayat kontribusi dan cicilan hanya dapat dibaca; catatan terkait tidak boleh dihapus. Penghapusan permanen: periksa konfirmasi sebelum melanjutkan.",
+    "Gunakan Ubah/Hapus di setiap akun, anggaran, tujuan, utang, atau jadwal. Di Investasi, buka Kelola transaksi saham untuk koreksi transaksi. Riwayat kontribusi dan cicilan hanya dapat dibaca; catatan terkait tidak boleh dihapus. Penghapusan permanen: periksa konfirmasi sebelum melanjutkan.",
   saveChanges: "Simpan perubahan",
   accountUpdated: "Akun diperbarui.",
   accountDeleted: "Akun dihapus.",
-  editAccount: "Edit akun",
+  editAccount: "Ubah akun",
   editAccountHint:
     "Saldo awal adalah saldo sebelum transaksi pertama, bukan saldo hari ini. Mengubahnya akan menghitung ulang riwayat saldo akun.",
   deleteAccountHint:
     "Hapus akun ini secara permanen. Akun yang terhubung ke catatan keuangan tidak dapat dihapus; kelola catatan tersebut terlebih dahulu.",
-  editBudget: "Edit anggaran",
+  editBudget: "Ubah anggaran",
   budgetUpdated: "Anggaran diperbarui.",
   budgetDeleted: "Anggaran dihapus.",
   editBudgetHint:
     "Ubah batas bulanan atau pengaturan rollover. Pengeluaran yang sudah dicatat tidak berubah.",
   deleteBudgetHint:
     "Hapus anggaran dan pengaturan rollover ini secara permanen. Transaksi tetap tersimpan; rollover bulan berikutnya dapat berubah.",
-  editGoal: "Edit tujuan",
+  editGoal: "Ubah tujuan",
   goalUpdated: "Tujuan diperbarui.",
   goalDeleted: "Tujuan dihapus.",
   editGoalHint:
-    "Edit target dan detail tujuan. Target tidak boleh di bawah dana yang sudah terkumpul; kontribusi tetap tersimpan.",
+    "Ubah target dan detail tujuan. Target tidak boleh di bawah dana yang sudah terkumpul; kontribusi tetap tersimpan.",
   deleteGoalHint:
     "Hapus tujuan ini secara permanen. Tujuan dengan riwayat kontribusi tidak dapat dihapus.",
-  editDebt: "Edit utang atau piutang",
+  editDebt: "Ubah utang atau piutang",
   debtUpdated: "Utang atau piutang diperbarui.",
   debtDeleted: "Utang atau piutang dihapus.",
   editDebtHint:
     "Jumlah tidak boleh di bawah pembayaran yang sudah dicatat. Setelah ada pembayaran, jenis utang/piutang terkunci; riwayat cicilan tetap tersimpan.",
   deleteDebtHint:
     "Hapus utang atau piutang ini secara permanen. Catatan dengan riwayat pembayaran tidak dapat dihapus.",
-  editSchedule: "Edit jadwal rutin",
+  editSchedule: "Ubah jadwal rutin",
   scheduleUpdated: "Jadwal diperbarui.",
   editScheduleHint:
     "Perubahan memengaruhi estimasi dan pencatatan berikutnya. Transaksi sebelumnya tetap tersimpan; mengedit tidak mencatat pembayaran.",
@@ -293,18 +293,18 @@ const id: Record<keyof typeof en, string> = {
     "Kontribusi melebihi sisa target tujuan. Kurangi jumlah atau naikkan target terlebih dahulu.",
   debtPaymentExceeded:
     "Pembayaran melebihi sisa utang atau piutang. Kurangi jumlah pembayaran.",
-  editTrade: "Edit transaksi saham",
+  editTrade: "Ubah transaksi saham",
   tradeUpdated: "Transaksi saham diperbarui.",
   tradeEditHint:
     "Menyimpan menghitung ulang kas investasi, kepemilikan saham, dan untung/rugi. Perubahan tidak boleh menyebabkan penjualan tanpa cukup lembar atau transaksi tanpa cukup kas.",
   previousCashImpact: "Dampak kas sebelumnya",
   manageTrades: "Kelola transaksi saham",
   manageTradesHint:
-    "Kepemilikan dihitung dari transaksi saham. Edit atau hapus setiap catatan di Riwayat transaksi saham.",
-  editWatch: "Edit entri watchlist",
+    "Kepemilikan dihitung dari transaksi saham. Ubah atau hapus setiap catatan di Riwayat transaksi saham.",
+  editWatch: "Ubah entri watchlist",
   watchUpdated: "Entri watchlist diperbarui.",
   watchEditHint:
-    "Edit nama perusahaan dan catatan. Kode saham tetap; nama perusahaan juga digunakan di portofolio.",
+    "Ubah nama perusahaan dan catatan. Kode saham tetap; nama perusahaan juga digunakan di portofolio.",
   closeDialog: "Tutup dialog",
   recordScheduleHint:
     "Ini membuat transaksi aktual hari ini dan mengubah saldo akun pilihan. Pastikan pembayaran benar-benar telah terjadi.",
@@ -324,9 +324,9 @@ const id: Record<keyof typeof en, string> = {
   openingBalanceHint:
     "Saldo sebelum transaksi pertama. Kosongkan untuk saldo nol.",
   networkError:
-    "Tidak dapat terhubung. Periksa koneksi lalu coba lagi. Isian Anda tetap tersimpan.",
+    "Tidak dapat terhubung. Periksa koneksi lalu coba lagi.",
   serviceUnavailable:
-    "Catatan tidak dapat dimuat. Coba lagi sebentar. Jika berlanjut, periksa koneksi database.",
+    "Catatan belum dapat dimuat. Coba lagi sebentar.",
   invalidInput:
     "Periksa nominal, tanggal, dan akun yang dipilih, lalu coba lagi. Isian Anda tetap tersimpan.",
   recordConflict:

@@ -69,7 +69,9 @@ export function SinkingFunds() {
                 <AddAccountForm />
               </EmptyState>
             ) : !data.funds.length ? (
-              <EmptyState title={t("noFunds")} description={t("noFundsHint")} />
+              <EmptyState title={t("noFunds")} description={t("noFundsHint")}>
+                <FundForm accounts={data.accounts} />
+              </EmptyState>
             ) : (
               <div className="grid gap-5 xl:grid-cols-2">
                 {data.funds.map((fund) => (
@@ -180,8 +182,18 @@ function FundCard({
         <FundEntryForm fund={fund} account={account} kind="release" />
         <FundEntryForm fund={fund} account={account} kind="spend" />
       </div>
+      {fund.allocated === 0 && (
+        <p className="text-xs text-muted-foreground">{t("fundNoAllocation")}</p>
+      )}
+      {fund.allocated >= fund.targetAmount ? (
+        <p className="text-xs text-brand-active">{t("fundTargetReached")}</p>
+      ) : (
+        (account?.availableCash ?? 0) <= 0 && (
+          <p className="text-xs text-muted-foreground">{t("fundNoCash")}</p>
+        )
+      )}
       <details className="border-t pt-4">
-        <summary className="cursor-pointer rounded py-1 text-sm font-medium">
+        <summary className="min-h-11 cursor-pointer rounded py-3 text-sm font-medium">
           {t("fundHistory")}
         </summary>
         {!fund.entries.length ? (
@@ -211,6 +223,9 @@ function FundCard({
           </ul>
         )}
       </details>
+      {fund.entries.length > 0 && (
+        <p className="text-xs text-muted-foreground">{t("fundDeleteHint")}</p>
+      )}
       <ConfirmDelete
         open={deleting}
         onOpenChange={setDeleting}
@@ -293,12 +308,13 @@ function FundForm({
           variant={fund ? "ghost" : "default"}
           size={fund ? "sm" : "default"}
           disabled={!accounts.length}
+          title={!accounts.length ? t("accountCreateHint") : undefined}
         >
           {!fund && <Plus className="h-4 w-4" />}
           {t(fund ? "edit" : "addFund")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
           <DialogTitle>{t(fund ? "editFund" : "addFund")}</DialogTitle>
           <DialogDescription>{t("fundHint")}</DialogDescription>
@@ -315,14 +331,24 @@ function FundForm({
                 required
               />
             </Field>
-            <Field id={id + "-account"} label={t("fundAccount")} required>
+            <Field
+              id={id + "-account"}
+              label={t("fundAccount")}
+              hint={fund?.entries.length ? t("fundAccountLocked") : undefined}
+              required
+            >
               <Select
                 value={account}
                 onValueChange={setAccount}
                 disabled={Boolean(fund?.entries.length)}
                 required
               >
-                <SelectTrigger id={id + "-account"}>
+                <SelectTrigger
+                  id={id + "-account"}
+                  aria-describedby={
+                    fund?.entries.length ? id + "-account-hint" : undefined
+                  }
+                >
                   <SelectValue placeholder={t("chooseAccount")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -388,7 +414,7 @@ function FundForm({
                 !name.trim() || !account || Number(amount) <= 0 || !date
               }
             >
-              {t("save")}
+              {t(fund ? "saveChanges" : "saveFund")}
             </SubmitButton>
           </DialogFooter>
         </form>
@@ -469,7 +495,7 @@ function FundEntryForm({
           {t(kind)}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
           <DialogTitle>
             {t(

@@ -54,6 +54,12 @@ Use sentence case. Keep supporting copy short, concrete, and action-oriented. En
 
 ## Components and states
 
+- **Landing:** Use a left-aligned, compact value proposition alongside the real report component with explicitly labelled example data. Follow with a concise feature overview, a three-action getting-started sequence, and native FAQ disclosures. Keep the same light, blue-led theme throughout.
+- **Navigation:** Group destinations into everyday records, planning, and analysis without changing their names or hash destinations. Make the selected page visible, and keep account management near account balances.
+- **Touch and keyboard:** Buttons, navigation, tabs, and dialog-close controls have at least a 44px touch target. Dialog headings reserve space for the close control; scrollable tables expose a labelled, keyboard-focusable region.
+- **Page actions:** Align filters and actions on their bottom edge. Actions named Add open the relevant form; empty states show an available next action. Amounts wrap inside their containers rather than widening the page.
+- **Content:** Explain financial consequences at the action: transfers preserve total cash, allocations keep cash in their account, and payments affect recorded balances. Use a specific saving or calculating state appropriate to the task.
+
 - **Primary button:** Brand background, white text, Brand active on hover.
 - **Secondary button:** Surface with Hairline border; use for a related alternative.
 - **Selected navigation and summary:** Brand soft background with Brand active text.

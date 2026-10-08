@@ -132,7 +132,11 @@ export function TransactionList() {
         title={t("transactionTitle")}
         description={t("transactionDescription")}
       >
-        <TransactionForm accounts={accounts} onSaved={() => {}} />
+        {accounts.length ? (
+          <TransactionForm accounts={accounts} onSaved={() => {}} />
+        ) : !accountData.loading && !accountData.error ? (
+          <AddAccountForm />
+        ) : null}
       </PageHeading>
       <Card className="shadow-none">
         <CardContent className="space-y-4 pt-5">
@@ -158,7 +162,10 @@ export function TransactionList() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <Field id="search-transactions" label={t("search")}>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search
+                  aria-hidden="true"
+                  className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground"
+                />
                 <Input
                   id="search-transactions"
                   className="pl-9"
@@ -226,6 +233,9 @@ export function TransactionList() {
                 type="date"
                 min={from || undefined}
                 aria-invalid={invalidRange}
+                aria-describedby={
+                  invalidRange ? "filter-date-error" : undefined
+                }
                 value={to}
                 onChange={(event) => {
                   setTo(event.target.value)
@@ -235,7 +245,15 @@ export function TransactionList() {
             </Field>
           </div>
           <p className="text-xs text-muted-foreground">{t("filtersHint")}</p>
-          {invalidRange && <ErrorNotice message="invalidDateRange" />}
+          {invalidRange && (
+            <p
+              id="filter-date-error"
+              role="alert"
+              className="text-sm text-rose-700"
+            >
+              {t("filterDateError")}
+            </p>
+          )}
         </CardContent>
       </Card>
       {error ? (
@@ -310,7 +328,15 @@ export function TransactionList() {
                     {t("results", { count: data.total })}
                   </span>
                 </div>
-                <div className="overflow-x-auto">
+                <p className="px-4 pb-3 text-xs text-muted-foreground lg:hidden">
+                  {t("transactionTableHint")}
+                </p>
+                <div
+                  role="region"
+                  aria-label={t("transactionHistory")}
+                  tabIndex={0}
+                  className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-brand"
+                >
                   <table className="w-full min-w-[700px] text-sm">
                     <caption className="sr-only">
                       {t("transactionHistory")}

@@ -11,6 +11,7 @@ import {
 import { usabilityMessages } from "@/lib/usability-messages"
 import { planningMessages } from "@/lib/planning-messages"
 import { authMessages } from "@/lib/auth-messages"
+import { interfaceMessages } from "@/lib/interface-messages"
 
 type Dictionary = Record<string, string>
 
@@ -445,7 +446,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       t: (key: string, values: Record<string, string | number> = {}) =>
         Object.entries(values).reduce(
           (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
-          authMessages[locale][key] ??
+          interfaceMessages[locale][key] ??
+            authMessages[locale][key] ??
             planningMessages[locale][key] ??
             usabilityMessages[locale][key] ??
             dictionaries[locale][key] ??

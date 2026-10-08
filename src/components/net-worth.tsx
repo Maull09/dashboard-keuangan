@@ -1,6 +1,7 @@
 "use client"
 
 import { useLanguage } from "./language-provider"
+import { AddAccountForm } from "./accounts-form"
 import { EmptyState, ErrorNotice, LoadingState, PageHeading } from "./feedback"
 import { Button } from "./ui/button"
 import { useRemoteData } from "@/lib/use-remote-data"
@@ -42,7 +43,7 @@ export function NetWorth() {
               </p>
               <p
                 className={
-                  "mt-3 break-words text-4xl font-semibold tracking-tight tabular-nums " +
+                  "mt-3 break-words text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl " +
                   (data.knownNetWorth < 0 ? "text-rose-700" : "text-foreground")
                 }
               >
@@ -121,6 +122,14 @@ export function NetWorth() {
                     </li>
                   ))}
                 </ul>
+                {data.accounts.length === 0 && (
+                  <EmptyState
+                    title={t("noAccounts")}
+                    description={t("accountHelp")}
+                  >
+                    <AddAccountForm />
+                  </EmptyState>
+                )}
               </section>
             </div>
             <section className="space-y-3">

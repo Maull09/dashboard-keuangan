@@ -144,12 +144,13 @@ export function TransactionForm({
         <Button
           variant={transaction ? "outline" : "default"}
           disabled={accounts.length === 0}
+          title={accounts.length === 0 ? t("accountCreateHint") : undefined}
         >
           {!transaction && <Plus className="h-4 w-4" />}
           {t(transaction ? "edit" : "addTransaction")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!loading}>
         <DialogHeader>
           <DialogTitle>
             {t(transaction ? "editTransaction" : "recordTransaction")}
@@ -175,6 +176,11 @@ export function TransactionForm({
                 </SelectContent>
               </Select>
             </Field>
+            {accounts.length < 2 && (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {t("transferNeedsAccounts")}
+              </p>
+            )}
             {type === "transfer" && (
               <p className="rounded-lg bg-brand-soft p-3 text-sm text-brand-active">
                 {t("transferHint")}
@@ -285,6 +291,7 @@ export function TransactionForm({
               <Input
                 id={id + "-note"}
                 value={description}
+                maxLength={500}
                 onChange={(event) => setDescription(event.target.value)}
               />
             </Field>

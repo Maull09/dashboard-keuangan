@@ -4,7 +4,6 @@ import { useId, useState } from "react"
 import { CheckCircle2, Landmark } from "lucide-react"
 import { AddAccountForm } from "./accounts-form"
 import { RecordDeleteButton } from "./record-delete-button"
-import { TransactionForm } from "./transaction-form"
 import {
   EmptyState,
   ErrorNotice,
@@ -28,7 +27,7 @@ import { Input } from "./ui/input"
 import { jsonBody, requestJson } from "@/lib/client-api"
 import { useRemoteData } from "@/lib/use-remote-data"
 import { getToday } from "@/lib/finance"
-import type { Account, AccountSummary as Summary } from "@/lib/types"
+import type { AccountSummary as Summary } from "@/lib/types"
 
 export function AccountSummary() {
   const { t, formatCurrency } = useLanguage()
@@ -42,10 +41,6 @@ export function AccountSummary() {
         <AddAccountForm />
       </EmptyState>
     )
-  const accounts: Account[] = records.data.map((account) => ({
-    ...account,
-    initialBalance: account.balance,
-  }))
   return (
     <section aria-labelledby="account-summary-title" className="space-y-3">
       <ErrorNotice message={records.error} onRetry={records.reload} />
@@ -55,20 +50,26 @@ export function AccountSummary() {
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="account-summary-title" className="text-base font-semibold">
-          {t("accountBalance")}
-        </h2>
+        <div>
+          <h2 id="account-summary-title" className="text-lg font-semibold">
+            {t("accountBalance")}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("accountsCount", { count: records.data.length })}
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2">
           <AddAccountForm />
-          <TransactionForm accounts={accounts} onSaved={() => {}} />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {records.data.map((account) => (
-          <Card key={account.id}>
-            <CardContent className="pt-5">
+          <Card key={account.id} className="py-5">
+            <CardContent>
               <div className="flex items-center gap-3">
-                <Landmark className="h-5 w-5 text-primary" />
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-active">
+                  <Landmark aria-hidden="true" className="size-5" />
+                </span>
                 <div className="min-w-0">
                   <p className="break-words font-medium">{account.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -84,7 +85,7 @@ export function AccountSummary() {
               >
                 {formatCurrency(account.balance)}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-1">
+              <div className="mt-4 flex flex-wrap items-center gap-1 border-t pt-3">
                 <ReconcileAccount account={account} />
                 <AddAccountForm account={account} />
                 <RecordDeleteButton
@@ -140,11 +141,11 @@ function ReconcileAccount({ account }: { account: Summary }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="mt-3 px-0 text-primary">
+        <Button variant="ghost" size="sm" className="text-primary">
           {t("reconcileBalance")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent showCloseButton={!busy}>
         <DialogHeader>
           <DialogTitle>
             {t("reconcileBalance")} · {account.name}
