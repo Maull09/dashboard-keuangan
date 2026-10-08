@@ -41,6 +41,17 @@ export type DashboardData = {
   savingRate: number
   monthlyData: Array<{ month: string; income: number; expense: number; balance: number }>
   balanceHistory: Array<{ month: string; balance: number }>
+  dailyData: Array<{
+    date: string
+    label: string
+    income: number
+    expense: number
+  }>
+  today: { income: number; expense: number; net: number }
+  dailyAverageExpense: number
+  highestExpenseDay: { label: string; amount: number } | null
+  topExpenseCategory: { name: string; amount: number } | null
+  spendingChange: { amount: number; percent: number } | null
   expenseByCategory: Record<string, number>
   incomeBySource: Record<string, number>
   insights: string[]

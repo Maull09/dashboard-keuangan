@@ -259,6 +259,176 @@ function Dashboard() {
                 <a href="#netWorth">{t("viewNetWorth")}</a>
               </Button>
             </div>
+            <section
+              aria-labelledby="daily-analysis-heading"
+              className="grid gap-5 xl:grid-cols-5"
+            >
+              <Card className="xl:col-span-2">
+                <CardHeader>
+                  <CardTitle id="daily-analysis-heading">
+                    {t("dailyAnalysis")}
+                  </CardTitle>
+                  <CardDescription>{t("dailyAnalysisDescription")}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <dl className="grid divide-y border-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                    <div className="py-4 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                      <dt className="text-sm text-muted-foreground">
+                        {t("todayIncome")}
+                      </dt>
+                      <dd className="mt-2 break-words text-lg font-semibold tabular-nums text-emerald-700">
+                        {formatCurrency(data.today.income)}
+                      </dd>
+                    </div>
+                    <div className="py-4 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                      <dt className="text-sm text-muted-foreground">
+                        {t("todayExpense")}
+                      </dt>
+                      <dd className="mt-2 break-words text-lg font-semibold tabular-nums text-rose-700">
+                        {formatCurrency(data.today.expense)}
+                      </dd>
+                    </div>
+                    <div className="py-4 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                      <dt className="text-sm text-muted-foreground">
+                        {t("netToday")}
+                      </dt>
+                      <dd
+                        className={
+                          "mt-2 break-words text-lg font-semibold tabular-nums " +
+                          (data.today.net < 0
+                            ? "text-rose-700"
+                            : "text-emerald-700")
+                        }
+                      >
+                        {formatCurrency(data.today.net)}
+                      </dd>
+                    </div>
+                  </dl>
+                </CardContent>
+              </Card>
+              <Card className="xl:col-span-3">
+                <CardHeader>
+                  <CardTitle>{t("dailyCashFlow")}</CardTitle>
+                  <CardDescription>
+                    {t("dailyCashFlowDescription")}
+                  </CardDescription>
+                  <div className="mt-3 flex gap-4 text-xs">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                      {t("income")}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-rose-600" />
+                      {t("expenses")}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={data.dailyData} accessibilityLayer>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={11}
+                      />
+                      <YAxis
+                        width={48}
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) =>
+                          value / 1000000 + " " + t("shortMillion")
+                        }
+                      />
+                      <Tooltip
+                        formatter={(value: number) => formatCurrency(value)}
+                      />
+                      <Bar
+                        isAnimationActive={false}
+                        dataKey="income"
+                        fill="#059669"
+                        name={t("income")}
+                        radius={[3, 3, 0, 0]}
+                      />
+                      <Bar
+                        isAnimationActive={false}
+                        dataKey="expense"
+                        fill="#e11d48"
+                        name={t("expenses")}
+                        radius={[3, 3, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </section>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("spendingSignals")}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <AnalysisMetric
+                  label={t("averageDailyExpense")}
+                  value={formatCurrency(data.dailyAverageExpense)}
+                  detail={t("averageDailyExpenseHint")}
+                />
+                <AnalysisMetric
+                  label={t("highestExpenseDay")}
+                  value={
+                    data.highestExpenseDay
+                      ? formatCurrency(data.highestExpenseDay.amount)
+                      : t("notAvailable")
+                  }
+                  detail={
+                    data.highestExpenseDay?.label ?? t("highestExpenseDayHint")
+                  }
+                />
+                <AnalysisMetric
+                  label={t("topExpenseCategory")}
+                  value={
+                    data.topExpenseCategory
+                      ? t(data.topExpenseCategory.name)
+                      : t("notAvailable")
+                  }
+                  detail={
+                    data.topExpenseCategory
+                      ? formatCurrency(data.topExpenseCategory.amount)
+                      : t("topExpenseCategoryHint")
+                  }
+                />
+                <AnalysisMetric
+                  label={t("spendingVsLastMonth")}
+                  value={
+                    data.spendingChange
+                      ? `${data.spendingChange.percent > 0 ? "+" : ""}${data.spendingChange.percent}%`
+                      : t("notAvailable")
+                  }
+                  detail={
+                    data.spendingChange
+                      ? t(
+                          data.spendingChange.amount > 0
+                            ? "spendingHigher"
+                            : "spendingLower",
+                          {
+                            amount: formatCurrency(
+                              Math.abs(data.spendingChange.amount),
+                            ),
+                          },
+                        )
+                      : t("spendingVsLastMonthHint")
+                  }
+                  tone={
+                    data.spendingChange && data.spendingChange.amount > 0
+                      ? "text-rose-700"
+                      : data.spendingChange && data.spendingChange.amount < 0
+                        ? "text-emerald-700"
+                        : undefined
+                  }
+                />
+              </CardContent>
+            </Card>
             <AccountSummary />
             <div className="grid gap-5 xl:grid-cols-2">
               <Card>
@@ -405,6 +575,35 @@ function Metric({
           {hint}
         </p>
       )}
+    </div>
+  )
+}
+
+function AnalysisMetric({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string
+  value: string
+  detail: string
+  tone?: string
+}) {
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p
+        className={
+          "mt-2 break-words text-lg font-semibold tabular-nums " +
+          (tone ?? "text-foreground")
+        }
+      >
+        {value}
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+        {detail}
+      </p>
     </div>
   )
 }
