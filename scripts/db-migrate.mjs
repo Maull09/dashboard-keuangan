@@ -184,8 +184,11 @@ async function main() {
     throw new Error(
       "DATABASE_URL is missing. Configure .env for the intended database.",
     )
+  const databaseUrl = new URL(process.env.DATABASE_URL)
+  databaseUrl.searchParams.delete("ssl")
+  databaseUrl.searchParams.set("sslmode", "verify-full")
   const client = new pg.Client({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseUrl.toString(),
     connectionTimeoutMillis: 15000,
     query_timeout: 60000,
   })
