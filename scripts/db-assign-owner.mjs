@@ -2,6 +2,7 @@ import { config } from "dotenv"
 import pg from "pg"
 import { fileURLToPath } from "node:url"
 import { resolve } from "node:path"
+import { databaseConnectionOptions } from "../src/db/connection.mjs"
 import { ownedTables } from "./auth-tables.mjs"
 
 export async function assignLegacyOwner(client, email, apply = false) {
@@ -58,11 +59,11 @@ async function main() {
       "Usage: npm run db:assign-owner -- --email=owner@example.com [--apply]",
     )
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is missing")
-  const databaseUrl = new URL(process.env.DATABASE_URL)
-  databaseUrl.searchParams.delete("ssl")
-  databaseUrl.searchParams.set("sslmode", "verify-full")
   const client = new pg.Client({
-    connectionString: databaseUrl.toString(),
+    ...databaseConnectionOptions(
+      process.env.DATABASE_URL,
+      process.env.DATABASE_CA_CERT,
+    ),
     connectionTimeoutMillis: 15000,
   })
   try {
