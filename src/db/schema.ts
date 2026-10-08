@@ -65,6 +65,7 @@ export const debts = pgTable(
     privateAccessPolicy(),
     ownerPolicy("debts", []),
     index("debts_user_id_idx").on(table.userId),
+    index("debts_user_due_date_idx").on(table.userId, table.dueDate),
   ],
 ).enableRLS()
 
@@ -85,6 +86,7 @@ export const accounts = pgTable(
     privateAccessPolicy(),
     ownerPolicy("accounts", []),
     index("accounts_user_id_idx").on(table.userId),
+    index("accounts_user_order_idx").on(table.userId, table.id),
   ],
 ).enableRLS()
 
@@ -120,6 +122,9 @@ export const transactions = pgTable(
       desc(table.date),
       desc(table.id),
     ),
+    index("transactions_user_type_date_idx").on(table.userId, table.type, table.date),
+    index("transactions_user_account_date_idx").on(table.userId, table.accountId, table.date),
+    index("transactions_user_destination_date_idx").on(table.userId, table.destinationAccountId, table.date),
   ],
 ).enableRLS()
 
@@ -181,6 +186,9 @@ export const recurringTransactions = pgTable(
       ["destination_account_id", "accounts"],
     ]),
     index("recurring_transactions_user_id_idx").on(table.userId),
+    index("recurring_user_start_date_idx").on(table.userId, table.startDate),
+    index("recurring_user_account_idx").on(table.userId, table.accountId),
+    index("recurring_user_destination_idx").on(table.userId, table.destinationAccountId),
   ],
 ).enableRLS()
 
@@ -209,6 +217,8 @@ export const goalContributions = pgTable(
       ["account_id", "accounts"],
     ]),
     index("goal_contributions_user_id_idx").on(table.userId),
+    index("goal_contributions_user_goal_date_idx").on(table.userId, table.goalId, table.date, table.id),
+    index("goal_contributions_user_account_idx").on(table.userId, table.accountId),
   ],
 ).enableRLS()
 
@@ -241,6 +251,8 @@ export const debtPayments = pgTable(
       ["transaction_id", "transactions"],
     ]),
     index("debt_payments_user_id_idx").on(table.userId),
+    index("debt_payments_user_debt_date_idx").on(table.userId, table.debtId, table.date, table.id),
+    index("debt_payments_user_account_idx").on(table.userId, table.accountId),
   ],
 ).enableRLS()
 
@@ -263,6 +275,7 @@ export const reconciliations = pgTable(
     privateAccessPolicy(),
     ownerPolicy("reconciliations", [["account_id", "accounts"]]),
     index("reconciliations_user_id_idx").on(table.userId),
+    index("reconciliations_user_account_date_idx").on(table.userId, table.accountId, desc(table.date)),
   ],
 ).enableRLS()
 
@@ -285,6 +298,7 @@ export const goals = pgTable(
     privateAccessPolicy(),
     ownerPolicy("goals", []),
     index("goals_user_id_idx").on(table.userId),
+    index("goals_user_order_idx").on(table.userId, table.id),
   ],
 ).enableRLS()
 
@@ -335,6 +349,7 @@ export const stockTrades = pgTable(
     privateAccessPolicy(),
     ownerPolicy("stock_trades", [["account_id", "accounts"]]),
     index("stock_trades_user_id_idx").on(table.userId),
+    index("stock_trades_user_account_date_idx").on(table.userId, table.accountId, desc(table.date), desc(table.id)),
 
     index("stock_trades_account_symbol_date_idx").on(
       table.accountId,
@@ -425,6 +440,8 @@ export const sinkingFunds = pgTable(
     privateAccessPolicy(),
     ownerPolicy("sinking_funds", [["account_id", "accounts"]]),
     index("sinking_funds_user_id_idx").on(table.userId),
+    index("sinking_funds_user_target_date_idx").on(table.userId, table.targetDate),
+    index("sinking_funds_user_account_idx").on(table.userId, table.accountId),
 
     check("sinking_funds_positive_target", sql`${table.targetAmount} > 0`),
   ],
@@ -456,6 +473,7 @@ export const sinkingFundEntries = pgTable(
       ["transaction_id", "transactions"],
     ]),
     index("sinking_fund_entries_user_id_idx").on(table.userId),
+    index("sinking_fund_entries_user_fund_order_idx").on(table.userId, table.fundId, desc(table.id)),
 
     index("sinking_fund_entries_fund_idx").on(table.fundId),
     uniqueIndex("sinking_fund_entries_transaction_idx").on(table.transactionId),

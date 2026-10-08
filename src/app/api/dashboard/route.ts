@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
-import { readLedger } from "@/lib/server/ledger"
-import { tradeCashChange } from "@/lib/investments"
+import { readDashboardLedger } from "@/lib/server/dashboard-queries"
 import {
   getCategoryInsight,
   getPeriodRange,
@@ -21,28 +20,39 @@ export async function GET(request: NextRequest) {
   return authenticatedResponse(async (db) => {
     const locale =
       new URL(request.url).searchParams.get("locale") === "en" ? "en" : "id"
-    const {
-      accounts: allAccounts,
-      transactions: allTransactions,
-      trades,
-      cashBalance,
-    } = await readLedger(db)
     const requestedMonth = new URL(request.url).searchParams.get("month")
     const currentMonth = isMonth(requestedMonth)
       ? requestedMonth
       : getCurrentMonth()
     const period = getPeriodRange(currentMonth)
+    const today = getToday()
+    const recentDays = getRecentDays(today, 7)
+    const months = getRecentMonths(6)
+    const firstMonthStart = getMonthStart(months[0])
+    const previousPeriod = getPeriodRange(getPreviousPeriod(currentMonth))
+    const {
+      startingBalance,
+      transactions: allTransactions,
+      trades,
+      cashBalance,
+      openingChange,
+    } = await readDashboardLedger(db, {
+      historyStart: firstMonthStart,
+      historyEnd: getPeriodRange(months[months.length - 1]).end,
+      previousStart: previousPeriod.start,
+      periodEnd: period.end,
+      recentStart: recentDays[0],
+      today,
+    })
     const monthlyTransactions = allTransactions.filter(
       (transaction) =>
         transaction.date >= period.start && transaction.date < period.end,
     )
     const income = totalFor(monthlyTransactions, "income")
     const expense = totalFor(monthlyTransactions, "expense")
-    const today = getToday()
     const todayTransactions = allTransactions.filter(
       (transaction) => transaction.date === today,
     )
-    const recentDays = getRecentDays(today, 7)
     const dailyData = recentDays.map((date) => {
       const dayTransactions = allTransactions.filter(
         (transaction) => transaction.date === date,
@@ -55,23 +65,8 @@ export async function GET(request: NextRequest) {
         expense: totalFor(dayTransactions, "expense"),
       }
     })
-    const startingBalance = allAccounts.reduce(
-      (total, account) => total + account.initialBalance,
-      0,
-    )
     const runningBalance = cashBalance
-    const months = getRecentMonths(6)
-    const firstMonthStart = getMonthStart(months[0])
-    let historicalBalance =
-      startingBalance +
-      netAmount(
-        allTransactions.filter(
-          (transaction) => transaction.date < firstMonthStart,
-        ),
-      ) +
-      trades
-        .filter((trade) => trade.date < firstMonthStart)
-        .reduce((total, trade) => total + tradeCashChange(trade), 0)
+    let historicalBalance = startingBalance + openingChange
 
     const monthlyData = months.map((month) => {
       const monthTransactions = allTransactions.filter((transaction) =>
@@ -84,7 +79,7 @@ export async function GET(request: NextRequest) {
         monthExpense +
         trades
           .filter((trade) => trade.date.startsWith(month))
-          .reduce((total, trade) => total + tradeCashChange(trade), 0)
+          .reduce((total, trade) => total + trade.cashChange, 0)
 
       return {
         month: formatMonth(month, locale),
@@ -110,7 +105,6 @@ export async function GET(request: NextRequest) {
         amount > topCategory[1] ? [category, amount] : topCategory,
       [null, 0],
     )
-    const previousPeriod = getPeriodRange(getPreviousPeriod(currentMonth))
     const previousByCategory = totalByCategory(
       allTransactions.filter(
         (transaction) =>
@@ -231,16 +225,6 @@ function totalFor(
       transaction.type === type ? total + transaction.amount : total,
     0,
   )
-}
-
-function netAmount(
-  rows: Array<{ type: "income" | "expense" | "transfer"; amount: number }>,
-) {
-  return rows.reduce((total, transaction) => {
-    if (transaction.type === "income") return total + transaction.amount
-    if (transaction.type === "expense") return total - transaction.amount
-    return total
-  }, 0)
 }
 
 function totalByCategory(

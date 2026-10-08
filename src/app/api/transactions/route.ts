@@ -1,6 +1,5 @@
 import {
   and,
-  count,
   desc,
   eq,
   gte,
@@ -8,13 +7,13 @@ import {
   inArray,
   lte,
   or,
-  sql,
 } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
 import { transactions } from "@/db/schema"
 import { accountsExist } from "@/lib/accounts"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
+import { readTransactionPage } from "@/lib/server/transaction-queries"
 import { parseTransactionInput } from "@/lib/validation"
 import {
   findEnglishCategoryMatches,
@@ -68,38 +67,7 @@ export async function GET(request: NextRequest) {
     const limit = Number.isSafeInteger(limitValue)
       ? Math.min(Math.max(limitValue, 1), 100)
       : 25
-    const [summary] = await db
-      .select({
-        total: count(),
-        income:
-          sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)`.mapWith(
-            Number,
-          ),
-        expense:
-          sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)`.mapWith(
-            Number,
-          ),
-      })
-      .from(transactions)
-      .where(where)
-    const totalPages = Math.max(1, Math.ceil(summary.total / limit))
-    const page = Math.min(pageValue, totalPages)
-    const items = await db
-      .select()
-      .from(transactions)
-      .where(where)
-      .orderBy(desc(transactions.date), desc(transactions.id))
-      .limit(limit)
-      .offset((page - 1) * limit)
-
-    return NextResponse.json({
-      items,
-      page,
-      limit,
-      total: summary.total,
-      totalPages,
-      summary: { income: summary.income, expense: summary.expense },
-    })
+    return NextResponse.json(await readTransactionPage(db, where, pageValue, limit))
   })
 }
 export async function POST(request: NextRequest) {

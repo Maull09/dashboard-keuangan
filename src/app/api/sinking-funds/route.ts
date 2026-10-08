@@ -6,18 +6,24 @@ import { FinanceError } from "@/lib/finance-errors"
 import { parseFund } from "@/lib/planning-validation"
 import { fundBalance, monthlyFundSaving } from "@/lib/planning"
 import { getToday } from "@/lib/finance"
-import { readLedger, readReservations } from "@/lib/server/ledger"
+import { readReservations } from "@/lib/server/ledger"
+import { readBalanceLedger } from "@/lib/server/financial-queries"
 
 export async function GET() {
   return authenticatedResponse(async (db) => {
     const [ledger, reservations] = await Promise.all([
-      readLedger(db),
+      readBalanceLedger(db),
       readReservations(db),
     ])
+    const entriesByFund = new Map<number, typeof reservations.entries>()
+    for (const entry of reservations.entries) {
+      const entries = entriesByFund.get(entry.fundId) ?? []
+      entries.push(entry)
+      entriesByFund.set(entry.fundId, entries)
+    }
     return NextResponse.json({
       funds: reservations.funds.map((fund) => {
-        const entries = reservations.entries
-          .filter((entry) => entry.fundId === fund.id)
+        const entries = (entriesByFund.get(fund.id) ?? [])
           .sort((a, b) => b.id - a.id)
         const allocated = fundBalance(entries)
         return {

@@ -1,17 +1,16 @@
-import { desc } from "drizzle-orm"
 import { db } from "@/db"
 import { stockPrices, stockTrades, stockWatchlist } from "@/db/schema"
 import { calculateHoldings } from "../investments"
 import { FinanceError, type FinanceErrorCode } from "../finance-errors"
 import { readYahooDailyPrice } from "./yahoo-prices"
+import { readLatestPrices } from "./market-queries"
 
 export async function refreshDailyStockPrices(
   connection: Pick<typeof db, "select" | "transaction"> = db,
 ) {
-  const [trades, watchlist, prices] = await Promise.all([
+  const [trades, watchlist] = await Promise.all([
     connection.select().from(stockTrades),
     connection.select().from(stockWatchlist),
-    connection.select().from(stockPrices).orderBy(desc(stockPrices.date)),
   ])
   const symbols = [
     ...new Set([
@@ -21,6 +20,7 @@ export async function refreshDailyStockPrices(
       ...watchlist.map((item) => item.symbol),
     ]),
   ].sort()
+  const prices = await readLatestPrices(connection, symbols)
   const latest = new Map<string, (typeof prices)[number]>()
   for (const price of prices)
     if (!latest.has(price.symbol)) latest.set(price.symbol, price)

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { and, lte, gte, isNull, or } from "drizzle-orm"
 
 import { recurringTransactions } from "@/db/schema"
 import { calculateForecast } from "@/lib/calculations"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { getToday, isDate } from "@/lib/finance"
-import { readLedger } from "@/lib/server/ledger"
+import { readBalanceLedger } from "@/lib/server/financial-queries"
 import { scheduleOccurrences } from "@/lib/planning"
 
 export async function GET(request: NextRequest) {
@@ -16,8 +17,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ code: "invalidInput" }, { status: 400 })
 
     const [ledger, recurring] = await Promise.all([
-      readLedger(db),
-      db.select().from(recurringTransactions),
+      readBalanceLedger(db),
+      db.select().from(recurringTransactions).where(and(
+        lte(recurringTransactions.startDate, payday),
+        or(isNull(recurringTransactions.endDate), gte(recurringTransactions.endDate, today)),
+      )),
     ])
     const currentBalance = ledger.cashBalance
     const scheduled = recurring.flatMap((item) =>
