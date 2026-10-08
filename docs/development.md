@@ -10,7 +10,7 @@
 Create `.env` in the repository root. In Supabase, open **Connect** and copy the connection string that matches your use case.
 
 ```env
-DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=require
+DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=verify-full
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
@@ -31,10 +31,10 @@ npm run build
 npm test
 npm run db:generate
 npm run db:migrate
-npm run db:migrate -- --check
+npm run db:check
 ```
 
-`db:generate` creates a Drizzle migration after a schema change. `db:migrate` applies existing migrations and verifies required schema objects. `--check` is read-only. Back up financial data before applying a migration; see the [migration and recovery guide](database-migrations.md) if existing tables have no migration history.
+`db:generate` creates a Drizzle migration after a schema change. `db:migrate` applies existing migrations and verifies required schema objects. `db:check` is read-only. Back up financial data before applying a migration; see the [migration and recovery guide](database-migrations.md) if existing tables have no migration history.
 
 ## Database
 
