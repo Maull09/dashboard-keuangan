@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { requestJson } from "./client-api"
+import {
+  clearRemoteResourceCache,
+  loadRemoteResource,
+} from "./remote-resource-cache"
 
 type RemoteResult<T> = {
   url: string
@@ -16,14 +20,14 @@ export function useRemoteData<T>(url: string) {
   const reload = useCallback(() => setRevision((value) => value + 1), [])
 
   useEffect(() => {
-    const controller = new AbortController()
-    requestJson<T>(url, { signal: controller.signal })
+    let active = true
+    loadRemoteResource(url, () => requestJson<T>(url))
       .then((data) => {
-        if (!controller.signal.aborted)
+        if (active)
           setResult({ url, revision, data, error: "" })
       })
       .catch((reason: Error) => {
-        if (!controller.signal.aborted)
+        if (active)
           setResult((previous) => ({
             url,
             revision,
@@ -31,12 +35,18 @@ export function useRemoteData<T>(url: string) {
             error: reason.message,
           }))
       })
-    return () => controller.abort()
+    return () => {
+      active = false
+    }
   }, [url, revision])
 
   useEffect(() => {
-    window.addEventListener("finance-data-changed", reload)
-    return () => window.removeEventListener("finance-data-changed", reload)
+    const invalidate = () => {
+      clearRemoteResourceCache()
+      reload()
+    }
+    window.addEventListener("finance-data-changed", invalidate)
+    return () => window.removeEventListener("finance-data-changed", invalidate)
   }, [reload])
 
   const isCurrent = result?.url === url && result.revision === revision

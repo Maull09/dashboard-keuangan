@@ -22,7 +22,7 @@ import {
   index,
   check,
 } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
+import { desc, sql } from "drizzle-orm"
 
 export const transactionTypeEnum = pgEnum("transaction_type", [
   "income",
@@ -115,6 +115,11 @@ export const transactions = pgTable(
       ["destination_account_id", "accounts"],
     ]),
     index("transactions_user_id_idx").on(table.userId),
+    index("transactions_user_date_id_idx").on(
+      table.userId,
+      desc(table.date),
+      desc(table.id),
+    ),
   ],
 ).enableRLS()
 
@@ -137,6 +142,11 @@ export const budgets = pgTable(
     privateAccessPolicy(),
     ownerPolicy("budgets", []),
     index("budgets_user_id_idx").on(table.userId),
+    index("budgets_user_period_category_idx").on(
+      table.userId,
+      table.periodStart,
+      table.category,
+    ),
   ],
 ).enableRLS()
 

@@ -42,6 +42,5 @@ export const config = {
     "/sign-in",
     "/sign-up",
     "/auth/:path*",
-    "/api/((?!jobs/).*)",
   ],
 }

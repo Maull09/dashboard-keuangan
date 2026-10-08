@@ -12,7 +12,7 @@ const pool = new Pool({
     connectionString,
     process.env.DATABASE_CA_CERT,
   ),
-  max: 1,
+  max: 4,
 })
 
 export const db = drizzle(pool, { schema })
