@@ -15,5 +15,10 @@ describe.skipIf(!process.env.AI_MODEL_TEST_URL)("Ollama page insights with synth
     expect(text.length).toBeGreaterThan(30)
     expect(text.length).toBeLessThanOrEqual(12000)
     expect(text.toLowerCase()).toMatch(/harga|nilai|data/)
+    expect(text).not.toMatch(/\n|\bnull\b|healthIncomplete/)
+    expect(text.split(/\s+/).length).toBeLessThanOrEqual(80)
+    const sentences = [...new Intl.Segmenter("id", { granularity: "sentence" }).segment(text)]
+    expect(sentences.length).toBeGreaterThanOrEqual(3)
+    expect(sentences.length).toBeLessThanOrEqual(4)
   }, 130_000)
 })

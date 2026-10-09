@@ -63,4 +63,15 @@ describe("contextual insight worker", () => {
       await expect(explainPageSummary("investments", { marketValue: null }, "en")).rejects.toMatchObject({ code: "aiInvalidResponse" })
     }
   })
+  it("requests a concise explanation in both languages and renders one paragraph", async () => {
+    for (const locale of ["id", "en"] as const) {
+      mocks.invoke.mockResolvedValueOnce(new AIMessage("Income is Rp1.000.000.\n\nExpense is Rp500.000.\nReview your budget."))
+      const text = await explainPageSummary("dashboard", { income: 1000000, expense: 500000 }, locale)
+      expect(text).toBe("Income is Rp1.000.000. Expense is Rp500.000. Review your budget.")
+      const prompt = mocks.invoke.mock.lastCall![0][0].content
+      expect(prompt).toContain("3–4 short sentences, at most 80 words")
+      expect(prompt).toContain("never print JSON field names")
+      expect(prompt).toContain(locale === "id" ? "Indonesian" : "English")
+    }
+  })
 })

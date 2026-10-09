@@ -42,7 +42,7 @@ export async function insightRevision(connection: Pick<UserDatabase, "execute">,
 }
 
 export function insightJobId(userId: string, context: InsightContext, locale: string, revision: string, now = Date.now()) {
-  return createHash("sha256").update(JSON.stringify([userId, canonicalInsightContext(context), locale, revision, Math.floor(now / insightCacheMs)])).digest("hex")
+  return createHash("sha256").update(JSON.stringify(["concise-v2", userId, canonicalInsightContext(context), locale, revision, Math.floor(now / insightCacheMs)])).digest("hex")
 }
 
 async function admitInsight(target: InsightQueue, userId: string) {
