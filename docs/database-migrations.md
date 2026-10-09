@@ -12,6 +12,14 @@
 
 The read-only check validates required tables, columns, types, nullability, defaults, serial sequences, primary/foreign keys, enum values, and the presence of required named checks/indexes. It also requires the latest migration timestamp in history and checks the auth role, private-table RLS flags, and ownership policy presence. It does not compare every catalog property, check expression, index expression, policy expression, or permission.
 
+Normal readiness checks accept additional nullable columns, such as
+`transactions.group_name` from another feature branch. Expected columns must still
+match, and unknown `NOT NULL` columns are rejected, even if they have defaults.
+Explicit baseline adoption requires the exact column set and still rejects extra
+nullable columns. If a migration finished but its readiness check failed, inspect
+the reported difference and rerun `npm run db:check` after correcting the checkout
+or verifier; an already-recorded migration does not need to be reapplied.
+
 Generating migrations is not applying them. An account endpoint can succeed while the dashboard fails because `stock_trades` has not been created. This version expects 16 application tables and migration `0011_redis_api_cache`, including four-decimal numeric trade quantities/prices and private ownership policies. Migration 0005 widens only the trade price column from `numeric(14, 2)` to `numeric(16, 4)`. Migrations 0006–0007 add ownership and RLS without assigning existing rows; follow [authentication setup](authentication.md) to assign legacy records to a confirmed owner. Back up before applying migrations.
 
 Migrations 0009–0010 add indexes for ownership-scoped pagination, date/type filters, account references, and payment/contribution joins. They do not update financial rows or change RLS. Run the normal migration workflow before deploying the optimized queries; generating the SQL alone does not install the indexes. These transactional `CREATE INDEX` statements can block writes while building, so use a maintenance window for a large database.

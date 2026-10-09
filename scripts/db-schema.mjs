@@ -70,8 +70,14 @@ export function schemaIssues(snapshot, actual, { strictTables = false } = {}) {
       continue
     }
     const expectedColumns = Object.values(table.columns)
-    if (columns.length !== expectedColumns.length)
+    if (strictTables && columns.length !== expectedColumns.length)
       issues.push(`Column count differs: ${table.name}`)
+    for (const column of columns) {
+      if (expectedColumns.some((expected) => expected.name === column.column_name))
+        continue
+      if (!strictTables && column.is_nullable !== "YES")
+        issues.push(`Unexpected required column: ${table.name}.${column.column_name}`)
+    }
     for (const column of expectedColumns) {
       const found = columns.find((item) => item.column_name === column.name)
       const label = `${table.name}.${column.name}`
