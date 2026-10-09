@@ -13,6 +13,7 @@ export type TransactionInput = {
   type: TransactionType
   amount: number
   category: string
+  groupName: string | null
   description: string
   date: string
   accountId: number
@@ -39,6 +40,7 @@ export function parseTransactionInput(value: unknown): TransactionInput | null {
   const type = value.type
   const amount = toPositiveInteger(value.amount)
   const category = toRequiredText(value.category)
+  const groupName = parseTransactionGroupName(value.groupName)
   const date = value.date
   const accountId = toPositiveInteger(value.accountId)
   const destinationAccountId = value.destinationAccountId == null ? null : toPositiveInteger(value.destinationAccountId)
@@ -47,6 +49,7 @@ export function parseTransactionInput(value: unknown): TransactionInput | null {
     !transactionTypes.includes(type as TransactionType) ||
     amount == null ||
     !category ||
+    groupName === undefined ||
     !isDate(date) ||
     accountId == null
   ) {
@@ -61,11 +64,20 @@ export function parseTransactionInput(value: unknown): TransactionInput | null {
     type: type as TransactionType,
     amount,
     category,
+    groupName,
     description: toOptionalText(value.description),
     date: date as string,
     accountId,
     destinationAccountId: type === "transfer" ? destinationAccountId : null,
   }
+}
+
+export function parseTransactionGroupName(
+  value: unknown,
+): string | null | undefined {
+  if (value == null) return null
+  if (typeof value !== "string" || value.trim().length > 100) return undefined
+  return value.trim() || null
 }
 
 export function parseAccountInput(value: unknown): AccountInput | null {

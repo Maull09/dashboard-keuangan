@@ -3,6 +3,7 @@ import { planningMessages } from "./planning-messages"
 import { financeErrorCodes } from "./finance-errors"
 import { usabilityMessages } from "./usability-messages"
 import { authMessages } from "./auth-messages"
+import { aiMessages } from "./ai/messages"
 
 it("keeps planning copy and placeholders available in both languages", () => {
   expect(Object.keys(planningMessages.en).sort()).toEqual(
@@ -18,7 +19,8 @@ it("keeps planning copy and placeholders available in both languages", () => {
   for (const code of financeErrorCodes)
     for (const locale of ["en", "id"] as const)
       expect(
-        authMessages[locale][code] ??
+        aiMessages[locale][code] ??
+          authMessages[locale][code] ??
           planningMessages[locale][code] ??
           usabilityMessages[locale][code],
       ).toBeTruthy()

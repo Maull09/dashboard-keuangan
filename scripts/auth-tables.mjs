@@ -1,4 +1,8 @@
 export const ownedTables = [
+  "ai_conversations",
+  "ai_messages",
+  "ai_receipts",
+  "ai_drafts",
   "accounts",
   "budgets",
   "debts",

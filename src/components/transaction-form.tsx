@@ -5,6 +5,7 @@ import { Plus } from "lucide-react"
 import { ErrorNotice, Field, SubmitButton, useFeedback } from "./feedback"
 import { useLanguage } from "./language-provider"
 import { Button } from "./ui/button"
+import { TransactionGroupField } from "./transaction-group-field"
 import {
   Dialog,
   DialogContent,
@@ -40,10 +41,12 @@ const categories: Record<TransactionType, readonly string[]> = {
 export function TransactionForm({
   accounts,
   transaction,
+  defaultGroupName,
   onSaved,
 }: {
   accounts: Account[]
   transaction?: Transaction
+  defaultGroupName?: string
   onSaved: () => void
 }) {
   const { t, formatCurrency } = useLanguage()
@@ -56,6 +59,8 @@ export function TransactionForm({
   const [accountId, setAccountId] = useState("")
   const [destinationAccountId, setDestinationAccountId] = useState("")
   const [description, setDescription] = useState("")
+  const [groupChoice, setGroupChoice] = useState("none")
+  const [groupName, setGroupName] = useState("")
   const [date, setDate] = useState(getToday())
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -80,6 +85,9 @@ export function TransactionForm({
         : "",
     )
     setDescription(transaction?.description ?? "")
+    const initialGroup = transaction ? transaction.groupName : defaultGroupName
+    setGroupChoice(initialGroup ? "group:" + initialGroup : "none")
+    setGroupName(initialGroup ?? "")
     setDate(transaction?.date ?? getToday())
     setError("")
   }
@@ -96,6 +104,7 @@ export function TransactionForm({
     category &&
     accountId &&
     date &&
+    (groupChoice !== "new" || groupName.trim().length > 0) &&
     (type !== "transfer" ||
       (destinationAccountId && destinationAccountId !== accountId))
 
@@ -105,23 +114,45 @@ export function TransactionForm({
     setLoading(true)
     setError("")
     try {
+      const selectedGroup =
+        groupChoice === "none"
+          ? null
+          : groupChoice === "new"
+            ? groupName.trim()
+            : groupChoice.slice(6)
+      const onlyGroupChanged =
+        transaction &&
+        type === transaction.type &&
+        Number(amount) === transaction.amount &&
+        category === transaction.category &&
+        Number(accountId) === transaction.accountId &&
+        (type === "transfer" ? Number(destinationAccountId) : null) ===
+          transaction.destinationAccountId &&
+        description.trim() === (transaction.description ?? "") &&
+        date === transaction.date
       await requestJson(
         transaction
           ? "/api/transactions/" + transaction.id
           : "/api/transactions",
-        jsonBody(transaction ? "PATCH" : "POST", {
-          type,
-          amount,
-          category,
-          accountId,
-          destinationAccountId:
-            type === "transfer" ? destinationAccountId : null,
-          description,
-          date,
-        }),
+        jsonBody(
+          transaction ? "PATCH" : "POST",
+          onlyGroupChanged
+            ? { groupName: selectedGroup }
+            : {
+                type,
+                amount,
+                category,
+                accountId,
+                destinationAccountId:
+                  type === "transfer" ? destinationAccountId : null,
+                description,
+                groupName: selectedGroup,
+                date,
+              },
+        ),
       )
       setOpen(false)
-      notify("transactionSaved")
+      notify(onlyGroupChanged ? "transactionGroupSaved" : "transactionSaved")
       onSaved()
       window.dispatchEvent(new Event("finance-data-changed"))
     } catch (reason) {
@@ -150,7 +181,10 @@ export function TransactionForm({
           {t(transaction ? "edit" : "addTransaction")}
         </Button>
       </DialogTrigger>
-      <DialogContent showCloseButton={!loading}>
+      <DialogContent
+        showCloseButton={!loading}
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+      >
         <DialogHeader>
           <DialogTitle>
             {t(transaction ? "editTransaction" : "recordTransaction")}
@@ -295,6 +329,16 @@ export function TransactionForm({
                 onChange={(event) => setDescription(event.target.value)}
               />
             </Field>
+            <TransactionGroupField
+              id={id + "-group"}
+              choice={groupChoice}
+              name={groupName}
+              onChoiceChange={(value) => {
+                setGroupChoice(value)
+                if (value === "new") setGroupName("")
+              }}
+              onNameChange={setGroupName}
+            />
           </fieldset>
           <ErrorNotice message={error} />
           {!valid && (

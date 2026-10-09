@@ -5,6 +5,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNull,
   lte,
   or,
 } from "drizzle-orm"
@@ -40,6 +41,9 @@ export async function GET(request: NextRequest) {
       )
     if (filters.from) conditions.push(gte(transactions.date, filters.from))
     if (filters.to) conditions.push(lte(transactions.date, filters.to))
+    if (filters.groupName)
+      conditions.push(eq(transactions.groupName, filters.groupName))
+    if (filters.ungrouped) conditions.push(isNull(transactions.groupName))
     if (filters.search) {
       const search = "%" + filters.search.replace(/[\\%_]/g, "\\$&") + "%"
       const translatedCategories = findEnglishCategoryMatches(filters.search)
@@ -47,6 +51,7 @@ export async function GET(request: NextRequest) {
         or(
           ilike(transactions.category, search),
           ilike(transactions.description, search),
+          ilike(transactions.groupName, search),
           translatedCategories.length
             ? inArray(transactions.category, translatedCategories)
             : undefined,

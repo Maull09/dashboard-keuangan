@@ -14,6 +14,9 @@
     "db:assign-owner": "node scripts/db-assign-owner.mjs"
   },
   "dependencies": {
+    "@langchain/core": "^1.2.17",
+    "@langchain/langgraph": "^1.4.21",
+    "@langchain/openai": "^1.6.2",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-progress": "^1.1.7",
@@ -34,7 +37,8 @@
     "react-dom": "^19.0.0",
     "recharts": "^3.1.0",
     "tailwind-merge": "^3.3.1",
-    "yahoo-finance2": "^4.0.2"
+    "yahoo-finance2": "^4.0.2",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

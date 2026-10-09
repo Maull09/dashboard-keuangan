@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { transactions, sinkingFundEntries, debtPayments } from "@/db/schema"
 import { accountsExist } from "@/lib/accounts"
-import { parseTransactionInput } from "@/lib/validation"
+import {
+  parseTransactionGroupName,
+  parseTransactionInput,
+} from "@/lib/validation"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { integerInput } from "@/lib/planning-validation"
 import { FinanceError } from "@/lib/finance-errors"
@@ -13,7 +16,27 @@ type RouteContext = { params: Promise<{ id: string }> }
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   return authenticatedResponse(async (db) => {
     const id = integerInput((await params).id, 1, 2_147_483_647)
-    const input = parseTransactionInput(await request.json())
+    const body = await request.json()
+    if (
+      body &&
+      typeof body === "object" &&
+      !Array.isArray(body) &&
+      Object.keys(body).length === 1 &&
+      Object.hasOwn(body, "groupName")
+    ) {
+      const groupName = parseTransactionGroupName(body.groupName)
+      if (!Number.isSafeInteger(id) || id <= 0 || groupName === undefined)
+        return NextResponse.json({ code: "invalidInput" }, { status: 400 })
+      const [transaction] = await db
+        .update(transactions)
+        .set({ groupName })
+        .where(eq(transactions.id, id))
+        .returning()
+      if (!transaction)
+        return NextResponse.json({ code: "recordMissing" }, { status: 404 })
+      return NextResponse.json(transaction)
+    }
+    const input = parseTransactionInput(body)
 
     if (
       !Number.isSafeInteger(id) ||

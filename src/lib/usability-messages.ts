@@ -5,58 +5,58 @@ const en = {
   scheduleUnavailable:
     "This schedule has not started or has already ended. Review its start/end dates before recording a payment.",
   scheduleAlreadyRecorded:
-    "This schedule was already recorded today. Check transaction history instead of recording the payment again.",
-  helpManage: "Edit details without breaking history",
+    "Today's payment is already recorded. Review it in transaction history.",
+  helpManage: "Update your records",
   helpManageBody:
-    "Use Edit/Delete beside each account, budget, goal, debt, or schedule. In Investments, open Manage trades for individual trade corrections. Contributions and payment history stay read-only; linked records cannot be deleted. Deletion is permanent: check the confirmation before proceeding.",
+    "Use Edit or Delete beside a record. Open Manage trades to correct stock trades. Contribution and payment histories preserve recorded amounts. Review the confirmation before permanently deleting a record.",
   saveChanges: "Save changes",
   accountUpdated: "Account updated.",
   accountDeleted: "Account deleted.",
   editAccount: "Edit account",
   editAccountHint:
-    "Opening balance is the balance before your first transaction, not today's balance. Changing it recalculates your account history.",
+    "Opening balance is your balance before the first transaction. Editing it recalculates the account's balance history.",
   deleteAccountHint:
-    "Permanently delete this account. Accounts linked to financial records cannot be deleted; manage those records first.",
+    "Permanently delete this account. Review linked financial records first. Deletion is available once the account is free of linked records.",
   editBudget: "Edit budget",
   budgetUpdated: "Budget updated.",
   budgetDeleted: "Budget deleted.",
   editBudgetHint:
-    "Change the monthly limit or rollover setting. Recorded expenses stay unchanged.",
+    "Update the monthly limit or rollover setting. Recorded expenses stay in your history.",
   deleteBudgetHint:
     "Permanently delete this budget and its rollover setting. Transactions stay unchanged; later rollover amounts may change.",
   editGoal: "Edit goal",
   goalUpdated: "Goal updated.",
   goalDeleted: "Goal deleted.",
   editGoalHint:
-    "Edit the target and details. The target cannot be less than the amount already saved; contributions stay unchanged.",
+    "Update the goal's details and target. Set a target at least equal to the saved amount. Contributions stay in your history.",
   deleteGoalHint:
-    "Permanently delete this goal. Goals with contribution history cannot be deleted.",
+    "Permanently delete a goal that has no contribution history. Goals with contributions retain their records.",
   editDebt: "Edit debt or receivable",
   debtUpdated: "Debt or receivable updated.",
   debtDeleted: "Debt or receivable deleted.",
   editDebtHint:
-    "The amount cannot be less than recorded payments. After a payment, the debt/receivable type is locked; payment history stays unchanged.",
+    "Set an amount at least equal to recorded payments. The debt or receivable type stays fixed after the first payment, and payment history is preserved.",
   deleteDebtHint:
-    "Permanently delete this debt or receivable. Records with payment history cannot be deleted.",
+    "Permanently delete a debt or receivable that has no payment history. Records with payments retain their history.",
   editSchedule: "Edit recurring schedule",
   scheduleUpdated: "Schedule updated.",
   editScheduleHint:
-    "Changes affect future forecasts and recording. Previously recorded transactions stay unchanged; editing does not record a payment.",
+    "Update future forecasts and scheduled entries. Existing transactions stay in your history. Choose Record now when a payment happens.",
   endDate: "End date",
   history: "History",
   contributionHistory: "Contribution history",
   paymentHistory: "Payment history",
   historyReadOnlyHint:
-    "These records explain the saved or paid amount. History is read-only here to keep balances and progress consistent.",
+    "This history shows the contributions or payments that make up the recorded total.",
   noHistory: "No history yet",
   noHistoryHint: "Recorded contributions or payments will appear here.",
   accountUnavailable: "Account unavailable",
   historyProtected:
-    "This change would break linked financial history. Keep recorded contributions, payments, or trades intact; edit only their supported details.",
+    "This record has linked contributions, payments, or trades. Update the available details while keeping its financial history intact.",
   amountBelowRecorded:
-    "The total cannot be less than the amount already saved or paid. Increase the total and try again.",
+    "Set the total at least equal to the amount already saved or paid, then try again.",
   accountInUse:
-    "This account is linked to financial records and cannot be deleted. Review its transactions and linked records first.",
+    "This account has linked financial records. Review and manage those records before deleting the account.",
   watchAlreadyExists:
     "This ticker is already on your watchlist. Edit the existing entry instead.",
   budgetAlreadyExists:
@@ -68,7 +68,7 @@ const en = {
   editTrade: "Edit stock trade",
   tradeUpdated: "Stock trade updated.",
   tradeEditHint:
-    "Saving recalculates brokerage cash, holdings, and profit/loss. Changes cannot leave a sale without enough shares or a trade without enough cash.",
+    "Saving recalculates brokerage cash, holdings, and gains. Check that each trade has sufficient cash and shares on its date.",
   previousCashImpact: "Previous cash impact",
   manageTrades: "Manage trades",
   manageTradesHint:
@@ -96,9 +96,9 @@ const en = {
   openingBalanceHint:
     "Your balance before the first transaction. Leave empty for zero.",
   networkError:
-    "Could not connect. Check your connection and try again.",
+    "Connection failed. Check your connection and try again.",
   serviceUnavailable:
-    "Your records could not be loaded. Try again in a moment.",
+    "Loading your records failed. Try again in a moment.",
   invalidInput:
     "Check the amount, date, and selected account, then try again. Your input is still here.",
   recordConflict:
@@ -117,11 +117,11 @@ const en = {
   scheduleRecorded: "Transaction recorded from the schedule.",
   scheduleDeleted: "Schedule deleted. Existing transactions are unchanged.",
   confirmDelete: "Delete this record?",
-  irreversible: "This cannot be undone. Review the record before deleting it.",
+  irreversible: "Deletion is permanent. Review the record before deleting it.",
   deleteScheduleHint:
     "Deleting a schedule stops future entries. Transactions already recorded will stay in your history.",
   transactionDeleteHint:
-    "This removes the transaction and recalculates balances, budgets, and reports. This cannot be undone.",
+    "Permanently delete the transaction and recalculate balances, budgets, and reports.",
   transferHint:
     "Move money between two different accounts. Your total balance stays the same.",
   transferNeedsAccounts:
@@ -177,13 +177,13 @@ const en = {
     "Budget use comes from expenses in the selected month. Rollover carries only the unused budget from the previous month.",
   helpGoals: "Understand contributions",
   helpGoalsBody:
-    "A contribution reserves money toward a goal. It does not move money out of its source account.",
+    "A contribution reserves cash for a goal in its source account. The account balance stays the same.",
   helpPlanning: "Use forecasts carefully",
   helpPlanningBody:
-    "Forecasts estimate your balance from active recurring schedules. They do not record transactions automatically. Use Record now once an actual payment happens.",
+    "Forecasts use your balance and active recurring schedules. Choose Record now once a payment happens to add it to transaction history.",
   helpReconcile: "Check your balance",
   helpReconcileBody:
-    "Compare an account against your real statement. Reconciliation records the difference without changing its balance.",
+    "Compare an account with your real statement. Reconciliation records the difference and preserves the recorded balance.",
   done: "Got it",
   noGoals: "What are you saving for?",
   noGoalsHint:
@@ -203,7 +203,7 @@ const en = {
   lastRecorded: "Last recorded",
   notRecorded: "Not recorded yet",
   forecastHint:
-    "An estimate, not a guarantee. Unscheduled spending is not included.",
+    "Projected balance based on current cash and active recurring schedules.",
   noSchedulesHint:
     "Add a salary, bill, or subscription to include it in your forecast.",
   cash: "Cash",
@@ -225,7 +225,7 @@ const en = {
   Pendidikan: "Education",
   "Transfer antar akun": "Account transfer",
   reconcileHint:
-    "This comparison saves a record; it does not adjust your balance.",
+    "Save the comparison and balance difference. Your recorded balance stays the same.",
 } as const
 
 const id: Record<keyof typeof en, string> = {
@@ -233,58 +233,58 @@ const id: Record<keyof typeof en, string> = {
   scheduleUnavailable:
     "Jadwal ini belum mulai atau sudah selesai. Periksa tanggal mulai/selesai sebelum mencatat pembayaran.",
   scheduleAlreadyRecorded:
-    "Jadwal ini sudah dicatat hari ini. Periksa riwayat transaksi agar pembayaran tidak tercatat dua kali.",
-  helpManage: "Ubah detail tanpa merusak riwayat",
+    "Pembayaran hari ini sudah dicatat. Periksa catatannya di riwayat transaksi.",
+  helpManage: "Perbarui catatan Anda",
   helpManageBody:
-    "Gunakan Ubah/Hapus di setiap akun, anggaran, tujuan, utang, atau jadwal. Di Investasi, buka Kelola transaksi saham untuk koreksi transaksi. Riwayat kontribusi dan cicilan hanya dapat dibaca; catatan terkait tidak boleh dihapus. Penghapusan permanen: periksa konfirmasi sebelum melanjutkan.",
+    "Gunakan Ubah atau Hapus di setiap catatan. Buka Kelola transaksi saham untuk mengoreksi catatan saham. Riwayat kontribusi dan pembayaran menyimpan nominal yang sudah dicatat. Periksa konfirmasi sebelum menghapus catatan secara permanen.",
   saveChanges: "Simpan perubahan",
   accountUpdated: "Akun diperbarui.",
   accountDeleted: "Akun dihapus.",
   editAccount: "Ubah akun",
   editAccountHint:
-    "Saldo awal adalah saldo sebelum transaksi pertama, bukan saldo hari ini. Mengubahnya akan menghitung ulang riwayat saldo akun.",
+    "Saldo awal adalah saldo sebelum transaksi pertama. Mengubahnya menghitung ulang riwayat saldo akun.",
   deleteAccountHint:
-    "Hapus akun ini secara permanen. Akun yang terhubung ke catatan keuangan tidak dapat dihapus; kelola catatan tersebut terlebih dahulu.",
+    "Hapus akun secara permanen. Periksa catatan keuangan terkait terlebih dahulu. Akun bisa dihapus setelah seluruh kaitan catatan dilepas.",
   editBudget: "Ubah anggaran",
   budgetUpdated: "Anggaran diperbarui.",
   budgetDeleted: "Anggaran dihapus.",
   editBudgetHint:
-    "Ubah batas bulanan atau pengaturan rollover. Pengeluaran yang sudah dicatat tidak berubah.",
+    "Ubah batas bulanan atau pengaturan rollover. Pengeluaran tercatat tetap tersimpan di riwayat.",
   deleteBudgetHint:
     "Hapus anggaran dan pengaturan rollover ini secara permanen. Transaksi tetap tersimpan; rollover bulan berikutnya dapat berubah.",
   editGoal: "Ubah tujuan",
   goalUpdated: "Tujuan diperbarui.",
   goalDeleted: "Tujuan dihapus.",
   editGoalHint:
-    "Ubah target dan detail tujuan. Target tidak boleh di bawah dana yang sudah terkumpul; kontribusi tetap tersimpan.",
+    "Ubah detail dan target tujuan. Tetapkan target minimal sebesar dana terkumpul. Kontribusi tetap tersimpan di riwayat.",
   deleteGoalHint:
-    "Hapus tujuan ini secara permanen. Tujuan dengan riwayat kontribusi tidak dapat dihapus.",
+    "Hapus permanen tujuan yang belum memiliki riwayat kontribusi. Tujuan dengan kontribusi tetap menyimpan catatannya.",
   editDebt: "Ubah utang atau piutang",
   debtUpdated: "Utang atau piutang diperbarui.",
   debtDeleted: "Utang atau piutang dihapus.",
   editDebtHint:
-    "Jumlah tidak boleh di bawah pembayaran yang sudah dicatat. Setelah ada pembayaran, jenis utang/piutang terkunci; riwayat cicilan tetap tersimpan.",
+    "Tetapkan nominal minimal sebesar pembayaran tercatat. Jenis utang atau piutang tetap setelah pembayaran pertama, dan riwayat cicilan tetap tersimpan.",
   deleteDebtHint:
-    "Hapus utang atau piutang ini secara permanen. Catatan dengan riwayat pembayaran tidak dapat dihapus.",
+    "Hapus permanen utang atau piutang yang belum memiliki riwayat pembayaran. Catatan dengan pembayaran tetap menyimpan riwayatnya.",
   editSchedule: "Ubah jadwal rutin",
   scheduleUpdated: "Jadwal diperbarui.",
   editScheduleHint:
-    "Perubahan memengaruhi estimasi dan pencatatan berikutnya. Transaksi sebelumnya tetap tersimpan; mengedit tidak mencatat pembayaran.",
+    "Perbarui proyeksi dan pencatatan terjadwal berikutnya. Transaksi sebelumnya tetap ada di riwayat. Pilih Catat sekarang saat pembayaran terjadi.",
   endDate: "Tanggal selesai",
   history: "Riwayat",
   contributionHistory: "Riwayat kontribusi",
   paymentHistory: "Riwayat cicilan",
   historyReadOnlyHint:
-    "Catatan ini menjelaskan jumlah dana terkumpul atau terbayar. Riwayat hanya dapat dibaca di sini agar saldo dan progres tetap konsisten.",
+    "Riwayat ini menampilkan kontribusi atau pembayaran yang membentuk total tercatat.",
   noHistory: "Belum ada riwayat",
   noHistoryHint: "Kontribusi atau pembayaran yang dicatat akan muncul di sini.",
   accountUnavailable: "Akun tidak tersedia",
   historyProtected:
-    "Perubahan ini akan merusak riwayat keuangan yang terhubung. Pertahankan kontribusi, pembayaran, atau transaksi saham yang sudah dicatat; edit hanya detail yang didukung.",
+    "Catatan ini terhubung ke kontribusi, pembayaran, atau transaksi saham. Perbarui detail yang tersedia sambil menjaga riwayat keuangannya.",
   amountBelowRecorded:
-    "Jumlah total tidak boleh di bawah dana terkumpul atau terbayar. Naikkan jumlah total lalu coba lagi.",
+    "Tetapkan total minimal sebesar dana terkumpul atau terbayar, lalu coba lagi.",
   accountInUse:
-    "Akun ini terhubung ke catatan keuangan dan tidak dapat dihapus. Periksa transaksi dan catatan terkait terlebih dahulu.",
+    "Akun ini memiliki catatan keuangan terkait. Periksa dan kelola catatan tersebut sebelum menghapus akun.",
   watchAlreadyExists:
     "Kode saham ini sudah ada di watchlist. Edit entri yang sudah ada.",
   budgetAlreadyExists:
@@ -296,7 +296,7 @@ const id: Record<keyof typeof en, string> = {
   editTrade: "Ubah transaksi saham",
   tradeUpdated: "Transaksi saham diperbarui.",
   tradeEditHint:
-    "Menyimpan menghitung ulang kas investasi, kepemilikan saham, dan untung/rugi. Perubahan tidak boleh menyebabkan penjualan tanpa cukup lembar atau transaksi tanpa cukup kas.",
+    "Menyimpan menghitung ulang kas sekuritas, kepemilikan, dan hasil investasi. Pastikan setiap transaksi memiliki kas dan saham yang cukup pada tanggalnya.",
   previousCashImpact: "Dampak kas sebelumnya",
   manageTrades: "Kelola transaksi saham",
   manageTradesHint:
@@ -324,9 +324,9 @@ const id: Record<keyof typeof en, string> = {
   openingBalanceHint:
     "Saldo sebelum transaksi pertama. Kosongkan untuk saldo nol.",
   networkError:
-    "Tidak dapat terhubung. Periksa koneksi lalu coba lagi.",
+    "Koneksi terputus. Periksa koneksi lalu coba lagi.",
   serviceUnavailable:
-    "Catatan belum dapat dimuat. Coba lagi sebentar.",
+    "Pemuatan catatan gagal. Coba lagi sebentar.",
   invalidInput:
     "Periksa nominal, tanggal, dan akun yang dipilih, lalu coba lagi. Isian Anda tetap tersimpan.",
   recordConflict:
@@ -347,11 +347,11 @@ const id: Record<keyof typeof en, string> = {
     "Jadwal dihapus. Transaksi yang telah dicatat tetap tersimpan.",
   confirmDelete: "Hapus catatan ini?",
   irreversible:
-    "Tindakan ini tidak dapat dibatalkan. Periksa catatan sebelum menghapusnya.",
+    "Penghapusan bersifat permanen. Periksa catatan sebelum menghapusnya.",
   deleteScheduleHint:
     "Menghapus jadwal menghentikan pencatatan berikutnya. Transaksi yang sudah dicatat tetap ada di riwayat.",
   transactionDeleteHint:
-    "Transaksi akan dihapus dan saldo, anggaran, serta laporan dihitung ulang. Tindakan ini tidak dapat dibatalkan.",
+    "Hapus transaksi secara permanen dan hitung ulang saldo, anggaran, serta laporan.",
   transferHint:
     "Pindahkan uang antara dua akun berbeda. Total saldo Anda tetap sama.",
   transferNeedsAccounts:
@@ -409,13 +409,13 @@ const id: Record<keyof typeof en, string> = {
     "Pemakaian anggaran berasal dari pengeluaran pada bulan pilihan. Rollover hanya membawa sisa anggaran dari bulan sebelumnya.",
   helpGoals: "Pahami kontribusi",
   helpGoalsBody:
-    "Kontribusi mengalokasikan uang untuk tujuan. Uang tidak berpindah dari akun sumber.",
+    "Kontribusi mencadangkan kas untuk tujuan di akun sumber. Saldo akun tetap sama.",
   helpPlanning: "Gunakan estimasi saldo",
   helpPlanningBody:
-    "Estimasi memakai jadwal rutin aktif dan tidak otomatis mencatat transaksi. Gunakan Catat sekarang ketika pembayaran benar-benar terjadi.",
+    "Proyeksi memakai saldo dan jadwal rutin aktif. Pilih Catat sekarang saat pembayaran terjadi untuk menambahkannya ke riwayat transaksi.",
   helpReconcile: "Periksa saldo",
   helpReconcileBody:
-    "Bandingkan akun dengan rekening asli. Rekonsiliasi mencatat selisih tanpa mengubah saldo.",
+    "Bandingkan akun dengan rekening asli. Rekonsiliasi mencatat selisih dan mempertahankan saldo tercatat.",
   done: "Mengerti",
   noGoals: "Apa tujuan tabungan Anda?",
   noGoalsHint:
@@ -436,7 +436,7 @@ const id: Record<keyof typeof en, string> = {
   lastRecorded: "Terakhir dicatat",
   notRecorded: "Belum pernah dicatat",
   forecastHint:
-    "Ini estimasi, bukan kepastian. Belanja di luar jadwal belum termasuk.",
+    "Proyeksi saldo berdasarkan kas saat ini dan jadwal rutin aktif.",
   noSchedulesHint:
     "Tambahkan gaji, tagihan, atau langganan untuk menghitung estimasi saldo.",
   cash: "Tunai",
@@ -458,7 +458,7 @@ const id: Record<keyof typeof en, string> = {
   Pendidikan: "Pendidikan",
   "Transfer antar akun": "Transfer antar akun",
   reconcileHint:
-    "Perbandingan ini menyimpan catatan, tanpa menyesuaikan saldo.",
+    "Simpan perbandingan dan selisih saldo. Saldo tercatat tetap sama.",
 }
 
 export const usabilityMessages: Record<Locale, Record<string, string>> = {

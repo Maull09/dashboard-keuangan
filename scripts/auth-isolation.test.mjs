@@ -2,8 +2,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { readFileSync } from "node:fs"
 import pg from "pg"
 import { drizzle } from "drizzle-orm/node-postgres"
-import { eq } from "drizzle-orm"
-import { transactions } from "../src/db/schema"
+import { and, eq, isNotNull, isNull } from "drizzle-orm"
+import { aiDrafts, transactions } from "../src/db/schema"
+import { decideDraft } from "../src/lib/ai/confirmation"
 import { readLedger, readReservations } from "../src/lib/server/ledger"
 import { readBalanceLedger, readReservedCash, accountSummaryQuery, goalSummaryQuery, debtSummaryQuery } from "../src/lib/server/financial-queries"
 import { readBudgets } from "../src/lib/server/budget-queries"
@@ -85,7 +86,7 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
   it("applies migrations without losing legacy amounts or watchlist notes", async () => {
     expect((await client.query("SELECT initial_balance, user_id FROM accounts WHERE id = $1", [legacyId])).rows[0]).toEqual({ initial_balance: 12345, user_id: null })
     expect((await client.query("SELECT note FROM stock_watchlist")).rows[0].note).toBe("Legacy note")
-    expect(schemaIssues(loadSnapshot("0011"), await readDatabaseSchema(client))).toEqual([])
+    expect(schemaIssues(loadSnapshot("0013"), await readDatabaseSchema(client))).toEqual([])
   })
 
   it("automatically assigns new rows and isolates reads, updates, and deletes", async () => {
@@ -98,9 +99,110 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
     })
   })
 
-  it("installs revision triggers on every private and shared market table", async () => {
+  it("adopts an existing grouping schema without changing recorded transactions", async () => {
+    const fixture = (await asUser(userA, () => client.query(
+      "INSERT INTO transactions(type,amount,category,group_name,date,account_id) VALUES ('expense',123,'Food','Existing trip','2026-10-09',$1) RETURNING id,amount,group_name",
+      [accountA.id],
+    ))).rows[0]
+    await client.query("BEGIN")
+    try {
+      for (const statement of readFileSync("drizzle/0013_groovy_talkback.sql", "utf8").split("--> statement-breakpoint"))
+        await client.query(statement)
+      expect((await client.query("SELECT id,amount,group_name FROM transactions WHERE id=$1", [fixture.id])).rows[0]).toEqual(fixture)
+      await client.query("COMMIT")
+    } catch (error) {
+      await client.query("ROLLBACK")
+      throw error
+    } finally {
+      await asUser(userA, () => client.query("DELETE FROM transactions WHERE id=$1", [fixture.id]))
+    }
+    await expect(asUser(userA, () => client.query(
+      "INSERT INTO transactions(type,amount,category,group_name,date,account_id) VALUES ('expense',123,'Food','   ','2026-10-09',$1)", [accountA.id],
+    ))).rejects.toMatchObject({ code: "23514" })
+  })
+
+  it("isolates AI conversations, messages, receipts and draft references between users", async () => {
+    const conversation = (await asUser(userA, () => client.query("INSERT INTO ai_conversations(title) VALUES ('AI fixture') RETURNING id"))).rows[0].id
+    const message = (await asUser(userA, () => client.query("INSERT INTO ai_messages(conversation_id, role, content) VALUES ($1, 'assistant', 'Draft') RETURNING id", [conversation]))).rows[0].id
+    await asUser(userB, async () => {
+      expect((await client.query("SELECT id FROM ai_conversations WHERE id = $1", [conversation])).rows).toEqual([])
+      expect((await client.query("SELECT id FROM ai_messages WHERE id = $1", [message])).rows).toEqual([])
+      expect((await client.query("UPDATE ai_conversations SET title = 'stolen' WHERE id = $1", [conversation])).rowCount).toBe(0)
+    })
+    await expect(asUser(userB, () => client.query("INSERT INTO ai_messages(conversation_id, role, content) VALUES ($1, 'user', 'Attack')", [conversation]))).rejects.toMatchObject({ code: "42501" })
+    await expect(asUser(userB, () => client.query("INSERT INTO ai_receipts(conversation_id, storage_path, mime_type) VALUES ($1, 'fake', 'image/png')", [conversation]))).rejects.toMatchObject({ code: "42501" })
+    const own = (await asUser(userB, () => client.query("INSERT INTO ai_conversations(title) VALUES ('Own AI fixture') RETURNING id"))).rows[0].id
+    await expect(asUser(userB, () => client.query("INSERT INTO ai_drafts(conversation_id, message_id, data) VALUES ($1, $2, '{}')", [own, message]))).rejects.toMatchObject({ code: "42501" })
+    for (const role of ["anon", "authenticated"]) {
+      const grants = await client.query("SELECT has_table_privilege($1, 'ai_conversations', 'SELECT,INSERT,UPDATE,DELETE') AS access", [role])
+      expect(grants.rows[0].access).toBe(false)
+    }
+  })
+
+  it("atomically confirms a persisted AI draft once and rolls back a failed confirmation", async () => {
+    const connection = drizzle(client)
+    const data = { type: "expense", amount: 25000, category: "Makanan", description: "AI fixture", date: "2026-10-09", accountId: accountA.id, destinationAccountId: null }
+    const conversation = (await asUser(userA, () => client.query("INSERT INTO ai_conversations(title) VALUES ('Confirmation fixture') RETURNING id"))).rows[0].id
+    const message = (await asUser(userA, () => client.query("INSERT INTO ai_messages(conversation_id, role, content) VALUES ($1, 'assistant', 'Review') RETURNING id", [conversation]))).rows[0].id
+    const draft = (await asUser(userA, () => client.query("INSERT INTO ai_drafts(conversation_id, message_id, data) VALUES ($1, $2, $3) RETURNING id", [conversation, message, JSON.stringify(data)]))).rows[0].id
+    await expect(asUser(userA, async () => {
+      await decideDraft(connection, draft, { action: "confirm", data })
+      throw new Error("Rollback confirmation fixture")
+    })).rejects.toThrow("Rollback confirmation fixture")
+    const pending = await asUser(userA, () => connection.select().from(aiDrafts).where(eq(aiDrafts.id, draft)))
+    expect(pending[0].status).toBe("pending")
+    expect(pending[0].transactionId).toBeNull()
+    const result = await asUser(userA, () => decideDraft(connection, draft, { action: "confirm", data }))
+    expect(result.transactionId).toBeGreaterThan(0)
+    await expect(asUser(userA, () => decideDraft(connection, draft, { action: "confirm", data }))).rejects.toMatchObject({ code: "recordConflict" })
+    const saved = await asUser(userA, () => connection.select().from(transactions).where(eq(transactions.id, result.transactionId)))
+    expect(saved).toHaveLength(1)
+    expect(saved[0].amount).toBe(25000)
+    await asUser(userA, async () => {
+      await client.query("DELETE FROM ai_drafts WHERE id = $1", [draft])
+      await client.query("DELETE FROM transactions WHERE id = $1", [result.transactionId])
+    })
+  })
+
+  it("keeps receipt Storage private even when a preexisting policy permits broad access", async () => {
+    await client.query("BEGIN")
+    try {
+      await client.query(`
+        CREATE SCHEMA storage;
+        CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$
+          SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+        $$;
+        CREATE FUNCTION storage.foldername(name text) RETURNS text[] LANGUAGE sql AS $$
+          SELECT string_to_array(name, '/')
+        $$;
+        CREATE TABLE storage.buckets(id text PRIMARY KEY, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+        CREATE TABLE storage.objects(id uuid DEFAULT gen_random_uuid(), bucket_id text, name text);
+        ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+        GRANT USAGE ON SCHEMA storage, auth TO anon, authenticated;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated;
+        CREATE POLICY broad_existing_policy ON storage.objects FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+      `)
+      await client.query(readFileSync("scripts/ai-storage.sql", "utf8"))
+      await client.query(readFileSync("scripts/ai-storage.sql", "utf8"))
+      expect((await client.query("SELECT public, file_size_limit FROM storage.buckets WHERE id = 'ai-receipts'")).rows[0]).toEqual({ public: false, file_size_limit: "5242880" })
+      await client.query("SET LOCAL ROLE authenticated")
+      await client.query("SELECT set_config('request.jwt.claim.sub', $1, true)", [userA])
+      await client.query("INSERT INTO storage.objects(bucket_id, name) VALUES ('ai-receipts', $1)", [userA + "/receipt.png"])
+      expect((await client.query("SELECT name FROM storage.objects")).rowCount).toBe(1)
+      await client.query("SELECT set_config('request.jwt.claim.sub', $1, true)", [userB])
+      expect((await client.query("SELECT name FROM storage.objects")).rowCount).toBe(0)
+      expect((await client.query("DELETE FROM storage.objects")).rowCount).toBe(0)
+      await client.query("RESET ROLE; SET LOCAL ROLE anon")
+      expect((await client.query("SELECT name FROM storage.objects")).rowCount).toBe(0)
+      await client.query("SAVEPOINT denied_upload")
+      await expect(client.query("INSERT INTO storage.objects(bucket_id, name) VALUES ('ai-receipts', $1)", [userB + "/receipt.png"])).rejects.toMatchObject({ code: "42501" })
+      await client.query("ROLLBACK TO SAVEPOINT denied_upload")
+    } finally { await client.query("ROLLBACK") }
+  })
+
+  it("installs revision triggers on every private financial and shared market table", async () => {
     const { rows } = await client.query("SELECT c.relname AS table_name, t.tgname AS trigger_name FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid WHERE NOT t.tgisinternal AND c.relnamespace = 'public'::regnamespace")
-    for (const table of ownedTables) {
+    for (const table of ownedTables.filter(name => !name.startsWith("ai_"))) {
       expect(rows).toContainEqual({ table_name: table, trigger_name: "invalidate_api_cache" })
       expect(rows).toContainEqual({ table_name: table, trigger_name: "invalidate_api_cache_truncate" })
     }
@@ -242,6 +344,39 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
     expect((await client.query("SELECT user_id, initial_balance FROM accounts WHERE id=$1", [legacyId])).rows[0]).toEqual({ user_id: userA, initial_balance: 12345 })
     expect((await assignLegacyOwner(client, "owner@example.test", true)).accounts).toBe(0)
     expect((await client.query("SELECT user_id FROM accounts WHERE id=$1", [accountB.id])).rows[0].user_id).toBe(userB)
+  })
+
+  it("groups the entire filtered history and keeps names private under RLS", async () => {
+    await asUser(userA, async () => {
+      await client.query("SAVEPOINT group_fixture")
+      try {
+        const connection = drizzle(client)
+        const accountId = (await client.query("INSERT INTO accounts(name, type) VALUES ('Group fixture', 'bank') RETURNING id")).rows[0].id
+        const targetId = (await client.query("INSERT INTO accounts(name, type) VALUES ('Group target', 'bank') RETURNING id")).rows[0].id
+        await client.query("INSERT INTO transactions(type, amount, category, group_name, date, account_id) SELECT 'expense', 100, 'Food', 'Japan trip', '2026-10-09', $1 FROM generate_series(1, 26)", [accountId])
+        await client.query("INSERT INTO transactions(type, amount, category, group_name, date, account_id) VALUES ('income', 600, 'Refund', 'Japan trip', '2026-10-09', $1), ('expense', 200, 'Food', null, '2026-10-09', $1), ('expense', 600, 'Food', 'Wedding', '2026-10-09', $1)", [accountId])
+        await client.query("INSERT INTO transactions(type, amount, category, group_name, date, account_id, destination_account_id) VALUES ('transfer', 500, 'Transfer', 'Japan trip', '2026-10-09', $1, $2)", [accountId, targetId])
+        const page = await readTransactionPage(connection, eq(transactions.accountId, accountId), 1, 2)
+        expect(page.items).toHaveLength(2)
+        expect(page).toMatchObject({ total: 30, summary: { income: 600, expense: 3400 } })
+        expect(page.groups).toEqual([
+          { groupName: 'Japan trip', count: 28, income: 600, expense: 2600 },
+          { groupName: 'Wedding', count: 1, income: 0, expense: 600 },
+          { groupName: null, count: 1, income: 0, expense: 200 },
+        ])
+        const selected = await readTransactionPage(connection, and(eq(transactions.accountId, accountId), eq(transactions.groupName, 'Japan trip')), 2, 2)
+        expect(selected).toMatchObject({ total: 28, summary: { income: 600, expense: 2600 }, groups: [page.groups[0]] })
+        expect(selected.items.every((item) => item.groupName === 'Japan trip')).toBe(true)
+        expect((await readTransactionPage(connection, and(eq(transactions.accountId, accountId), isNull(transactions.groupName)), 1, 25)).groups)
+          .toEqual([{ groupName: null, count: 1, income: 0, expense: 200 }])
+        await client.query("SELECT set_config('app.user_id', $1, true)", [userB])
+        expect((await connection.selectDistinct({ name: transactions.groupName }).from(transactions).where(isNotNull(transactions.groupName)))).toEqual([])
+        expect((await readTransactionPage(connection, undefined, 1, 25)).groups).toEqual([])
+        expect((await client.query("UPDATE transactions SET group_name='stolen' WHERE account_id=$1", [accountId])).rowCount).toBe(0)
+      } finally {
+        await client.query("ROLLBACK TO SAVEPOINT group_fixture")
+      }
+    })
   })
 
   it("keeps optimized SQL totals, pagination, prices and joins equivalent under RLS", async () => {

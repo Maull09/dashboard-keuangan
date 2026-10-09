@@ -15,6 +15,7 @@ import {
   PiggyBank,
   Scale,
   LogOut,
+  MessageSquare,
 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { useAuth } from "./auth-provider"
@@ -39,6 +40,7 @@ import { useRemoteData } from "@/lib/use-remote-data"
 import type { Account } from "@/lib/types"
 
 export const navigationItems = [
+  { key: "ai", icon: MessageSquare },
   { key: "dashboard", icon: Home },
   { key: "transactions", icon: ReceiptText },
   { key: "budget", icon: TrendingUp },
@@ -99,7 +101,7 @@ export function Sidebar({
           {[
             {
               label: "dailyNavigation",
-              keys: ["dashboard", "transactions", "budget", "goals", "debts"],
+              keys: ["dashboard", "transactions", "ai", "budget", "goals", "debts"],
             },
             {
               label: "planNavigation",

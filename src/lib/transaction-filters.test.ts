@@ -18,6 +18,8 @@ describe("transaction filter inputs", () => {
       accountId: 2,
       from: "2026-10-01",
       to: "2026-10-31",
+      groupName: null,
+      ungrouped: false,
     })
   })
   it("rejects a reversed range instead of silently showing no records", () => {
@@ -40,8 +42,21 @@ describe("transaction filter inputs", () => {
       accountId: null,
       from: "",
       to: "",
+      groupName: null,
+      ungrouped: false,
     })
   })
+  it("filters an exact group name, including names matching UI options", () => {
+    expect(parseTransactionFilters(new URLSearchParams("group=all")))
+      .toMatchObject({ groupName: "all", ungrouped: false })
+    expect(parseTransactionFilters(new URLSearchParams("ungrouped=true")))
+      .toMatchObject({ groupName: null, ungrouped: true })
+  })
+  it.each(["group=Trip&ungrouped=true", "ungrouped=yes", "group=" + "x".repeat(101)])(
+    "rejects ambiguous or invalid group filters: %s", (query) => {
+      expect(parseTransactionFilters(new URLSearchParams(query))).toBeNull()
+    },
+  )
   it("matches English category labels without rewriting stored categories", () => {
     expect(findEnglishCategoryMatches(" FOOD ")).toEqual(["Makanan"])
     expect(findEnglishCategoryMatches("bill")).toEqual(["Tagihan"])
