@@ -14,7 +14,11 @@ import type { AiConversation, AiConversationDetail } from "@/lib/ai/types"
 export function AiAssistant() {
   const { t } = useLanguage()
   const conversations = useRemoteData<AiConversation[]>("/api/ai/conversations")
-  const [selected, setSelected] = useState("")
+  const [selected, setSelected] = useState(() => {
+    if (typeof window === "undefined") return ""
+    const id = new URLSearchParams(window.location.hash.split("?")[1]).get("conversation")
+    return id && /^[a-f0-9-]{36}$/.test(id) ? id : ""
+  })
   const [busy, setBusy] = useState(false)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState("")

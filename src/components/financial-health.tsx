@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { RefreshCw } from "lucide-react"
 import { getCurrentMonth } from "@/lib/finance"
 import { calculateFinancialHealth, healthInputSchema, type FinancialHealthReport } from "@/lib/financial-health"
 import { useRemoteData } from "@/lib/use-remote-data"
-import { jsonBody, requestJson } from "@/lib/client-api"
 import { clearRemoteResourceCache } from "@/lib/remote-resource-cache"
+import { PageInsights } from "./page-insights"
 import { useLanguage } from "./language-provider"
 import { ErrorNotice, Field, LoadingState, PageHeading } from "./feedback"
 import { Button } from "./ui/button"
@@ -35,12 +35,12 @@ export function FinancialHealth() {
       </PageHeading>
       <ErrorNotice message={records.error} onRetry={reload} />
       {records.refreshing && <p role="status" className="text-sm text-muted-foreground">{t("refreshing")}</p>}
-      {records.loading ? <LoadingState /> : records.data && <HealthAnalysis key={month} snapshot={records.data} refreshing={records.refreshing} onReload={reload} />}
+      {records.loading ? <LoadingState /> : records.data && <HealthAnalysis key={month} snapshot={records.data} refreshing={records.refreshing || Boolean(records.error)} />}
     </div>
   )
 }
 
-function HealthAnalysis({ snapshot, refreshing, onReload }: { snapshot: FinancialHealthReport; refreshing: boolean; onReload: () => void }) {
+function HealthAnalysis({ snapshot, refreshing }: { snapshot: FinancialHealthReport; refreshing: boolean }) {
   const { locale, t, formatCurrency, formatDate, formatMonth } = useLanguage()
   const [essentialExpense, setEssentialExpense] = useState("")
   const [monthlyDebtPayment, setMonthlyDebtPayment] = useState("")
@@ -143,7 +143,7 @@ function HealthAnalysis({ snapshot, refreshing, onReload }: { snapshot: Financia
           <p className="text-xs text-muted-foreground">{t("healthHistoryHint", { count: report.historyMonths })}</p>
         </CardContent>
       </Card>
-      <HealthInsights key={JSON.stringify([report, locale, refreshing])} report={report} disabled={!valid || refreshing} onReload={onReload} />
+      <PageInsights context={{ page: "financialHealth", input: report.input }} ready={valid && !refreshing} />
       <details className="rounded-xl border bg-card p-5">
         <summary className="min-h-11 cursor-pointer content-center font-medium focus-visible:outline-2 focus-visible:outline-ring">{t("healthMethod")}</summary>
         <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
@@ -156,48 +156,4 @@ function HealthAnalysis({ snapshot, refreshing, onReload }: { snapshot: Financia
 
 function HealthMetric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return <div className="min-w-0"><dt className="text-sm text-muted-foreground">{label}</dt><dd className="mt-2 text-xl font-semibold tabular-nums">{value}</dd>{hint && <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{hint}</p>}</div>
-}
-
-function HealthInsights({ report, disabled, onReload }: { report: FinancialHealthReport; disabled: boolean; onReload: () => void }) {
-  const { t, locale } = useLanguage()
-  const [insight, setInsight] = useState("")
-  const [error, setError] = useState("")
-  const [pending, setPending] = useState(false)
-  const controller = useRef<AbortController | null>(null)
-  useEffect(() => () => controller.current?.abort(), [])
-  async function generate() {
-    if (pending || disabled) return
-    const request = new AbortController()
-    controller.current = request
-    setPending(true)
-    setError("")
-    setInsight("")
-    try {
-      const result = await requestJson<{ report: FinancialHealthReport; insight: string }>("/api/ai/financial-health", {
-        ...jsonBody("POST", { ...report.input, locale }), signal: request.signal,
-      })
-      clearRemoteResourceCache()
-      const changed = (Object.keys(report) as Array<keyof FinancialHealthReport>).some((key) =>
-        JSON.stringify(report[key]) !== JSON.stringify(result.report[key]))
-      if (changed) throw new Error("healthRecordsChanged")
-      if (!request.signal.aborted) setInsight(result.insight)
-    } catch (reason) {
-      if (!request.signal.aborted) setError(reason instanceof Error ? reason.message : "aiUnavailable")
-    } finally {
-      if (!request.signal.aborted) setPending(false)
-    }
-  }
-  return <Card aria-busy={pending}>
-    <CardHeader><CardTitle>{t("healthAi")}</CardTitle><CardDescription>{t("healthAiHint")}</CardDescription></CardHeader>
-    <CardContent className="space-y-4">
-      <Button onClick={generate} disabled={disabled || pending}>{t(pending ? "healthAiGenerating" : "healthAiGenerate")}</Button>
-      {pending && <p role="status" className="text-sm text-muted-foreground">{t("healthAiGenerating")}</p>}
-      <ErrorNotice message={error} onRetry={error === "healthRecordsChanged" ? onReload : generate} />
-      {insight && <div className="space-y-3" aria-live="polite">
-        <p className="max-w-prose whitespace-pre-wrap text-sm leading-relaxed">{insight}</p>
-        <p className="text-xs text-muted-foreground">{t("healthAiReview")}</p>
-        <Button asChild variant="outline"><a href="#ai">{t("healthAiHistory")}</a></Button>
-      </div>}
-    </CardContent>
-  </Card>
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useId, useState } from "react"
 import { Pencil, Plus, Target } from "lucide-react"
 import { RecordDeleteButton } from "./record-delete-button"
@@ -87,6 +88,7 @@ export function GoalsManager() {
       <PageHeading title={t("goalsTitle")} description={t("goalsDescription")}>
         <AddGoal />
       </PageHeading>
+      <PageInsights context={{ page: "goals" }} ready={Boolean(goals.data) && !goals.loading && !goals.refreshing && !goals.error} />
       {(goals.error || accounts.error) && (
         <ErrorNotice
           message={goals.error || accounts.error}

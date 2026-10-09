@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useEffect, useMemo, useState } from "react"
 import { Search, SlidersHorizontal, Trash2 } from "lucide-react"
 import { TransactionForm } from "./transaction-form"
@@ -158,6 +159,7 @@ export function TransactionList() {
           <AddAccountForm />
         ) : null}
       </PageHeading>
+      <PageInsights context={{ page: "transactions", filters: new URLSearchParams([...params].filter(([key]) => key !== "page" && key !== "limit")).toString() }} ready={Boolean(data) && !loading && !records.refreshing && !error && !invalidRange} />
       {!accountData.loading && !accountData.error && <AiTransactionDrafts accounts={accounts} />}
       <Card className="shadow-none">
         <CardContent className="space-y-4 pt-5">

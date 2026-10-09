@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useId, useState } from "react"
 import { Plus, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
@@ -47,6 +48,7 @@ export function SinkingFunds() {
       <PageHeading title={t("funds")} description={t("fundsDescription")}>
         <FundForm accounts={data?.accounts ?? []} />
       </PageHeading>
+      <PageInsights context={{ page: "funds" }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       <ErrorNotice message={records.error} onRetry={records.reload} />
       {records.refreshing && (
         <p role="status" className="text-sm text-muted-foreground">

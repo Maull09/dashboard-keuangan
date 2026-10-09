@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useState } from "react"
 import { Pencil, Plus } from "lucide-react"
 import { RecordDeleteButton } from "./record-delete-button"
@@ -215,6 +216,7 @@ export function BudgetManager() {
           {add}
         </div>
       </PageHeading>
+      <PageInsights context={{ page: "budget", month }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       <ErrorNotice message={records.error} onRetry={records.reload} />
       {records.refreshing && (
         <p role="status" className="text-sm text-muted-foreground">

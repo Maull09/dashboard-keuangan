@@ -1,14 +1,4 @@
-import {
-  and,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  isNull,
-  lte,
-  or,
-} from "drizzle-orm"
+import { desc } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
 import { transactions } from "@/db/schema"
@@ -16,10 +6,8 @@ import { accountsExist } from "@/lib/accounts"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { readTransactionPage } from "@/lib/server/transaction-queries"
 import { parseTransactionInput } from "@/lib/validation"
-import {
-  findEnglishCategoryMatches,
-  parseTransactionFilters,
-} from "@/lib/transaction-filters"
+import { parseTransactionFilters } from "@/lib/transaction-filters"
+import { transactionConditions } from "@/lib/server/transaction-conditions"
 
 export async function GET(request: NextRequest) {
   return authenticatedResponse(async (db) => {
@@ -29,36 +17,7 @@ export async function GET(request: NextRequest) {
     const filters = parseTransactionFilters(params)
     if (!filters)
       return NextResponse.json({ code: "invalidInput" }, { status: 400 })
-    const conditions = []
-    if (filters.type !== "all")
-      conditions.push(eq(transactions.type, filters.type))
-    if (filters.accountId)
-      conditions.push(
-        or(
-          eq(transactions.accountId, filters.accountId),
-          eq(transactions.destinationAccountId, filters.accountId),
-        ),
-      )
-    if (filters.from) conditions.push(gte(transactions.date, filters.from))
-    if (filters.to) conditions.push(lte(transactions.date, filters.to))
-    if (filters.groupName)
-      conditions.push(eq(transactions.groupName, filters.groupName))
-    if (filters.ungrouped) conditions.push(isNull(transactions.groupName))
-    if (filters.search) {
-      const search = "%" + filters.search.replace(/[\\%_]/g, "\\$&") + "%"
-      const translatedCategories = findEnglishCategoryMatches(filters.search)
-      conditions.push(
-        or(
-          ilike(transactions.category, search),
-          ilike(transactions.description, search),
-          ilike(transactions.groupName, search),
-          translatedCategories.length
-            ? inArray(transactions.category, translatedCategories)
-            : undefined,
-        ),
-      )
-    }
-    const where = and(...conditions)
+    const where = transactionConditions(filters)
 
     if (!Number.isSafeInteger(pageValue) || pageValue < 1) {
       const data = await db

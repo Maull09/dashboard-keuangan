@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useId, useState } from "react"
 import { AddDebtForm, type Debt } from "./debt-form"
 import { RecordDeleteButton } from "./record-delete-button"
@@ -53,6 +54,7 @@ export function DebtManager() {
       <PageHeading title={t("debtsTitle")} description={t("debtsDescription")}>
         <AddDebtForm />
       </PageHeading>
+      <PageInsights context={{ page: "debts" }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       {(records.error || accounts.error) && (
         <ErrorNotice
           message={records.error || accounts.error}

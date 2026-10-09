@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useLanguage } from "./language-provider"
@@ -75,6 +76,7 @@ export function FinancialCalendar() {
           {t("thisMonth")}
         </Button>
       </PageHeading>
+      <PageInsights context={{ page: "calendar", month }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <Field id="calendar-month" label={t("period")}>
           <Input

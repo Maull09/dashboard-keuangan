@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useEffect, useState } from "react"
 import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
@@ -130,6 +131,7 @@ export function PlanningManager() {
       >
         <AddSchedule accounts={accounts} />
       </PageHeading>
+      <PageInsights context={{ page: "planning", endDate: payday }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error && Boolean(payday) && payday >= getToday()} />
       <Card>
         <CardHeader>
           <CardTitle>{t("forecastTitle")}</CardTitle>

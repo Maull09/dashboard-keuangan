@@ -3,6 +3,8 @@ import pg from "pg"
 import { drizzle } from "drizzle-orm/node-postgres"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { readFinancialHealth } from "@/lib/server/financial-health-queries"
+import { readInsightSummary } from "@/lib/ai/insight-summary"
+import type { InsightContext } from "@/lib/ai/insight-contract"
 import type { UserDatabase } from "@/lib/server/authenticated-response"
 
 const testUrl = process.env.FINANCIAL_HEALTH_TEST_DATABASE_URL
@@ -66,6 +68,31 @@ describe.skipIf(!testUrl)("financial health PostgreSQL aggregation", () => {
     await client?.end()
   })
   const input = { month: "2026-09", essentialExpense: 6000000, monthlyDebtPayment: 2000000 }
+  it("summarises the full transaction filter without sending raw records or private names", async () => {
+    const summary = await asUser(owner, (connection) => readInsightSummary(connection, { page: "transactions", filters: "from=2026-09-01&to=2026-09-30" }))
+    expect(summary).toMatchObject({ income: 15500000, expense: 9000000, transferCount: 1, largestExpense: 7000000 })
+    const hidden = await asUser(other, (connection) => readInsightSummary(connection, { page: "transactions", filters: "from=2026-09-01&to=2026-09-30" }))
+    expect(hidden).toMatchObject({ income: 0, expense: 0, transactionCount: 0 })
+    expect(JSON.stringify(summary)).not.toContain("accountId")
+    expect(JSON.stringify(summary)).not.toContain("description")
+  })
+  it("builds aggregates for every financial page without private identifiers or labels", async () => {
+    const contexts: InsightContext[] = [
+      { page: "dashboard" }, { page: "investments" }, { page: "netWorth" }, { page: "debts" }, { page: "goals" }, { page: "funds" },
+      { page: "budget", month: "2026-09" }, { page: "reports", month: "2026-09" }, { page: "calendar", month: "2026-09" },
+      { page: "financialHealth", input }, { page: "planning", endDate: "2026-12-31" },
+      { page: "simulation", input: { endDate: "2026-12-31", extraIncomes: [], extraExpenses: [] } },
+    ]
+    for (const context of contexts) {
+      const summary = await asUser(owner, (connection) => readInsightSummary(connection, context))
+      const payload = JSON.stringify(summary)
+      for (const field of ["userId", "accountId", "name", "description", "title", "note", "entries", "trades"])
+        expect(payload).not.toContain('"' + field + '":')
+      expect(payload).not.toContain("Synthetic stock")
+      expect(payload).not.toContain('"TEST"')
+      expect(payload).not.toContain("NaN")
+    }
+  })
   it("excludes future transactions, transfers, stock purchases and receivable collections from operating flow", async () => {
     const report = await asUser(owner, (connection) => readFinancialHealth(connection, input))
     expect(report).toMatchObject({ income: 15000000, expense: 9000000, surplus: 6000000,

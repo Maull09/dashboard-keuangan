@@ -6,9 +6,10 @@ import { calculateFinancialHealth } from "@/lib/financial-health"
 
 const { remote } = vi.hoisted(() => ({ remote: vi.fn() }))
 vi.mock("@/lib/use-remote-data", () => ({ useRemoteData: remote }))
+vi.mock("@/components/auth-provider", () => ({ useAuth: () => ({ user: { id: "test-user" } }) }))
 
 describe("financial health interface", () => {
-  it("shows incomplete data, labelled inputs, formulas and an explicit AI action", () => {
+  it("shows incomplete data, labelled inputs, formulas and automatic insight feedback", () => {
     const report = calculateFinancialHealth({ month: "2026-09", asOf: "2026-09-30", partial: false,
       months: [{ month: "2026-09", income: 1000000, expense: 500000, count: 2, transfers: 1, largestIncomeCategory: 1000000 }],
       liquidAssets: 1000000, totalAssets: 1000000, totalLiabilities: 0, recordedDebtPayments: 0,
@@ -20,7 +21,9 @@ describe("financial health interface", () => {
     expect(markup).toContain('for="health-essential"')
     expect(markup).toContain('for="health-debt"')
     expect(markup).toContain('aria-describedby="health-essential-hint"')
-    expect(markup).toContain("Generate AI insights")
+    expect(markup).toContain("AI insights")
+    expect(markup).toContain("Your analysis is waiting")
+    expect(markup).toContain("Reanalyse")
     expect(markup).toContain("How the score is calculated")
     expect(markup).toContain("Transfers excluded from cash flow")
     expect(markup).not.toContain("NaN")
