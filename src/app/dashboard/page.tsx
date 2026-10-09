@@ -29,6 +29,7 @@ import { InvestmentsManager } from "@/components/investments-manager"
 import { NetWorth } from "@/components/net-worth"
 import { FinancialCalendar } from "@/components/financial-calendar"
 import { FinancialSimulation } from "@/components/financial-simulation"
+import { FinancialHealth } from "@/components/financial-health"
 import { SinkingFunds } from "@/components/sinking-funds"
 import { ReportDistribution } from "@/components/report-distribution"
 import { Sidebar, navigationItems } from "@/components/sidebar"
@@ -140,6 +141,7 @@ export default function FinanceTracker() {
           {tab === "goals" && <GoalsManager />}
           {tab === "debts" && <DebtManager />}
           {tab === "reports" && <Reports />}
+          {tab === "financialHealth" && <FinancialHealth />}
           {tab === "planning" && <PlanningManager />}
           {tab === "investments" && <InvestmentsManager />}
           {tab === "netWorth" && <NetWorth />}
@@ -259,6 +261,9 @@ function Dashboard() {
               </Button>
               <Button asChild variant="ghost" size="sm">
                 <a href="#netWorth">{t("viewNetWorth")}</a>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <a href="#financialHealth">{t("financialHealth")}</a>
               </Button>
             </div>
             <section

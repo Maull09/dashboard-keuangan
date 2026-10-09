@@ -3,6 +3,9 @@ import { and, desc, eq, gte, lt, lte, sql } from "drizzle-orm"
 import { z } from "zod"
 import { budgets, transactions } from "@/db/schema"
 import { accountsExist } from "@/lib/accounts"
+import { healthInputSchema } from "@/lib/financial-health"
+import { readFinancialHealth } from "@/lib/server/financial-health-queries"
+import { healthInsightSummary } from "./financial-health"
 import { getCurrentMonth, getNextMonthStart, isDate } from "@/lib/finance"
 import { accountSummaryQuery, debtSummaryQuery, goalSummaryQuery } from "@/lib/server/financial-queries"
 import { userDatabase } from "./server"
@@ -67,5 +70,11 @@ export function financeTools(userId: string, drafts: AiDraftInput[]) {
     description: "Prepare a transaction draft only when the user requests recording a transaction. Never saves a transaction. Use null for unknown amount, date or account; never invent them. Categories use the app's Indonesian category names. Do not confirm or duplicate an existing draft via chat.",
     schema: aiDraftSchema,
   })
-  return [overview, history, prepare] as StructuredToolInterface[]
+  const health = tool(async (input) => userDatabase(userId, async (connection) =>
+    JSON.stringify(healthInsightSummary(await readFinancialHealth(connection, input)))), {
+    name: "read_financial_health",
+    description: "Read a deterministic financial health report for a YYYY-MM month up to the current month. Use null for unknown essential monthly expenses or total monthly debt payment obligations; ask the user rather than guessing. Debt payment obligations must not be below recorded payments. Returns heuristic score, ratios, data limitations and period-end balances. Does not change records.",
+    schema: healthInputSchema,
+  })
+  return [overview, history, health, prepare] as StructuredToolInterface[]
 }

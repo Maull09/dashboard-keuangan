@@ -83,6 +83,10 @@ Describe what a feature calculates or changes directly, in both languages. State
 
 Transaction groups collect records for a named activity, such as a trip, across spending categories. Each transaction has one optional group. Show group spending totals and transaction counts for the full filtered period, with an action to view the group's records. Use the existing blue selection treatment, Geist typography, quiet borders, and stacked layouts on mobile; keep amounts prominent and group names able to wrap.
 
+### Financial health
+
+Assumption: the user wants to review recorded monthly finances and identify the next practical action on desktop or mobile. Place Financial health in analysis navigation and link it from the dashboard. Lead with the selected month, a clearly labelled heuristic score, and the data needed to complete it; follow with ratios, their formulas, and transaction behaviour. Use Geist, existing blue tokens, quiet bordered surfaces, tabular amounts, and stacked mobile controls. Show unavailable ratios explicitly rather than treating missing data as zero. Current months are provisional; balance-sheet values use the selected period's closing date (today for the current month), with price dates visible. Essential monthly expenses and total monthly debt payments are user-supplied analysis inputs, kept only while the page is open. Inputs never change financial records. AI insights are generated on request from the server-calculated report, displayed as plain text, and discarded when inputs, language, or records change. Show generating, retryable failure, and incomplete-data states near the action.
+
 ## Implementation rule
 
 `src/app/globals.css` owns the semantic colour tokens. Components should use those tokens and existing shared primitives rather than scattered colour values. When a lasting visual decision changes, update this document before changing the implementation.

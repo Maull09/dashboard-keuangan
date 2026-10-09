@@ -19,16 +19,18 @@ export async function readConversation(userId: string, conversationId: string) {
   })
 }
 
-export async function claimConversation(userId: string, conversationId: string, content: string) {
+export async function claimConversation(userId: string, conversationId: string | null, content: string) {
   return userDatabase(userId, async (connection) => {
     // Serialize short request admission per user, across all conversations and workers.
     await connection.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`)
     const [recent] = await connection.select({ count: count() }).from(aiMessages)
       .where(and(eq(aiMessages.role, "user"), gt(aiMessages.createdAt, sql`now() - interval '1 minute'`)))
     if (recent.count >= 6) throw new FinanceError("aiRateLimited", 429)
-    const [conversation] = await connection.select().from(aiConversations)
-      .where(eq(aiConversations.id, conversationId))
+    const [conversation] = conversationId === null
+      ? await connection.insert(aiConversations).values({ title: content.slice(0, 80) }).returning()
+      : await connection.select().from(aiConversations).where(eq(aiConversations.id, conversationId))
     if (!conversation) throw new FinanceError("recordMissing", 404)
+    conversationId = conversation.id
     const busyUntil = new Date(Date.now() + 150_000)
     const [claimed] = await connection.update(aiConversations).set({ busyUntil })
       .where(and(eq(aiConversations.id, conversationId), or(
@@ -44,6 +46,7 @@ export async function claimConversation(userId: string, conversationId: string, 
     const pending = await connection.select({ data: aiDrafts.data, status: aiDrafts.status })
       .from(aiDrafts).where(eq(aiDrafts.conversationId, conversationId)).orderBy(desc(aiDrafts.createdAt)).limit(10)
     return {
+      conversationId,
       busyUntil,
       history: [...history.reverse(), { role: "user", content }],
       draftContext: pending,

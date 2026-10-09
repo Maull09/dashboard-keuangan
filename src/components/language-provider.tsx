@@ -13,6 +13,7 @@ import { planningMessages } from "@/lib/planning-messages"
 import { authMessages } from "@/lib/auth-messages"
 import { interfaceMessages } from "@/lib/interface-messages"
 import { aiMessages } from "@/lib/ai/messages"
+import { financialHealthMessages } from "@/lib/financial-health-messages"
 
 type Dictionary = Record<string, string>
 
@@ -447,7 +448,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       t: (key: string, values: Record<string, string | number> = {}) =>
         Object.entries(values).reduce(
           (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
-          aiMessages[locale][key] ??
+          financialHealthMessages[locale][key as keyof typeof financialHealthMessages.en] ??
+            aiMessages[locale][key] ??
             interfaceMessages[locale][key] ??
             authMessages[locale][key] ??
             planningMessages[locale][key] ??
