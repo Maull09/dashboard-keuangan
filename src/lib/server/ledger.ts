@@ -1,4 +1,5 @@
 import type { UserDatabase } from "@/lib/server/authenticated-response"
+import { eq, getTableColumns, inArray, or, sql } from "drizzle-orm"
 import {
   accounts,
   transactions,
@@ -13,11 +14,20 @@ import { fundBalance } from "../planning"
 
 export type ReadConnection = Pick<UserDatabase, "select">
 
-export async function readLedger(connection: ReadConnection) {
+export async function readLedger(
+  connection: ReadConnection,
+  accountIds?: number[],
+) {
   const [allAccounts, allTransactions, trades] = await Promise.all([
-    connection.select().from(accounts),
-    connection.select().from(transactions),
-    connection.select().from(stockTrades),
+    connection.select().from(accounts)
+      .where(accountIds ? inArray(accounts.id, accountIds) : undefined),
+    connection.select().from(transactions)
+      .where(accountIds ? or(
+        inArray(transactions.accountId, accountIds),
+        inArray(transactions.destinationAccountId, accountIds),
+      ) : undefined),
+    connection.select().from(stockTrades)
+      .where(accountIds ? inArray(stockTrades.accountId, accountIds) : undefined),
   ])
   const summaries = allAccounts.map((account) => ({
     ...account,
@@ -47,18 +57,37 @@ export async function readLedger(connection: ReadConnection) {
   }
 }
 
-export async function readReservations(connection: ReadConnection) {
+export async function readReservations(
+  connection: ReadConnection,
+  accountIds?: number[],
+) {
   const [funds, entries, contributions] = await Promise.all([
-    connection.select().from(sinkingFunds),
-    connection.select().from(sinkingFundEntries),
-    connection.select().from(goalContributions),
+    connection.select().from(sinkingFunds)
+      .where(accountIds ? inArray(sinkingFunds.accountId, accountIds) : undefined),
+    connection.select(getTableColumns(sinkingFundEntries))
+      .from(sinkingFundEntries)
+      .innerJoin(sinkingFunds, eq(sinkingFunds.id, sinkingFundEntries.fundId))
+      .where(accountIds ? inArray(sinkingFunds.accountId, accountIds) : undefined),
+    connection.select({
+      accountId: goalContributions.accountId,
+      amount: sql<number>`sum(${goalContributions.amount})`.mapWith(Number),
+    })
+      .from(goalContributions)
+      .where(accountIds ? inArray(goalContributions.accountId, accountIds) : undefined)
+      .groupBy(goalContributions.accountId),
   ])
+  const allocatedByFund = new Map<number, number>()
+  for (const entry of entries)
+    allocatedByFund.set(
+      entry.fundId,
+      (allocatedByFund.get(entry.fundId) ?? 0) + fundBalance([entry]),
+    )
   const reserved = new Map<number, number>()
   for (const fund of funds)
     reserved.set(
       fund.accountId,
       (reserved.get(fund.accountId) ?? 0) +
-        fundBalance(entries.filter((entry) => entry.fundId === fund.id)),
+        (allocatedByFund.get(fund.id) ?? 0),
     )
   for (const contribution of contributions)
     reserved.set(

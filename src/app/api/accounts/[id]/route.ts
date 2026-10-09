@@ -1,4 +1,4 @@
-import { eq, or } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
 import {
@@ -15,7 +15,8 @@ import { parseAccountInput } from "@/lib/validation"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { FinanceError } from "@/lib/finance-errors"
 import { integerInput } from "@/lib/planning-validation"
-import { readLedger, readReservations } from "@/lib/server/ledger"
+import { readLedger } from "@/lib/server/ledger"
+import { readReservedCash } from "@/lib/server/financial-queries"
 import { validateInvestmentAccount } from "@/lib/investments"
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -40,8 +41,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       if (trade && input.type !== "investment")
         throw new FinanceError("historyProtected", 409)
       if (input.initialBalance !== existing.initialBalance) {
-        const ledger = await readLedger(connection)
-        const reservations = await readReservations(connection)
+        const ledger = await readLedger(connection, [id])
+        const reservations = await readReservedCash(connection, [id])
         if (trade || (reservations.reserved.get(id) ?? 0) > 0)
           validateInvestmentAccount(
             { id, initialBalance: input.initialBalance },
@@ -64,57 +65,19 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 export async function DELETE(_: NextRequest, { params }: RouteContext) {
   return authenticatedResponse(async (db) => {
     const id = integerInput((await params).id, 1, 2_147_483_647)
-    const [trade] = await db
-      .select()
-      .from(stockTrades)
-      .where(eq(stockTrades.accountId, id))
-      .limit(1)
-    const [fund] = await db
-      .select()
-      .from(sinkingFunds)
-      .where(eq(sinkingFunds.accountId, id))
-      .limit(1)
-    if (trade || fund) throw new FinanceError("accountInUse", 409)
-    const [relatedTransaction] = await db
-      .select({ id: transactions.id })
-      .from(transactions)
-      .where(
-        or(
-          eq(transactions.accountId, id),
-          eq(transactions.destinationAccountId, id),
-        ),
-      )
-      .limit(1)
-    if (relatedTransaction) throw new FinanceError("accountInUse", 409)
-    const linked = await Promise.all([
-      db
-        .select({ id: goalContributions.id })
-        .from(goalContributions)
-        .where(eq(goalContributions.accountId, id))
-        .limit(1),
-      db
-        .select({ id: debtPayments.id })
-        .from(debtPayments)
-        .where(eq(debtPayments.accountId, id))
-        .limit(1),
-      db
-        .select({ id: recurringTransactions.id })
-        .from(recurringTransactions)
-        .where(
-          or(
-            eq(recurringTransactions.accountId, id),
-            eq(recurringTransactions.destinationAccountId, id),
-          ),
-        )
-        .limit(1),
-      db
-        .select({ id: reconciliations.id })
-        .from(reconciliations)
-        .where(eq(reconciliations.accountId, id))
-        .limit(1),
-    ])
-    if (linked.some((records) => records.length))
-      throw new FinanceError("accountInUse", 409)
+    const [usage] = await db.select({
+      inUse: sql<boolean>`
+        exists (select 1 from ${stockTrades} where ${stockTrades.accountId} = ${id}) or
+        exists (select 1 from ${sinkingFunds} where ${sinkingFunds.accountId} = ${id}) or
+        exists (select 1 from ${transactions} where ${transactions.accountId} = ${id} or ${transactions.destinationAccountId} = ${id}) or
+        exists (select 1 from ${goalContributions} where ${goalContributions.accountId} = ${id}) or
+        exists (select 1 from ${debtPayments} where ${debtPayments.accountId} = ${id}) or
+        exists (select 1 from ${recurringTransactions} where ${recurringTransactions.accountId} = ${id} or ${recurringTransactions.destinationAccountId} = ${id}) or
+        exists (select 1 from ${reconciliations} where ${reconciliations.accountId} = ${id})
+      `,
+    }).from(accounts).where(eq(accounts.id, id)).limit(1)
+    if (!usage) throw new FinanceError("recordMissing", 404)
+    if (usage.inUse) throw new FinanceError("accountInUse", 409)
     const [account] = await db
       .delete(accounts)
       .where(eq(accounts.id, id))

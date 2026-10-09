@@ -11,6 +11,7 @@ Create `.env` in the repository root. In Supabase, open **Connect** and copy the
 
 ```env
 DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:6543/postgres?sslmode=verify-full
+DATABASE_CA_CERT="-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
@@ -50,7 +51,7 @@ Switching daily prices from Twelve Data to Yahoo Finance requires updated npm de
 
 ## Troubleshooting
 
-- **Cannot connect to the database:** verify that `DATABASE_URL` comes from Supabase Connect, is URL-encoded where required, and uses SSL.
+- **Cannot connect to the database:** verify that `DATABASE_URL` comes from Supabase Connect, is URL-encoded where required, and uses SSL. For a project CA that is not in the host trust store, set `DATABASE_CA_CERT` to the PEM value from Supabase; multiline, escaped `\n`, and single-line PEM values are supported.
 - **Missing `stock_trades`:** run `npm run db:migrate -- --check`, then follow the [migration and recovery guide](database-migrations.md). Successful account queries do not prove that all feature tables exist.
 - **Migration fails:** make sure the connection targets the intended database. Use Direct connection or the Session pooler for migration work. Do not force schema pushes, drop application tables, or invent migration history to suppress an error.
 - **Build fails:** run `npm install`, then retry `npm run build`.

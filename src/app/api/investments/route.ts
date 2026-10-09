@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server"
-import { desc } from "drizzle-orm"
-import { stockInstruments, stockPrices, stockWatchlist } from "@/db/schema"
+import { desc, inArray } from "drizzle-orm"
+import { stockInstruments, stockTrades, stockWatchlist } from "@/db/schema"
 import { calculateHoldings, investmentTotals } from "@/lib/investments"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
-import { readLedger, readReservations } from "@/lib/server/ledger"
+import { readBalanceLedger, readReservedCash } from "@/lib/server/financial-queries"
+import { readLatestPrices } from "@/lib/server/market-queries"
 
 export async function GET() {
   return authenticatedResponse(async (db) => {
-    const [ledger, reservations, instruments, prices, watchlist] =
+    const [ledger, reservations, trades, watchlist] =
       await Promise.all([
-        readLedger(db),
-        readReservations(db),
-        db.select().from(stockInstruments),
-        db.select().from(stockPrices).orderBy(desc(stockPrices.date)),
+        readBalanceLedger(db),
+        readReservedCash(db),
+        db.select().from(stockTrades).orderBy(desc(stockTrades.date), desc(stockTrades.id)),
         db.select().from(stockWatchlist),
       ])
-    const holdings = calculateHoldings(ledger.trades, prices)
+    const symbols = [...new Set([...trades, ...watchlist].map((item) => item.symbol))]
+    const [instruments, prices] = await Promise.all([
+      symbols.length ? db.select().from(stockInstruments).where(inArray(stockInstruments.symbol, symbols)) : [],
+      readLatestPrices(db, symbols),
+    ])
+    const holdings = calculateHoldings(trades, prices)
+    const instrumentNames = new Map(instruments.map((item) => [item.symbol, item.name]))
+    const accountNames = new Map(ledger.accounts.map((item) => [item.id, item.name]))
     const latest = new Map<string, (typeof prices)[number]>()
     for (const price of prices)
       if (!latest.has(price.symbol)) latest.set(price.symbol, price)
@@ -23,16 +30,14 @@ export async function GET() {
       holdings: holdings.map((holding) => ({
         ...holding,
         name:
-          instruments.find((item) => item.symbol === holding.symbol)?.name ??
+          instrumentNames.get(holding.symbol) ??
           holding.symbol,
         accountName:
-          ledger.accounts.find((item) => item.id === holding.accountId)?.name ??
+          accountNames.get(holding.accountId) ??
           "",
       })),
       totals: investmentTotals(holdings),
-      trades: ledger.trades.sort(
-        (a, b) => b.date.localeCompare(a.date) || b.id - a.id,
-      ),
+      trades,
       accounts: ledger.summaries
         .filter((account) => account.type === "investment")
         .map((account) => ({
@@ -43,8 +48,7 @@ export async function GET() {
       watchlist: watchlist.map((item) => ({
         ...item,
         name:
-          instruments.find((instrument) => instrument.symbol === item.symbol)
-            ?.name ?? item.symbol,
+          instrumentNames.get(item.symbol) ?? item.symbol,
         quote: latest.get(item.symbol) ?? null,
       })),
     })

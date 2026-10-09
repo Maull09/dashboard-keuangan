@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 import {
   accounts,
@@ -9,9 +9,8 @@ import {
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { FinanceError } from "@/lib/finance-errors"
 import { integerInput, recordInput, textInput } from "@/lib/planning-validation"
-import { fundBalance } from "@/lib/planning"
 import { expenseCategories, getToday } from "@/lib/finance"
-import { readLedger, readReservations } from "@/lib/server/ledger"
+import { accountSummaryQuery, readReservedCash } from "@/lib/server/financial-queries"
 
 export async function POST(
   request: NextRequest,
@@ -45,16 +44,18 @@ export async function POST(
         .from(accounts)
         .where(eq(accounts.id, fund.accountId))
         .for("update")
-      const [ledger, reservations] = await Promise.all([
-        readLedger(connection),
-        readReservations(connection),
+      const [summaries, reservations, allocations] = await Promise.all([
+        accountSummaryQuery(connection, [fund.accountId]),
+        readReservedCash(connection, [fund.accountId]),
+        connection
+          .select({
+            amount: sql<number>`coalesce(sum(case when ${sinkingFundEntries.kind} = 'allocate' then ${sinkingFundEntries.amount} else -${sinkingFundEntries.amount} end), 0)`.mapWith(Number),
+          })
+          .from(sinkingFundEntries)
+          .where(eq(sinkingFundEntries.fundId, fund.id)),
       ])
-      const allocated = fundBalance(
-        reservations.entries.filter((item) => item.fundId === fund.id),
-      )
-      const cash = ledger.summaries.find(
-        (item) => item.id === fund.accountId,
-      )!.balance
+      const allocated = allocations[0].amount
+      const cash = summaries[0].balance
       const availableCash =
         cash - (reservations.reserved.get(fund.accountId) ?? 0)
       if (kind === "allocate" && amount > availableCash)

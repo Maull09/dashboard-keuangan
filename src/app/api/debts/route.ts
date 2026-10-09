@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { debtPayments, debts } from "@/db/schema"
-import { asc } from "drizzle-orm"
+import { debts } from "@/db/schema"
+import { debtSummaryQuery } from "@/lib/server/financial-queries"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { parseDebt } from "@/lib/planning-validation"
 
 export async function GET() {
   return authenticatedResponse(async (db) => {
-    const [data, payments] = await Promise.all([
-      db.select().from(debts).orderBy(asc(debts.dueDate)),
-      db
-        .select({ debtId: debtPayments.debtId, amount: debtPayments.amount })
-        .from(debtPayments),
-    ])
-    const paidByDebt = new Map<number, number>()
-    for (const payment of payments)
-      paidByDebt.set(
-        payment.debtId,
-        (paidByDebt.get(payment.debtId) ?? 0) + payment.amount,
-      )
     return NextResponse.json(
-      data.map((debt) => ({
-        ...debt,
-        paidAmount:
-          paidByDebt.get(debt.id) ?? (debt.status === "paid" ? debt.amount : 0),
-      })),
+      (await debtSummaryQuery(db)).map((row) => {
+        const debt: Omit<typeof row, "remaining"> & { remaining?: number } = { ...row }
+        delete debt.remaining
+        return debt
+      }),
     )
   })
 }

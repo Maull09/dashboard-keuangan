@@ -6,6 +6,7 @@ import pg from "pg"
 import { drizzle } from "drizzle-orm/node-postgres"
 import { migrate } from "drizzle-orm/node-postgres/migrator"
 import { readMigrationFiles } from "drizzle-orm/migrator"
+import { databaseConnectionOptions } from "../src/db/connection.mjs"
 import { verifyAuthReadiness } from "./auth-readiness.mjs"
 import {
   loadSnapshot,
@@ -184,11 +185,11 @@ async function main() {
     throw new Error(
       "DATABASE_URL is missing. Configure .env for the intended database.",
     )
-  const databaseUrl = new URL(process.env.DATABASE_URL)
-  databaseUrl.searchParams.delete("ssl")
-  databaseUrl.searchParams.set("sslmode", "verify-full")
   const client = new pg.Client({
-    connectionString: databaseUrl.toString(),
+    ...databaseConnectionOptions(
+      process.env.DATABASE_URL,
+      process.env.DATABASE_CA_CERT,
+    ),
     connectionTimeoutMillis: 15000,
     query_timeout: 60000,
   })

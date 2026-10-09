@@ -4,7 +4,8 @@ import { accounts, stockInstruments, stockTrades } from "@/db/schema"
 import { tradeCashChange, validateInvestmentAccount } from "../investments"
 import { FinanceError } from "../finance-errors"
 import { parseStockTrade } from "../planning-validation"
-import { readLedger, readReservations } from "./ledger"
+import { readLedger } from "./ledger"
+import { readReservedCash } from "./financial-queries"
 
 export async function recordStockTrade(db: UserDatabase, body: unknown) {
   const input = parseStockTrade(body)
@@ -16,8 +17,8 @@ export async function recordStockTrade(db: UserDatabase, body: unknown) {
       .for("update")
     if (!account) throw new FinanceError("recordMissing", 404)
     if (account.type !== "investment") throw new FinanceError("invalidInput")
-    const ledger = await readLedger(connection)
-    const reservations = await readReservations(connection)
+    const ledger = await readLedger(connection, [input.accountId])
+    const reservations = await readReservedCash(connection, [input.accountId])
     const cash = ledger.summaries.find(
       (item) => item.id === input.accountId,
     )!.balance
@@ -58,9 +59,9 @@ export async function removeStockTrade(db: UserDatabase, id: number) {
       .from(accounts)
       .where(eq(accounts.id, trade.accountId))
       .for("update")
-    const ledger = await readLedger(connection)
+    const ledger = await readLedger(connection, [trade.accountId])
     const remaining = ledger.trades.filter((item) => item.id !== id)
-    const reservations = await readReservations(connection)
+    const reservations = await readReservedCash(connection, [trade.accountId])
     validateInvestmentAccount(
       account,
       ledger.transactions,
@@ -100,8 +101,9 @@ export async function updateStockTrade(
     if (!destination) throw new FinanceError("recordMissing", 404)
     if (destination.type !== "investment")
       throw new FinanceError("invalidInput")
-    const ledger = await readLedger(connection)
-    const reservations = await readReservations(connection)
+    const accountIds = affected.map((account) => account.id)
+    const ledger = await readLedger(connection, accountIds)
+    const reservations = await readReservedCash(connection, accountIds)
     const candidate = { ...existing, ...input }
     const changedTrades = ledger.trades.map((trade) =>
       trade.id === id ? candidate : trade,

@@ -1,31 +1,27 @@
 import { NextResponse } from "next/server"
-import { debts, debtPayments, stockPrices } from "@/db/schema"
+import { stockTrades } from "@/db/schema"
 import { calculateHoldings, investmentTotals } from "@/lib/investments"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
-import { readLedger, readReservations } from "@/lib/server/ledger"
+import { readBalanceLedger, readReservedCash, debtSummaryQuery } from "@/lib/server/financial-queries"
+import { readLatestPrices } from "@/lib/server/market-queries"
 
 export async function GET() {
   return authenticatedResponse(async (db) => {
-    const [ledger, reservations, allDebts, payments, prices] =
+    const [ledger, reservations, debtRows, trades] =
       await Promise.all([
-        readLedger(db),
-        readReservations(db),
-        db.select().from(debts),
-        db.select().from(debtPayments),
-        db.select().from(stockPrices),
+        readBalanceLedger(db),
+        readReservedCash(db),
+        debtSummaryQuery(db),
+        db.select().from(stockTrades),
       ])
-    const holdings = calculateHoldings(ledger.trades, prices)
+    const prices = await readLatestPrices(db, trades.map((trade) => trade.symbol))
+    const holdings = calculateHoldings(trades, prices)
     const investments = investmentTotals(holdings)
-    const balances = allDebts.map((debt) => ({
-      ...debt,
-      remaining: Math.max(
-        0,
-        debt.amount -
-          payments
-            .filter((payment) => payment.debtId === debt.id)
-            .reduce((total, payment) => total + payment.amount, 0),
-      ),
-    }))
+    const balances = debtRows.map((row) => {
+      const debt: Omit<typeof row, "paidAmount"> & { paidAmount?: number } = { ...row }
+      delete debt.paidAmount
+      return debt
+    })
     const liabilities = balances
       .filter((debt) => debt.type === "utang")
       .reduce((total, debt) => total + debt.remaining, 0)

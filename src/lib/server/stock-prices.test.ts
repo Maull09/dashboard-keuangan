@@ -22,6 +22,7 @@ const state = vi.hoisted(() => ({
   readPrice: vi.fn(),
 }))
 vi.mock("./yahoo-prices", () => ({ readYahooDailyPrice: state.readPrice }))
+vi.mock("./market-queries", () => ({ readLatestPrices: async () => state.prices }))
 vi.mock("@/db", () => ({
   db: {
     transaction: async (action: (connection: unknown) => Promise<unknown>) => action({

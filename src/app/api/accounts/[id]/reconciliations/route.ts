@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq, lte, or } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
 import {
@@ -48,18 +48,19 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!account)
       return NextResponse.json({ code: "recordMissing" }, { status: 404 })
     const [accountTransactions, trades] = await Promise.all([
-      db.select().from(transactions),
-      db.select().from(stockTrades).where(eq(stockTrades.accountId, accountId)),
+      db.select().from(transactions).where(and(
+        lte(transactions.date, date),
+        or(eq(transactions.accountId, accountId), eq(transactions.destinationAccountId, accountId)),
+      )),
+      db.select().from(stockTrades).where(and(eq(stockTrades.accountId, accountId), lte(stockTrades.date, date))),
     ])
     const recordedBalance =
       calculateAccountBalance(
         account.initialBalance,
         accountId,
-        accountTransactions.filter((item) => item.date <= date),
+        accountTransactions,
       ) +
-      trades
-        .filter((trade) => trade.date <= date)
-        .reduce((total, trade) => total + tradeCashChange(trade), 0)
+      trades.reduce((total, trade) => total + tradeCashChange(trade), 0)
     const [reconciliation] = await db
       .insert(reconciliations)
       .values({

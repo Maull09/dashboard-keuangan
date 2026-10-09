@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, sql } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
 import { accounts, goalContributions, goals } from "@/db/schema"
@@ -6,7 +6,7 @@ import { getToday, isDate } from "@/lib/finance"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { FinanceError } from "@/lib/finance-errors"
 import { integerInput, recordInput, textInput } from "@/lib/planning-validation"
-import { readLedger, readReservations } from "@/lib/server/ledger"
+import { accountSummaryQuery, readReservedCash } from "@/lib/server/financial-queries"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -48,20 +48,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         .where(eq(goals.id, goalId))
         .for("update")
       if (!goal) throw new FinanceError("recordMissing", 404)
-      const contributions = await connection
-        .select()
+      const [contributions] = await connection
+        .select({ amount: sql<number>`coalesce(sum(${goalContributions.amount}), 0)`.mapWith(Number) })
         .from(goalContributions)
         .where(eq(goalContributions.goalId, goalId))
       const progress =
         goal.currentAmount +
-        contributions.reduce((total, item) => total + item.amount, 0)
+        contributions.amount
       if (progress + amount > goal.targetAmount)
         throw new FinanceError("goalTargetExceeded", 409)
-      const ledger = await readLedger(connection)
-      const reservations = await readReservations(connection)
-      const cash = ledger.summaries.find(
-        (item) => item.id === accountId,
-      )!.balance
+      const [summary] = await accountSummaryQuery(connection, [accountId])
+      const reservations = await readReservedCash(connection, [accountId])
+      const cash = summary.balance
       if (
         Math.round(cash * 100) -
           (reservations.reserved.get(accountId) ?? 0) * 100 <

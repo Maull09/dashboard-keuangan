@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, sql } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
 import { accounts, debtPayments, debts, transactions } from "@/db/schema"
@@ -49,14 +49,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       if (!debt) throw new FinanceError("recordMissing", 404)
       if (debt.status === "paid")
         throw new FinanceError("debtPaymentExceeded", 409)
-      const payments = await tx
-        .select()
+      const [payments] = await tx
+        .select({ amount: sql<number>`coalesce(sum(${debtPayments.amount}), 0)`.mapWith(Number) })
         .from(debtPayments)
         .where(eq(debtPayments.debtId, debtId))
-      const paidAmount = payments.reduce(
-        (total, payment) => total + payment.amount,
-        0,
-      )
+      const paidAmount = payments.amount
       if (paidAmount + amount > debt.amount)
         throw new FinanceError("debtPaymentExceeded", 409)
       const [transaction] = await tx

@@ -1,7 +1,7 @@
-import { and, asc, eq, gte, lt } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { NextRequest, NextResponse } from "next/server"
 
-import { budgets, transactions } from "@/db/schema"
+import { budgets } from "@/db/schema"
 import {
   getCurrentMonth,
   getMonthStart,
@@ -11,7 +11,8 @@ import {
 import { parseBudgetInput } from "@/lib/validation"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { FinanceError } from "@/lib/finance-errors"
-import { calculateBudgetCarryover, getPreviousPeriod } from "@/lib/calculations"
+import { getPreviousPeriod } from "@/lib/calculations"
+import { readBudgets } from "@/lib/server/budget-queries"
 
 export async function GET(request: NextRequest) {
   return authenticatedResponse(async (db) => {
@@ -21,79 +22,8 @@ export async function GET(request: NextRequest) {
     const periodEnd = getNextMonthStart(month)
     const previousMonth = getPreviousPeriod(month)
     const previousStart = getMonthStart(previousMonth)
-    const previousEnd = getNextMonthStart(previousMonth)
-    const [budgetRows, expenseRows, previousBudgetRows, previousExpenseRows] =
-      await Promise.all([
-        db
-          .select()
-          .from(budgets)
-          .where(eq(budgets.periodStart, periodStart))
-          .orderBy(asc(budgets.category)),
-        db
-          .select({
-            category: transactions.category,
-            amount: transactions.amount,
-          })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.type, "expense"),
-              gte(transactions.date, periodStart),
-              lt(transactions.date, periodEnd),
-            ),
-          ),
-        db.select().from(budgets).where(eq(budgets.periodStart, previousStart)),
-        db
-          .select({
-            category: transactions.category,
-            amount: transactions.amount,
-          })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.type, "expense"),
-              gte(transactions.date, previousStart),
-              lt(transactions.date, previousEnd),
-            ),
-          ),
-      ])
-    const spentByCategory = new Map<string, number>()
-
-    for (const expense of expenseRows) {
-      spentByCategory.set(
-        expense.category,
-        (spentByCategory.get(expense.category) ?? 0) + expense.amount,
-      )
-    }
-
-    const previousSpentByCategory = new Map<string, number>()
-    for (const expense of previousExpenseRows) {
-      previousSpentByCategory.set(
-        expense.category,
-        (previousSpentByCategory.get(expense.category) ?? 0) + expense.amount,
-      )
-    }
-
     return NextResponse.json(
-      budgetRows.map((budget) => {
-        const previousBudget = previousBudgetRows.find(
-          (item) => item.category === budget.category,
-        )
-        const carryover = previousBudget
-          ? calculateBudgetCarryover(
-              previousBudget.budget,
-              previousSpentByCategory.get(budget.category) ?? 0,
-              previousBudget.rolloverEnabled,
-            )
-          : 0
-
-        return {
-          ...budget,
-          spent: spentByCategory.get(budget.category) ?? 0,
-          carryover,
-          effectiveBudget: budget.budget + carryover,
-        }
-      }),
+      await readBudgets(db, periodStart, periodEnd, previousStart),
     )
   })
 }
@@ -114,6 +44,7 @@ export async function POST(request: NextRequest) {
             eq(budgets.periodStart, input.periodStart),
           ),
         )
+        .limit(1)
 
       if (existingBudget) {
         throw new FinanceError("budgetAlreadyExists", 409)

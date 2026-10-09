@@ -31,7 +31,7 @@ The command changes only unowned rows, in one transaction. It refuses missing/un
 
 ## Server boundaries
 
-- The Next.js proxy refreshes cookies. Dashboard layout and every financial API independently verify identity with `auth.getUser()`; client session state is never used to authorize database access.
+- The Next.js proxy refreshes cookies for dashboard and auth pages. Every financial API independently verifies identity with `auth.getUser()`; client session state is never used to authorize database access.
 - Financial handlers receive a transaction-scoped connection from `authenticatedResponse`. It switches to `finance_user` and sets the verified user ID with transaction-local settings, using serializable isolation. Helpers receive that connection explicitly. Nested financial writes use savepoints in the same transaction.
 - PostgreSQL policies filter reads/updates/deletes, stamp ownership on inserts, reject forged ownership, and check ownership of referenced accounts, goals, debts, funds, and transactions. Foreign keys alone do not protect cross-user references.
 - API responses use `private, no-store`. Expired sessions return 401; the client returns to sign in. Cross-site requests are rejected. Redirect destinations are restricted to local dashboard paths.
