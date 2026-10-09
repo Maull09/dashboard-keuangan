@@ -100,7 +100,7 @@ function InsightRun({ context, refresh, retry }: { context: InsightContext; refr
       </p>}
       <ErrorNotice message={error} onRetry={retry} />
       {result && <div className="space-y-3" aria-live="polite">
-        <p className="max-w-prose break-words text-sm leading-7">{result.text}</p>
+        <p className="break-words text-sm leading-7">{result.text}</p>
         <div className="flex flex-col gap-3 border-t pt-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 space-y-1 text-xs leading-relaxed text-muted-foreground">
             <p><time dateTime={result.generatedAt}>{t("insightGenerated", { time: new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(result.generatedAt)) })}</time></p>
