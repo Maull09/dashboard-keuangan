@@ -14,7 +14,7 @@ import { tradeCashChange } from "@/lib/investments"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
-export async function GET(_: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   return authenticatedResponse(async (db) => {
     const accountId = Number((await params).id)
     const data = await db
@@ -23,7 +23,7 @@ export async function GET(_: NextRequest, { params }: RouteContext) {
       .where(eq(reconciliations.accountId, accountId))
       .orderBy(desc(reconciliations.date))
     return NextResponse.json(data)
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {

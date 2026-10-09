@@ -41,5 +41,5 @@ export async function GET(request: NextRequest) {
       forecastBalance,
       scheduled,
     })
-  })
+  }, request)
 }

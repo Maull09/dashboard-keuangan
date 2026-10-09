@@ -7,7 +7,7 @@ import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { FinanceError } from "@/lib/finance-errors"
 import { parseRecurring } from "@/lib/planning-validation"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     return NextResponse.json(
       await db
@@ -15,7 +15,7 @@ export async function GET() {
         .from(recurringTransactions)
         .orderBy(asc(recurringTransactions.startDate)),
     )
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest) {

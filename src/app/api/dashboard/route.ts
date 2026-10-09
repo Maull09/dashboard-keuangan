@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
       incomeBySource: totalByCategory(monthlyTransactions, "income"),
       insights,
     })
-  })
+  }, request)
 }
 
 function getRecentDays(today: string, count: number) {

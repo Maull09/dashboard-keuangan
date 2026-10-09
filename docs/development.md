@@ -20,6 +20,45 @@ Use the **Transaction pooler** URL for serverless deployments. Use the **Direct 
 
 The two `NEXT_PUBLIC_SUPABASE_*` values come from the same project's API settings and are intentionally public. Never use a secret/service-role key in their place. Set them before building, since Next.js embeds public variables into the client bundle. See [authentication setup](authentication.md) for email confirmation, ownership migration, and session verification.
 
+## Local Redis cache
+
+Start the cache with Docker Desktop running:
+
+```bash
+docker compose up -d redis
+docker compose exec redis redis-cli ping
+```
+
+Add `REDIS_URL=redis://127.0.0.1:6379` to your local `.env`, apply migration
+`0011_redis_api_cache` with `npm run db:migrate`, then restart the application.
+Follow the [migration guide](database-migrations.md) and back up existing financial
+data before migrating. The migration adds cache revision metadata and triggers;
+it preserves existing financial records and amounts. Redis binds only to the
+local loopback address, limits memory to 128 MB, and does not persist cached data.
+Stop it with `docker compose stop redis`.
+
+Authenticated financial GET endpoints cache successful JSON results for 60 seconds.
+Keys separate users, origins, paths, query parameters, and the Jakarta calendar
+date. Authentication and PostgreSQL ownership checks still run on every request.
+Database triggers change a user's cache revision in the same transaction as each
+financial write; shared market data changes a global revision. Old entries then
+become unreachable and expire naturally, including after writes made while Redis
+was unavailable. Cache writes happen only after the database transaction commits.
+
+The `X-Finance-Cache` response header reports `HIT`, `MISS`, or `BYPASS`.
+Responses retain `Cache-Control: private, no-store` for browsers and proxies.
+Without `REDIS_URL`, the app reads PostgreSQL directly. Redis failures also use
+live database reads, with one-second connection/command timeouts. PostgreSQL
+remains authoritative; mutations, failed responses, and cookie-setting responses
+are never cached. For hosted Redis, use an authenticated `rediss://` URL as
+recommended in the [Redis connection guide](https://redis.io/docs/latest/develop/clients/nodejs/connect/).
+Keep `REDIS_URL` server-only and out of source control.
+
+For the real Redis integration tests, set `REDIS_TEST_URL=redis://127.0.0.1:6379`
+when running `npm test`. To also verify transactional invalidation against
+PostgreSQL, provide the disposable local `AUTH_TEST_DATABASE_URL` described in
+the [authentication verification guide](authentication.md#verification).
+
 ## Commands
 
 Use `npm ci` to install the exact versions in the committed lockfile. Use `npm install` when intentionally updating dependencies, and commit the manifest and lockfile together.

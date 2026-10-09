@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       await readBudgets(db, periodStart, periodEnd, previousStart),
     )
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest) {

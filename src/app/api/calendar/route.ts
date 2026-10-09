@@ -79,5 +79,5 @@ export async function GET(request: NextRequest) {
         (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
       ),
     })
-  })
+  }, request)
 }

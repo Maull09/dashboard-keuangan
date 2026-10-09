@@ -5,11 +5,11 @@ import { accounts } from "@/db/schema"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { parseAccountInput } from "@/lib/validation"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     const data = await db.select().from(accounts).orderBy(asc(accounts.id))
     return NextResponse.json(data)
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest) {
