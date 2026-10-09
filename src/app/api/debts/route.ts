@@ -4,7 +4,7 @@ import { debtSummaryQuery } from "@/lib/server/financial-queries"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { parseDebt } from "@/lib/planning-validation"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     return NextResponse.json(
       (await debtSummaryQuery(db)).map((row) => {
@@ -13,7 +13,7 @@ export async function GET() {
         return debt
       }),
     )
-  })
+  }, request)
 }
 
 export async function POST(req: NextRequest) {

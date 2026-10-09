@@ -5,7 +5,7 @@ import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { readBalanceLedger, readReservedCash, debtSummaryQuery } from "@/lib/server/financial-queries"
 import { readLatestPrices } from "@/lib/server/market-queries"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     const [ledger, reservations, debtRows, trades] =
       await Promise.all([
@@ -50,5 +50,5 @@ export async function GET() {
       holdings,
       debts: balances,
     })
-  })
+  }, request)
 }

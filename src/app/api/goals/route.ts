@@ -4,10 +4,10 @@ import { goalSummaryQuery } from "@/lib/server/financial-queries"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 import { parseGoal } from "@/lib/planning-validation"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     return NextResponse.json(await goalSummaryQuery(db))
-  })
+  }, request)
 }
 
 export async function POST(req: NextRequest) {

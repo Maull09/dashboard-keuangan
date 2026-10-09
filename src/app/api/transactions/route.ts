@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       ? Math.min(Math.max(limitValue, 1), 100)
       : 25
     return NextResponse.json(await readTransactionPage(db, where, pageValue, limit))
-  })
+  }, request)
 }
 export async function POST(request: NextRequest) {
   return authenticatedResponse(async (db) => {

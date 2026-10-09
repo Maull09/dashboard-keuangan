@@ -10,7 +10,7 @@ import { accountSummaryQuery, readReservedCash } from "@/lib/server/financial-qu
 
 type RouteContext = { params: Promise<{ id: string }> }
 
-export async function GET(_: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   return authenticatedResponse(async (db) => {
     const id = integerInput((await params).id, 1, 2_147_483_647)
     const [goal] = await db.select().from(goals).where(eq(goals.id, id))
@@ -22,7 +22,7 @@ export async function GET(_: NextRequest, { params }: RouteContext) {
         .where(eq(goalContributions.goalId, id))
         .orderBy(asc(goalContributions.date), asc(goalContributions.id)),
     )
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {

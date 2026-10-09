@@ -9,7 +9,7 @@ import { getToday } from "@/lib/finance"
 import { readReservations } from "@/lib/server/ledger"
 import { readBalanceLedger } from "@/lib/server/financial-queries"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     const [ledger, reservations] = await Promise.all([
       readBalanceLedger(db),
@@ -44,7 +44,7 @@ export async function GET() {
           account.balance - (reservations.reserved.get(account.id) ?? 0),
       })),
     })
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest) {

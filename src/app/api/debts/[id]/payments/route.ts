@@ -9,7 +9,7 @@ import { integerInput, recordInput, textInput } from "@/lib/planning-validation"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
-export async function GET(_: NextRequest, { params }: RouteContext) {
+export async function GET(request: NextRequest, { params }: RouteContext) {
   return authenticatedResponse(async (db) => {
     const debtId = integerInput((await params).id, 1, 2_147_483_647)
     const [debt] = await db.select().from(debts).where(eq(debts.id, debtId))
@@ -21,7 +21,7 @@ export async function GET(_: NextRequest, { params }: RouteContext) {
         .where(eq(debtPayments.debtId, debtId))
         .orderBy(asc(debtPayments.date), asc(debtPayments.id)),
     )
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {

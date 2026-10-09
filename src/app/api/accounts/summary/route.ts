@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { readBalanceLedger } from "@/lib/server/financial-queries"
 import { authenticatedResponse } from "@/lib/server/authenticated-response"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     const { summaries } = await readBalanceLedger(db)
     return NextResponse.json(
@@ -18,5 +18,5 @@ export async function GET() {
         }),
       ),
     )
-  })
+  }, request)
 }

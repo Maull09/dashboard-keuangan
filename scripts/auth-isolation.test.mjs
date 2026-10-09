@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { readFileSync } from "node:fs"
 import pg from "pg"
 import { drizzle } from "drizzle-orm/node-postgres"
@@ -14,8 +14,12 @@ import { tradeCashChange } from "../src/lib/investments"
 import { assignLegacyOwner } from "./db-assign-owner.mjs"
 import { schemaIssues, loadSnapshot, readDatabaseSchema } from "./db-schema.mjs"
 import { verifyAuthReadiness } from "./auth-readiness.mjs"
+import { ownedTables } from "./auth-tables.mjs"
+import { apiCacheKey, readApiCache, writeApiCache } from "../src/lib/server/api-cache"
+import { getRedisClient } from "../src/lib/server/redis"
 
 const testUrl = process.env.AUTH_TEST_DATABASE_URL
+const redisTestUrl = process.env.REDIS_TEST_URL
 const userA = "00000000-0000-4000-8000-000000000001"
 const userB = "00000000-0000-4000-8000-000000000002"
 
@@ -24,6 +28,7 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
   let accountA
   let accountB
   let legacyId
+  let redisCacheUsed = false
 
   async function asUser(id, action) {
     await client.query("BEGIN ISOLATION LEVEL SERIALIZABLE")
@@ -47,6 +52,8 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
     await client.connect()
     const existing = await client.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
     if (existing.rowCount) throw new Error("Auth tests require an empty disposable database")
+    await client.query("CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN")
+    await client.query("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon, authenticated")
     const journal = JSON.parse(readFileSync("drizzle/meta/_journal.json", "utf8")).entries
     for (const migration of journal) {
       if (migration.idx === 6) {
@@ -66,12 +73,19 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
     await client.query("INSERT INTO stock_instruments (symbol, name) VALUES ('BBCA', 'BBCA')")
   }, 30000)
 
-  afterAll(async () => { await client?.end() })
+  afterAll(async () => {
+    await client?.end()
+    if (redisCacheUsed) {
+      const redis = await getRedisClient()
+      await redis?.close()
+      vi.unstubAllEnvs()
+    }
+  })
 
   it("applies migrations without losing legacy amounts or watchlist notes", async () => {
     expect((await client.query("SELECT initial_balance, user_id FROM accounts WHERE id = $1", [legacyId])).rows[0]).toEqual({ initial_balance: 12345, user_id: null })
     expect((await client.query("SELECT note FROM stock_watchlist")).rows[0].note).toBe("Legacy note")
-    expect(schemaIssues(loadSnapshot("0010"), await readDatabaseSchema(client))).toEqual([])
+    expect(schemaIssues(loadSnapshot("0011"), await readDatabaseSchema(client))).toEqual([])
   })
 
   it("automatically assigns new rows and isolates reads, updates, and deletes", async () => {
@@ -82,6 +96,93 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
       expect((await client.query("UPDATE accounts SET name = 'stolen' WHERE id = $1", [accountA.id])).rowCount).toBe(0)
       expect((await client.query("DELETE FROM accounts WHERE id = $1", [accountA.id])).rowCount).toBe(0)
     })
+  })
+
+  it("installs revision triggers on every private and shared market table", async () => {
+    const { rows } = await client.query("SELECT c.relname AS table_name, t.tgname AS trigger_name FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid WHERE NOT t.tgisinternal AND c.relnamespace = 'public'::regnamespace")
+    for (const table of ownedTables) {
+      expect(rows).toContainEqual({ table_name: table, trigger_name: "invalidate_api_cache" })
+      expect(rows).toContainEqual({ table_name: table, trigger_name: "invalidate_api_cache_truncate" })
+    }
+    for (const table of ["stock_prices", "stock_instruments"])
+      expect(rows).toContainEqual({ table_name: table, trigger_name: "invalidate_api_cache" })
+  })
+
+  it("changes only the owner's cache revision for inserts, updates, and deletes", async () => {
+    const revision = async user => (await asUser(user, () => client.query("SELECT revision FROM api_cache_revisions WHERE scope = $1", [user]))).rows[0].revision
+    const unchangedB = await revision(userB)
+    let previousA = await revision(userA)
+    const created = (await asUser(userA, () => client.query("INSERT INTO accounts(name, type) VALUES ('Cache fixture', 'bank') RETURNING id"))).rows[0].id
+    for (const action of [
+      async () => {},
+      () => asUser(userA, () => client.query("UPDATE accounts SET name = 'Updated cache fixture' WHERE id = $1", [created])),
+      () => asUser(userA, () => client.query("DELETE FROM accounts WHERE id = $1", [created])),
+    ]) {
+      await action()
+      const nextA = await revision(userA)
+      expect(nextA).not.toBe(previousA)
+      expect(await revision(userB)).toBe(unchangedB)
+      previousA = nextA
+    }
+  })
+
+  it("rolls back cache revisions with financial writes and prevents forged revisions", async () => {
+    const before = (await asUser(userA, () => client.query("SELECT * FROM api_cache_revisions ORDER BY scope"))).rows
+    expect(before.map(row => row.scope)).not.toContain(userB)
+    await expect(asUser(userA, async () => {
+      await client.query("UPDATE accounts SET name = 'Rolled back' WHERE id = $1", [accountA.id])
+      throw new Error("rollback cache fixture")
+    })).rejects.toThrow("rollback cache fixture")
+    expect((await asUser(userA, () => client.query("SELECT * FROM api_cache_revisions ORDER BY scope"))).rows).toEqual(before)
+    await expect(asUser(userA, () => client.query("UPDATE api_cache_revisions SET revision = gen_random_uuid() WHERE scope = $1", [userA]))).rejects.toMatchObject({ code: "42501" })
+    await expect(asUser(userA, () => client.query("SELECT invalidate_private_api_cache()"))).rejects.toMatchObject({ code: "42501" })
+  })
+
+  it("revokes Supabase default grants on revision data and trigger functions", async () => {
+    for (const role of ["anon", "authenticated"]) {
+      const { rows } = await client.query("SELECT has_table_privilege($1, 'public.api_cache_revisions', 'SELECT') AS read, has_table_privilege($1, 'public.api_cache_revisions', 'INSERT,UPDATE,DELETE') AS write, has_function_privilege($1, 'public.invalidate_private_api_cache()', 'EXECUTE') AS private_function, has_function_privilege($1, 'public.invalidate_market_api_cache()', 'EXECUTE') AS market_function", [role])
+      expect(rows[0]).toEqual({ read: false, write: false, private_function: false, market_function: false })
+    }
+  })
+
+  it("invalidates both owners on ownership reassignment and all users for market changes", async () => {
+    const revisions = async () => (await client.query("SELECT scope, revision FROM api_cache_revisions ORDER BY scope")).rows
+    const before = await revisions()
+    await client.query("BEGIN")
+    try {
+      await client.query("UPDATE accounts SET user_id = $1 WHERE id = $2", [userB, accountA.id])
+      const moved = await revisions()
+      for (const user of [userA, userB])
+        expect(moved.find(row => row.scope === user).revision).not.toBe(before.find(row => row.scope === user).revision)
+      await client.query("INSERT INTO stock_prices(symbol, price, date) VALUES ('BBCA', 100, '2026-10-09')")
+      expect((await revisions()).find(row => row.scope === 'market').revision).not.toBe(moved.find(row => row.scope === 'market').revision)
+    } finally { await client.query("ROLLBACK") }
+    expect(await revisions()).toEqual(before)
+  })
+
+  it.skipIf(!redisTestUrl)("cannot revive stale data with a delayed Redis write after a committed mutation", async () => {
+    const url = new URL(redisTestUrl)
+    if (!["localhost", "127.0.0.1"].includes(url.hostname))
+      throw new Error("Redis tests require a local server")
+    vi.stubEnv("REDIS_URL", redisTestUrl)
+    redisCacheUsed = true
+    const request = new Request("http://localhost/api/accounts")
+    const keyFor = user => asUser(user, () => apiCacheKey(drizzle(client), user, request))
+    const oldKey = await keyFor(userA)
+    const otherKey = await keyFor(userB)
+    await asUser(userA, () => client.query("UPDATE accounts SET name = 'Cache mutation' WHERE id = $1", [accountA.id]))
+    const nextKey = await keyFor(userA)
+    expect(nextKey).not.toBe(oldKey)
+    expect(await keyFor(userB)).toBe(otherKey)
+    try {
+      await writeApiCache(oldKey, '{"name":"Old snapshot"}')
+      expect(await readApiCache(oldKey)).toBe('{"name":"Old snapshot"}')
+      expect(await readApiCache(nextKey)).toBeNull()
+      expect(await readApiCache(otherKey)).toBeNull()
+    } finally {
+      const redis = await getRedisClient()
+      await redis.del(oldKey)
+    }
   })
 
   it("rejects forged ownership and foreign accounts", async () => {

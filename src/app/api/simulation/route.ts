@@ -7,11 +7,11 @@ import { simulateCashflow } from "@/lib/planning"
 import { getToday } from "@/lib/finance"
 import { readBalanceLedger } from "@/lib/server/financial-queries"
 
-export async function GET() {
+export async function GET(request: Request) {
   return authenticatedResponse(async (db) => {
     const ledger = await readBalanceLedger(db)
     return NextResponse.json({ currentBalance: ledger.cashBalance })
-  })
+  }, request)
 }
 
 export async function POST(request: NextRequest) {

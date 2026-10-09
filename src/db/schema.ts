@@ -1,5 +1,6 @@
 import {
   ownerPolicy,
+  financeUser,
   privateAccessPolicy,
   marketReadPolicy,
   marketInsertPolicy,
@@ -8,6 +9,7 @@ import {
 // src/db/schema.ts
 import {
   pgTable,
+  pgPolicy,
   uuid,
   serial,
   text,
@@ -23,6 +25,21 @@ import {
   check,
 } from "drizzle-orm/pg-core"
 import { desc, sql } from "drizzle-orm"
+
+export const apiCacheRevisions = pgTable(
+  "api_cache_revisions",
+  {
+    scope: text("scope").primaryKey(),
+    revision: uuid("revision").notNull().defaultRandom(),
+  },
+  () => [
+    pgPolicy("cache_read", {
+      for: "select",
+      to: financeUser,
+      using: sql`scope = 'market' or scope = nullif(current_setting('app.user_id', true), '')`,
+    }),
+  ],
+).enableRLS()
 
 export const transactionTypeEnum = pgEnum("transaction_type", [
   "income",
