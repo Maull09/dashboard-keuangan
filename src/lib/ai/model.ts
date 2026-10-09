@@ -15,6 +15,6 @@ export function ollamaModel() {
     maxRetries: 0,
     streamUsage: false,
     useResponsesApi: false,
-    reasoning: { effort: "none" },
+    modelKwargs: { reasoning_effort: "none" },
   })
 }

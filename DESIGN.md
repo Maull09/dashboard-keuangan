@@ -44,6 +44,8 @@ Use the locally loaded Geist family for all interface text. It keeps screens com
 
 Use sentence case. Keep supporting copy short, concrete, and action-oriented. English and Indonesian must convey the same intent.
 
+Indonesian currency displays use a nonbreaking space after `Rp` (for example, `Rp 1.299.162`), with the existing decimal precision preserved. Month selectors use translated month names and a separate year control, so the selected application language determines their labels rather than the browser's native month-input language. Keep period labels visible and preserve each page's allowed date range.
+
 ### Spacing, shape, and elevation
 
 - Use a 4px rhythm: `4, 8, 12, 16, 24, 32, 48, 64`.
@@ -82,6 +84,14 @@ Use concise copy that names the user task. Prefer “Update daily prices” over
 Describe what a feature calculates or changes directly, in both languages. State projection inputs, allocation behaviour, and permanent deletion consequences in plain terms. Keep financial warnings specific and actionable.
 
 Transaction groups collect records for a named activity, such as a trip, across spending categories. Each transaction has one optional group. Show group spending totals and transaction counts for the full filtered period, with an action to view the group's records. Use the existing blue selection treatment, Geist typography, quiet borders, and stacked layouts on mobile; keep amounts prominent and group names able to wrap.
+
+### Financial health
+
+Assumption: the user wants to review recorded monthly finances and identify the next practical action on desktop or mobile. Place Financial health in analysis navigation and link it from the dashboard. Lead with the selected month, a clearly labelled heuristic score, and the data needed to complete it; follow with ratios, their formulas, and transaction behaviour. Use Geist, existing blue tokens, quiet bordered surfaces, tabular amounts, and stacked mobile controls. Show unavailable ratios explicitly rather than treating missing data as zero. Current months are provisional; balance-sheet values use the selected period's closing date (today for the current month), with price dates visible. Essential monthly expenses and total monthly debt payments are user-supplied analysis inputs, kept only while the page is open. Inputs never change financial records. AI insights run automatically through the shared page insight panel from the server-calculated report, use plain text, and follow valid inputs, language, and record changes. Show generating, retryable failure, and incomplete-data states near the action.
+
+### Contextual AI insights
+
+Assumption: users want a short explanation of the financial view they have just opened, without interrupting record keeping. Each financial page shows one quiet, full-width insight panel below its heading or summary. Use existing Geist type, Surface, Hairline, Brand links, and stacked mobile controls. Keep the header compact, with a small assistant icon, a short explanation of the scope, and a secondary Reanalyse action. Waiting and generating states use one visible status line with an icon; never imply a known completion percentage. Results lead with the paragraph, followed by a quiet divided footer grouping the analysis time, record-review hint, and next actions. Use 16px padding on mobile and 20px on wider screens, with the insight paragraph spanning the full content width inside that padding and no fixed height. Generate automatically after the page data is ready; follow its period, filters, and valid analysis inputs. Show one paragraph of three or four short sentences, at most 80 words, focused on the main finding, one or two supporting figures, and one practical next action. Describe missing data in everyday language; never display raw field names, status codes, or null values in explanations. Keep the main page usable while insights are waiting or generating. Failures offer a retry. Discard results from an earlier filter, language, user, or data revision. The AI assistant remains a conversation view. Insights explain server-calculated aggregates and never change financial records.
 
 ## Implementation rule
 

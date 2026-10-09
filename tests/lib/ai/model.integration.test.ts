@@ -5,6 +5,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 const boundary = vi.hoisted(() => ({ userDatabase: vi.fn() }))
 vi.mock("@/lib/ai/server", () => ({ userDatabase: boundary.userDatabase }))
 import { runChat, runReceipt } from "@/lib/ai/graph"
+import { explainFinancialHealth } from "@/lib/ai/financial-health"
+import { calculateFinancialHealth } from "@/lib/financial-health"
 
 describe.skipIf(!process.env.AI_MODEL_TEST_URL)("local Ollama integration", () => {
   beforeAll(() => {
@@ -12,6 +14,19 @@ describe.skipIf(!process.env.AI_MODEL_TEST_URL)("local Ollama integration", () =
     vi.stubEnv("OLLAMA_MODEL", "qwen3.5:9b")
   })
   afterAll(() => vi.unstubAllEnvs())
+
+  it("explains the calculated financial health score using only synthetic indicators", async () => {
+    const report = calculateFinancialHealth({
+      month: "2026-09", asOf: "2026-09-30", partial: false,
+      months: [{ month: "2026-09", income: 15000000, expense: 9000000, count: 30, transfers: 5, largestIncomeCategory: 15000000 }],
+      liquidAssets: 30000000, totalAssets: 120000000, totalLiabilities: 30000000,
+      recordedDebtPayments: 2000000, recurringExpense: 1000000, unpricedHoldings: 0, oldestPriceDate: null,
+    }, { month: "2026-09", essentialExpense: 6000000, monthlyDebtPayment: 2000000 })
+    const text = await explainFinancialHealth(report, "id")
+    expect(text).toContain("82")
+    expect(report.score).toBe(82)
+    expect(boundary.userDatabase).not.toHaveBeenCalled()
+  }, 130_000)
 
   it("replies in Indonesian without touching the database", async () => {
     const result = await runChat("synthetic-user", [{ role: "user", content: "Halo, apa yang bisa kamu lakukan? Jangan baca data akun." }], "id")

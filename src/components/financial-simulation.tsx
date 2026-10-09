@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useEffect, useRef, useState } from "react"
 import { Calculator, Loader2, Plus, Trash2 } from "lucide-react"
 import { useLanguage } from "./language-provider"
@@ -272,6 +273,11 @@ export function FinancialSimulation() {
         title={t("simulation")}
         description={t("simulationDescription")}
       />
+      <PageInsights context={{ page: "simulation", input: {
+        endDate,
+        extraIncomes: incomes.map((item) => ({ amount: Number(item.amount), date: item.date })),
+        extraExpenses: expenses.map((item) => ({ amount: Number(item.amount), date: item.date })),
+      } }} ready={Boolean(balance.data) && !balance.loading && !balance.refreshing && !balance.error && !invalidCashflow && Boolean(endDate) && endDate >= today} />
       <section
         aria-label={t("currentCash")}
         className="rounded-xl border bg-white p-5"

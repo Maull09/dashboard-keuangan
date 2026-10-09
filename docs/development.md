@@ -20,6 +20,33 @@ Use the **Transaction pooler** URL for serverless deployments. Use the **Direct 
 
 The two `NEXT_PUBLIC_SUPABASE_*` values come from the same project's API settings and are intentionally public. Never use a secret/service-role key in their place. Set them before building, since Next.js embeds public variables into the client bundle. See [authentication setup](authentication.md) for email confirmation, ownership migration, and session verification.
 
+## Automatic AI insight worker
+
+Automatic page insights use BullMQ with a separate Redis instance and a long-running Node worker. The cache Redis below uses eviction and is unsuitable for a job queue. Start the persistent queue with Docker Desktop running:
+
+```bash
+docker compose up -d insights-redis
+docker compose exec insights-redis redis-cli ping
+```
+
+Add the server-only variable `INSIGHTS_REDIS_URL=redis://127.0.0.1:6380` to `.env`. Use the same queue URL, `DATABASE_URL`, database CA configuration, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` for the app and worker; see [AI setup](ai-assistant.md). Apply the existing migrations through 0013 before using insights. This feature adds no database migration.
+
+In a second terminal, run:
+
+```bash
+npm run worker:insights
+```
+
+The worker loads `.env` when present and also accepts deployment environment variables. It uses the repository's restricted database role and user ownership policies, releases the database during inference, and saves successful explanations in AI conversation history. It never changes financial records. Twenty new or manually retried jobs per user per minute are admitted; cache hits do not count. BullMQ processes one insight globally across all worker instances. This limit applies to page insights; chat and receipt requests retain their existing limits.
+
+Completed insights are reused within 15-minute cache windows, separated by user, page, canonical filters/inputs, language, financial and market-data revisions, and Jakarta date. A new revision makes old results unavailable. Jobs waiting more than five minutes fail without model inference; inference has a 120-second timeout, with two attempts and exponential retry delay. Reanalyse retries the existing job. Completed-job retention targets 24 hours or 500 entries; failed-job retention targets one hour or 500 entries. Periodic cleanup runs while the worker is active; stopped workers cannot clean retained jobs. API responses expose only status and the authenticated user's explanation, never queue payloads or internal errors.
+
+The queue Redis binds to loopback, uses `noeviction`, and persists AOF data in the `insights-queue` volume, following [BullMQ production guidance](https://docs.bullmq.io/guide/going-to-production). Stop it with `docker compose stop insights-redis`; the volume survives restarts. Do not remove the volume to clear ordinary application cache. Queue data and generated insights are private financial data: keep Redis on a private network and use an authenticated `rediss://` connection for remote Redis. Keep all connection values out of Git.
+
+Run the worker on a VPS/container or the machine that can reach Ollama. A Vercel request or cron invocation is not a worker host. Install dependencies with `npm ci`, configure the environment, run `npm run worker:insights` under a process supervisor with automatic restarts, and allow up to 150 seconds for graceful shutdown. Worker startup fails if Redis cannot be reached; running workers reconnect after disconnection. Restart the app after environment changes. If insights remain waiting, check the worker's ready message and that both processes use the same queue. Ordinary financial pages remain usable when insight services fail.
+
+Real queue tests use `INSIGHTS_REDIS_TEST_URL=redis://127.0.0.1:6380` and `npx vitest run tests/lib/ai/insight-queue.integration.test.ts`. They use an isolated queue and synthetic data, then delete only their own keys. DOM tests cover automatic requests, polling, retry, identity/language changes, and cancellation during navigation. The PostgreSQL tests in `tests/lib/server/financial-health.integration.test.ts` also verify aggregates for every page and isolation between users, using an empty disposable local database ending in `_health_test` via `FINANCIAL_HEALTH_TEST_DATABASE_URL`.
+
 ## Local Redis cache
 
 Start the cache with Docker Desktop running:

@@ -16,6 +16,7 @@ import {
   Scale,
   LogOut,
   MessageSquare,
+  HeartPulse,
 } from "lucide-react"
 import { useLanguage } from "./language-provider"
 import { useAuth } from "./auth-provider"
@@ -46,6 +47,7 @@ export const navigationItems = [
   { key: "budget", icon: TrendingUp },
   { key: "goals", icon: Target },
   { key: "reports", icon: PieChartIcon },
+  { key: "financialHealth", icon: HeartPulse },
   { key: "planning", icon: CalendarClock },
   { key: "debts", icon: Wallet },
   { key: "investments", icon: ChartCandlestick },
@@ -109,7 +111,7 @@ export function Sidebar({
             },
             {
               label: "reviewNavigation",
-              keys: ["reports", "investments", "netWorth"],
+              keys: ["reports", "financialHealth", "investments", "netWorth"],
             },
           ].map(({ label, keys }) => (
             <section

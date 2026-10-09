@@ -29,6 +29,8 @@ import { InvestmentsManager } from "@/components/investments-manager"
 import { NetWorth } from "@/components/net-worth"
 import { FinancialCalendar } from "@/components/financial-calendar"
 import { FinancialSimulation } from "@/components/financial-simulation"
+import { PageInsights } from "@/components/page-insights"
+import { FinancialHealth } from "@/components/financial-health"
 import { SinkingFunds } from "@/components/sinking-funds"
 import { ReportDistribution } from "@/components/report-distribution"
 import { Sidebar, navigationItems } from "@/components/sidebar"
@@ -73,7 +75,7 @@ export default function FinanceTracker() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   useEffect(() => {
     const navigate = () => {
-      const next = window.location.hash.slice(1)
+      const next = window.location.hash.slice(1).split("?")[0]
       if (next === "main-content") return
       setTab(
         navigationItems.some((item) => item.key === next) ? next : "dashboard",
@@ -140,6 +142,7 @@ export default function FinanceTracker() {
           {tab === "goals" && <GoalsManager />}
           {tab === "debts" && <DebtManager />}
           {tab === "reports" && <Reports />}
+          {tab === "financialHealth" && <FinancialHealth />}
           {tab === "planning" && <PlanningManager />}
           {tab === "investments" && <InvestmentsManager />}
           {tab === "netWorth" && <NetWorth />}
@@ -183,6 +186,7 @@ function Dashboard() {
           <AddAccountForm />
         ) : null}
       </PageHeading>
+      <PageInsights context={{ page: "dashboard" }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       <ErrorNotice message={records.error} onRetry={records.reload} />
       {records.refreshing && (
         <p role="status" className="text-sm text-muted-foreground">
@@ -259,6 +263,9 @@ function Dashboard() {
               </Button>
               <Button asChild variant="ghost" size="sm">
                 <a href="#netWorth">{t("viewNetWorth")}</a>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <a href="#financialHealth">{t("financialHealth")}</a>
               </Button>
             </div>
             <section
@@ -648,6 +655,7 @@ function Reports() {
           />
         </Field>
       </PageHeading>
+      <PageInsights context={{ page: "reports", month }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       {records.error ? (
         <ErrorNotice message={records.error} onRetry={records.reload} />
       ) : records.loading ? (

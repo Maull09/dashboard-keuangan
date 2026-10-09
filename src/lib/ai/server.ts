@@ -1,18 +1,8 @@
-import { sql } from "drizzle-orm"
 import { z } from "zod"
-import { db } from "@/db"
 import { financeResponse } from "@/lib/api-response"
 import { FinanceError } from "@/lib/finance-errors"
 import { createClient } from "@/lib/supabase/server"
-import type { UserDatabase } from "@/lib/server/authenticated-response"
-
-export function userDatabase<T>(userId: string, action: (connection: UserDatabase) => Promise<T>) {
-  return db.transaction(async (connection) => {
-    await connection.execute(sql`set local role finance_user`)
-    await connection.execute(sql`select set_config('app.user_id', ${userId}, true)`)
-    return action(connection)
-  })
-}
+export { userDatabase } from "@/lib/server/user-database"
 
 type AiSession = { userId: string; supabase: Awaited<ReturnType<typeof createClient>> }
 

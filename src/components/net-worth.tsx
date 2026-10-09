@@ -1,5 +1,6 @@
 "use client"
 
+import { PageInsights } from "./page-insights"
 import { useLanguage } from "./language-provider"
 import { AddAccountForm } from "./accounts-form"
 import { EmptyState, ErrorNotice, LoadingState, PageHeading } from "./feedback"
@@ -22,6 +23,7 @@ export function NetWorth() {
           {t("refresh")}
         </Button>
       </PageHeading>
+      <PageInsights context={{ page: "netWorth" }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       {records.refreshing && (
         <p role="status" className="text-sm text-muted-foreground">
           {t("refreshing")}
