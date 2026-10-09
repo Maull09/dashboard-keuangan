@@ -69,9 +69,19 @@ Use sentence case. Keep supporting copy short, concrete, and action-oriented. En
 
 ## Product behaviour and content
 
+### AI assistant
+
+The AI assistant page contains conversation history and chat only. Receipt upload belongs to Transactions, beside the manual transaction action. Chat and receipt images can produce editable transaction drafts; review and confirmation belong to Transactions. Only a visible Confirm transaction action changes the financial record. Pending drafts remain available there after reloading. Assumption: one receipt creates one expense using its final IDR total, rather than separate line-item transactions.
+
+Use the existing Geist typography, Brand `#0052FF`, Ink `#0A0B0D`, Surface `#FFFFFF`, Canvas `#F7F7F7`, and Hairline `#DEE1E6`. Place conversation history beside the selected conversation on wide screens and above it on mobile. Keep messages left aligned, with quiet blue emphasis for the user's messages. Link chat-generated drafts to Transactions. Use a scrollable receipt dialog for upload and immediate review, and show pending AI drafts on Transactions for later review. Emphasize the IDR amount and explain the balance consequence beside confirmation. Show reading, replying, saving, missing fields, rejected drafts, and service failures near their actions. Preserve unsent text and selected images after failure. Unknown receipt dates and amounts require user input rather than invented values.
+
 The dashboard is a working financial record: accounts feed balances, transactions feed budgets and reports, and planning views estimate future changes without altering recorded transactions. Feedback must state what changed, what failed, and the available next action.
 
 Use concise copy that names the user task. Prefer “Update daily prices” over implementation details, and “Add budget” over generic verbs. Avoid defensive technical caveats in routine UI; present data date, error state, or incompleteness only where it changes a financial decision.
+
+Describe what a feature calculates or changes directly, in both languages. State projection inputs, allocation behaviour, and permanent deletion consequences in plain terms. Keep financial warnings specific and actionable.
+
+Transaction groups collect records for a named activity, such as a trip, across spending categories. Each transaction has one optional group. Show group spending totals and transaction counts for the full filtered period, with an action to view the group's records. Use the existing blue selection treatment, Geist typography, quiet borders, and stacked layouts on mobile; keep amounts prominent and group names able to wrap.
 
 ## Implementation rule
 

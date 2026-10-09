@@ -37,6 +37,7 @@ import { useLanguage } from "@/components/language-provider"
 import { TransactionList } from "@/components/transaction-list"
 import { TransactionForm } from "@/components/transaction-form"
 import { AddAccountForm } from "@/components/accounts-form"
+import { AiAssistant } from "@/components/ai-assistant"
 import {
   EmptyState,
   ErrorNotice,
@@ -134,6 +135,7 @@ export default function FinanceTracker() {
         >
           {tab === "dashboard" && <Dashboard />}
           {tab === "transactions" && <TransactionList />}
+          {tab === "ai" && <AiAssistant />}
           {tab === "budget" && <BudgetManager />}
           {tab === "goals" && <GoalsManager />}
           {tab === "debts" && <DebtManager />}

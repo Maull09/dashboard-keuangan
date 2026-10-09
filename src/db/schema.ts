@@ -23,8 +23,68 @@ import {
   uniqueIndex,
   index,
   check,
+  jsonb,
 } from "drizzle-orm/pg-core"
 import { desc, sql } from "drizzle-orm"
+import type { AiDraftInput } from "@/lib/ai/validation"
+
+export const aiConversations = pgTable("ai_conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().default(sql`nullif(current_setting('app.user_id', true), '')::uuid`),
+  title: text("title").notNull(),
+  busyUntil: timestamp("busy_until", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  privateAccessPolicy(), ownerPolicy("ai_conversations"),
+  index("ai_conversations_user_created_idx").on(table.userId, desc(table.createdAt)),
+]).enableRLS()
+
+export const aiMessages = pgTable("ai_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().default(sql`nullif(current_setting('app.user_id', true), '')::uuid`),
+  conversationId: uuid("conversation_id").notNull().references(() => aiConversations.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  privateAccessPolicy(), ownerPolicy("ai_messages", [["conversation_id", "ai_conversations"]]),
+  index("ai_messages_conversation_created_idx").on(table.conversationId, table.createdAt, table.id),
+  index("ai_messages_user_created_idx").on(table.userId, table.createdAt),
+  check("ai_messages_valid_role", sql`${table.role} in ('user', 'assistant')`),
+]).enableRLS()
+
+export const aiReceipts = pgTable("ai_receipts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().default(sql`nullif(current_setting('app.user_id', true), '')::uuid`),
+  conversationId: uuid("conversation_id").notNull().references(() => aiConversations.id, { onDelete: "cascade" }),
+  storagePath: text("storage_path").notNull(),
+  mimeType: text("mime_type").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  privateAccessPolicy(), ownerPolicy("ai_receipts", [["conversation_id", "ai_conversations"]]),
+  index("ai_receipts_conversation_idx").on(table.conversationId),
+  uniqueIndex("ai_receipts_storage_path_idx").on(table.storagePath),
+]).enableRLS()
+
+export const aiDrafts = pgTable("ai_drafts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().default(sql`nullif(current_setting('app.user_id', true), '')::uuid`),
+  conversationId: uuid("conversation_id").notNull().references(() => aiConversations.id, { onDelete: "cascade" }),
+  messageId: uuid("message_id").notNull().references(() => aiMessages.id),
+  receiptId: uuid("receipt_id").references(() => aiReceipts.id),
+  data: jsonb("data").$type<AiDraftInput>().notNull(),
+  status: text("status").notNull().default("pending"),
+  transactionId: integer("transaction_id").references(() => transactions.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  privateAccessPolicy(), ownerPolicy("ai_drafts", [
+    ["conversation_id", "ai_conversations"], ["message_id", "ai_messages"],
+    ["receipt_id", "ai_receipts"], ["transaction_id", "transactions"],
+  ]),
+  index("ai_drafts_conversation_idx").on(table.conversationId),
+  check("ai_drafts_valid_status", sql`${table.status} in ('pending', 'confirmed', 'rejected')`),
+  check("ai_drafts_confirmation_link", sql`(${table.status} = 'confirmed') = (${table.transactionId} is not null)`),
+]).enableRLS()
 
 export const apiCacheRevisions = pgTable(
   "api_cache_revisions",
@@ -117,6 +177,7 @@ export const transactions = pgTable(
     type: transactionTypeEnum("type").notNull(),
     amount: integer("amount").notNull(),
     category: text("category").notNull(),
+    groupName: text("group_name"),
     description: text("description"),
     date: date("date").notNull(),
     accountId: integer("account_id")
@@ -134,6 +195,10 @@ export const transactions = pgTable(
       ["destination_account_id", "accounts"],
     ]),
     index("transactions_user_id_idx").on(table.userId),
+    check(
+      "transactions_valid_group_name",
+      sql`${table.groupName} is null or (${table.groupName} = btrim(${table.groupName}) and char_length(${table.groupName}) between 1 and 100)`,
+    ),
     index("transactions_user_date_id_idx").on(
       table.userId,
       desc(table.date),

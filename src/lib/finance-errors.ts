@@ -1,4 +1,11 @@
 export const financeErrorCodes = [
+  "aiNotConfigured",
+  "aiUnavailable",
+  "aiInvalidResponse",
+  "aiBusy",
+  "aiRateLimited",
+  "aiReceiptInvalid",
+  "aiStorageUnavailable",
   "unauthorized",
   "forbidden",
   "invalidInput",

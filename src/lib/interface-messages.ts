@@ -1,6 +1,22 @@
 import type { Locale } from "./finance"
 
 const en = {
+  transactionGroup: "Transaction group",
+  transactionGroupSaved: "Transaction group updated.",
+  transactionGroupOptional: "Transaction group (optional)",
+  transactionGroupHint:
+    "Choose a group or create one for a trip, event, or other activity.",
+  ungroupedTransactions: "Ungrouped",
+  newTransactionGroup: "Create a new group",
+  loadingGroups: "Loading groups…",
+  groupName: "Group name",
+  groupExample: "For example, Japan trip",
+  allGroups: "All groups",
+  transactionsByGroup: "Transactions by group",
+  groupsSummaryHint:
+    "Group totals cover all transactions matching your filters. Open a group to review its records.",
+  groupTransactionCount: "{count} transactions",
+  viewGroupTransactions: "View transactions",
   dailyNavigation: "Everyday money",
   planNavigation: "Plan ahead",
   reviewNavigation: "Review & analyse",
@@ -11,7 +27,7 @@ const en = {
     "From your first transaction to your next financial goal, keep your records connected.",
   landingTracking: "Know where your money goes",
   landingTrackingBody:
-    "Record income, spending, and transfers. Filter your history by date, account, or category.",
+    "Record income, spending, and transfers. Group transactions by activity and filter your history by date or account.",
   landingBudgeting: "Give spending a clear limit",
   landingBudgetingBody:
     "Set monthly budgets and see remaining amounts update as you record expenses.",
@@ -33,13 +49,13 @@ const en = {
   landingQuestions: "Before you get started",
   landingFaqBank: "Does this connect to my bank?",
   landingFaqBankBody:
-    "You enter your records yourself. Adding an account does not connect to your bank or move money.",
+    "Enter accounts and transactions manually, then compare the recorded balances with your bank statements.",
   landingFaqBalance: "How are balances calculated?",
   landingFaqBalanceBody:
     "Balances start with your opening amounts and change with recorded transactions. Compare them with your statements to keep your records accurate.",
   landingFaqPlanning: "Do plans create transactions?",
   landingFaqPlanningBody:
-    "Forecasts and simulations estimate future balances. A recurring schedule creates a transaction only when you choose Record now.",
+    "Forecasts and simulations project future balances. Choose Record now on a recurring schedule to add a completed payment to your history.",
   landingFaqCurrency: "Which currency and languages can I use?",
   landingFaqCurrencyBody:
     "Record amounts in Indonesian rupiah (IDR). Switch between English and Bahasa Indonesia at any time.",
@@ -99,6 +115,22 @@ const en = {
 } as const
 
 const id: Record<keyof typeof en, string> = {
+  transactionGroup: "Grup transaksi",
+  transactionGroupSaved: "Grup transaksi diperbarui.",
+  transactionGroupOptional: "Grup transaksi (opsional)",
+  transactionGroupHint:
+    "Pilih grup atau buat grup untuk perjalanan, acara, atau kegiatan lain.",
+  ungroupedTransactions: "Belum dikelompokkan",
+  newTransactionGroup: "Buat grup baru",
+  loadingGroups: "Memuat grup…",
+  groupName: "Nama grup",
+  groupExample: "Misalnya, Liburan Jepang",
+  allGroups: "Semua grup",
+  transactionsByGroup: "Transaksi per grup",
+  groupsSummaryHint:
+    "Total grup mencakup seluruh transaksi sesuai filter. Buka grup untuk meninjau rinciannya.",
+  groupTransactionCount: "{count} transaksi",
+  viewGroupTransactions: "Lihat transaksi",
   dailyNavigation: "Keuangan harian",
   planNavigation: "Rencana ke depan",
   reviewNavigation: "Tinjau & analisis",
@@ -109,7 +141,7 @@ const id: Record<keyof typeof en, string> = {
     "Dari transaksi pertama hingga tujuan berikutnya, kelola catatan keuangan yang saling terhubung.",
   landingTracking: "Ketahui ke mana uang pergi",
   landingTrackingBody:
-    "Catat pemasukan, pengeluaran, dan transfer. Telusuri riwayat berdasarkan tanggal, akun, atau kategori.",
+    "Catat pemasukan, pengeluaran, dan transfer. Kelompokkan transaksi per kegiatan dan telusuri riwayat berdasarkan tanggal atau akun.",
   landingBudgeting: "Beri batas yang jelas untuk belanja",
   landingBudgetingBody:
     "Tetapkan anggaran bulanan dan pantau sisanya setiap kali pengeluaran dicatat.",
@@ -131,13 +163,13 @@ const id: Record<keyof typeof en, string> = {
   landingQuestions: "Sebelum Anda mulai",
   landingFaqBank: "Apakah aplikasi terhubung ke bank saya?",
   landingFaqBankBody:
-    "Anda memasukkan catatan sendiri. Menambahkan akun tidak menghubungkan aplikasi ke bank atau memindahkan uang.",
+    "Masukkan akun dan transaksi secara manual, lalu cocokkan saldo tercatat dengan rekening bank Anda.",
   landingFaqBalance: "Bagaimana saldo dihitung?",
   landingFaqBalanceBody:
     "Saldo dimulai dari nominal awal dan berubah mengikuti transaksi tercatat. Bandingkan dengan rekening Anda agar catatan tetap akurat.",
   landingFaqPlanning: "Apakah rencana membuat transaksi?",
   landingFaqPlanningBody:
-    "Estimasi dan simulasi memproyeksikan saldo mendatang. Jadwal rutin hanya membuat transaksi saat Anda memilih Catat sekarang.",
+    "Proyeksi dan simulasi memperkirakan saldo mendatang. Pilih Catat sekarang pada jadwal rutin untuk menambahkan pembayaran yang sudah terjadi ke riwayat.",
   landingFaqCurrency: "Mata uang dan bahasa apa yang tersedia?",
   landingFaqCurrencyBody:
     "Catat nominal dalam rupiah (IDR). Anda bisa beralih antara Bahasa Indonesia dan Inggris kapan saja.",
@@ -192,7 +224,7 @@ const id: Record<keyof typeof en, string> = {
     "Belum ada kas yang bisa dialokasikan. Periksa saldo akun sumber.",
   fundTargetReached: "Target dana sudah teralokasi penuh.",
   fundAccountLocked:
-    "Akun sumber tidak dapat diubah setelah dana memiliki riwayat.",
+    "Akun sumber tetap setelah dana memiliki riwayat.",
   budgetAtLimit: "Batas tercapai",
   goalQuickAmount: "Pilih nominal",
   calendarDayHint: "Kosongkan untuk melihat seluruh bulan.",

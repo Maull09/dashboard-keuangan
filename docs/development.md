@@ -61,6 +61,8 @@ the [authentication verification guide](authentication.md#verification).
 
 ## Commands
 
+Test files live in `tests/`, grouped by the matching application modules (`lib/`, `db/`, `components/`, `app/`) and operational scripts (`scripts/`). Application imports use the existing `@/` alias. Run `npm test` for the full suite or, for example, `npx vitest run tests/lib/ai` for one module. Integration test environment requirements remain as described above and in the focused setup documents.
+
 Use `npm ci` to install the exact versions in the committed lockfile. Use `npm install` when intentionally updating dependencies, and commit the manifest and lockfile together.
 
 ```bash

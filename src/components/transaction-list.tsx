@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { Search, SlidersHorizontal, Trash2 } from "lucide-react"
 import { TransactionForm } from "./transaction-form"
+import { TransactionGroups } from "./transaction-groups"
+import { AiTransactionDrafts, ReceiptReader } from "./ai-transaction-drafts"
 import { useLanguage } from "./language-provider"
 import {
   ConfirmDelete,
@@ -31,7 +33,7 @@ import {
 } from "@/lib/finance"
 import { useRemoteData } from "@/lib/use-remote-data"
 import { requestJson } from "@/lib/client-api"
-import type { Account, Transaction } from "@/lib/types"
+import type { Account, Transaction, TransactionGroupSummary } from "@/lib/types"
 
 type TransactionPage = {
   items: Transaction[]
@@ -39,6 +41,7 @@ type TransactionPage = {
   page: number
   totalPages: number
   summary: { income: number; expense: number }
+  groups: TransactionGroupSummary[]
 }
 const colors = {
   income: "text-emerald-700 bg-emerald-50",
@@ -54,6 +57,7 @@ export function TransactionList() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [type, setType] = useState<"all" | TransactionType>("all")
   const [account, setAccount] = useState("all")
+  const [group, setGroup] = useState("all")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
   const [page, setPage] = useState(1)
@@ -74,24 +78,35 @@ export function TransactionList() {
     search: debouncedSearch,
     type,
     account,
+    group: group.startsWith("group:") ? group.slice(6) : "",
+    ungrouped: String(group === "ungrouped"),
     from,
     to: invalidRange ? "" : to,
   })
   const records = useRemoteData<TransactionPage>("/api/transactions?" + params)
   const accountData = useRemoteData<Account[]>("/api/accounts")
+  const groupData = useRemoteData<string[]>("/api/transactions/groups")
   const accounts = accountData.data ?? noAccounts
+  const groupNames = [
+    ...new Set([
+      ...(groupData.data ?? []),
+      ...(group.startsWith("group:") ? [group.slice(6)] : []),
+    ]),
+  ]
+  const selectedGroupName = group.startsWith("group:") ? group.slice(6) : undefined
   const accountsById = useMemo(
     () => new Map(accounts.map((item) => [item.id, item.name])),
     [accounts],
   )
   const hasFilters = Boolean(
-    search || type !== "all" || account !== "all" || from || to,
+    search || type !== "all" || account !== "all" || group !== "all" || from || to,
   )
   function resetFilters() {
     setSearch("")
     setDebouncedSearch("")
     setType("all")
     setAccount("all")
+    setGroup("all")
     setFrom("")
     setTo("")
     setPage(1)
@@ -132,12 +147,18 @@ export function TransactionList() {
         title={t("transactionTitle")}
         description={t("transactionDescription")}
       >
+        <ReceiptReader accounts={accounts} />
         {accounts.length ? (
-          <TransactionForm accounts={accounts} onSaved={() => {}} />
+          <TransactionForm
+            accounts={accounts}
+            defaultGroupName={selectedGroupName}
+            onSaved={() => {}}
+          />
         ) : !accountData.loading && !accountData.error ? (
           <AddAccountForm />
         ) : null}
       </PageHeading>
+      {!accountData.loading && !accountData.error && <AiTransactionDrafts accounts={accounts} />}
       <Card className="shadow-none">
         <CardContent className="space-y-4 pt-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -159,7 +180,7 @@ export function TransactionList() {
               </Button>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <Field id="search-transactions" label={t("search")}>
               <div className="relative">
                 <Search
@@ -216,6 +237,28 @@ export function TransactionList() {
                 </SelectContent>
               </Select>
             </Field>
+            <Field id="filter-group" label={t("transactionGroup")}>
+              <Select
+                value={group}
+                onValueChange={(value) => {
+                  setGroup(value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger id="filter-group">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("allGroups")}</SelectItem>
+                  <SelectItem value="ungrouped">{t("ungroupedTransactions")}</SelectItem>
+                  {groupNames.map((name) => (
+                    <SelectItem key={name} value={"group:" + name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
             <Field id="filter-from" label={t("fromDate")}>
               <Input
                 id="filter-from"
@@ -245,6 +288,7 @@ export function TransactionList() {
             </Field>
           </div>
           <p className="text-xs text-muted-foreground">{t("filtersHint")}</p>
+          <ErrorNotice message={groupData.error} onRetry={groupData.reload} />
           {invalidRange && (
             <p
               id="filter-date-error"
@@ -296,6 +340,14 @@ export function TransactionList() {
                 </div>
               ))}
             </div>
+            <TransactionGroups
+              groups={data.groups}
+              selectedGroup={group}
+              onSelect={(value) => {
+                setGroup(value)
+                setPage(1)
+              }}
+            />
             {accounts.length === 0 ? (
               <EmptyState
                 title={t("noAccounts")}
@@ -317,7 +369,11 @@ export function TransactionList() {
                     {t("resetFilters")}
                   </Button>
                 ) : (
-                  <TransactionForm accounts={accounts} onSaved={() => {}} />
+                  <TransactionForm
+                    accounts={accounts}
+                    defaultGroupName={selectedGroupName}
+                    onSaved={() => {}}
+                  />
                 )}
               </EmptyState>
             ) : (
@@ -389,6 +445,11 @@ export function TransactionList() {
                             <span className="font-medium">
                               {t(item.category)}
                             </span>
+                            {item.groupName && (
+                              <p className="mt-1 max-w-[220px] break-words text-xs font-medium text-brand-active">
+                                {item.groupName}
+                              </p>
+                            )}
                             {item.description && (
                               <p className="mt-1 max-w-[220px] break-words text-xs text-muted-foreground">
                                 {item.description}
