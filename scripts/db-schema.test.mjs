@@ -95,6 +95,50 @@ describe("database baseline verification", () => {
       "Missing table: public.accounts",
     )
   })
+  it("accepts additional nullable columns during normal readiness checks", () => {
+    const { snapshot, actual } = fixture()
+    actual.columns.push({
+      table_name: "accounts",
+      column_name: "group_name",
+      data_type: "text",
+      is_nullable: "YES",
+      column_default: null,
+    })
+    expect(schemaIssues(snapshot, actual)).toEqual([])
+    expect(schemaIssues(snapshot, actual, { strictTables: true })).toContain(
+      "Column count differs: accounts",
+    )
+  })
+  it.each([null, "'default'"])(
+    "refuses an unknown required column, including one with default %s",
+    (columnDefault) => {
+      const { snapshot, actual } = fixture()
+      actual.columns.push({
+        table_name: "accounts",
+        column_name: "required_note",
+        data_type: "text",
+        is_nullable: "NO",
+        column_default: columnDefault,
+      })
+      expect(schemaIssues(snapshot, actual)).toContain(
+        "Unexpected required column: accounts.required_note",
+      )
+    },
+  )
+  it("still rejects a missing expected column when a nullable extra keeps the count unchanged", () => {
+    const { snapshot, actual } = fixture()
+    actual.columns[1] = {
+      table_name: "accounts",
+      column_name: "group_name",
+      data_type: "text",
+      is_nullable: "YES",
+      column_default: null,
+    }
+    expect(schemaIssues(snapshot, actual)).toContain("Missing column: accounts.type")
+    expect(schemaIssues(snapshot, actual, { strictTables: true })).toContain(
+      "Missing column: accounts.type",
+    )
+  })
   it.each([
     ["data_type", "bigint", "Column type differs: accounts.id"],
     ["is_nullable", "YES", "Nullability differs: accounts.id"],
