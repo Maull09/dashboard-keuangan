@@ -25,6 +25,13 @@ const buy: StockTrade = {
 }
 
 describe("stock portfolio accounting", () => {
+  it("separates the rupiah symbol from amounts without changing signs or precision", () => {
+    expect(formatCurrency(1299162, "id")).toBe("Rp\u00a01.299.162")
+    expect(formatCurrency(-1000.758, "id")).toBe("-Rp\u00a01.000,76")
+    expect(formatCurrency(0, "id")).toBe("Rp\u00a00")
+    expect(formatStockPrice(8500.1234, "id")).toBe("Rp\u00a08.500,1234")
+    expect(formatCurrency(1299162, "en")).toMatch(/^IDR\s1,299,162$/)
+  })
   it("preserves four-decimal prices before rounding the total trade cash", () => {
     const trade = { ...buy, shares: 125, price: 1000.1234, fees: 1 }
     expect(tradeCashChange(trade)).toBe(-125016.43)

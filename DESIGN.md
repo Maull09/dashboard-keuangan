@@ -44,6 +44,8 @@ Use the locally loaded Geist family for all interface text. It keeps screens com
 
 Use sentence case. Keep supporting copy short, concrete, and action-oriented. English and Indonesian must convey the same intent.
 
+Indonesian currency displays use a nonbreaking space after `Rp` (for example, `Rp 1.299.162`), with the existing decimal precision preserved. Month selectors use translated month names and a separate year control, so the selected application language determines their labels rather than the browser's native month-input language. Keep period labels visible and preserve each page's allowed date range.
+
 ### Spacing, shape, and elevation
 
 - Use a 4px rhythm: `4, 8, 12, 16, 24, 32, 48, 64`.
@@ -89,7 +91,7 @@ Assumption: the user wants to review recorded monthly finances and identify the 
 
 ### Contextual AI insights
 
-Assumption: users want a short explanation of the financial view they have just opened, without interrupting record keeping. Each financial page shows one quiet, full-width insight panel below its heading or summary. Use existing Geist type, Surface, Hairline, Brand links, and stacked mobile controls. Generate automatically after the page data is ready; follow its period, filters, and valid analysis inputs. Show one paragraph of three or four short sentences, at most 80 words, focused on the main finding, one or two supporting figures, and one practical next action. Describe missing data in everyday language; never display raw field names, status codes, or null values in explanations. Keep the main page usable while insights are waiting or generating. Show the analysis time and a secondary Reanalyse action; failures offer a retry. Discard results from an earlier filter, language, user, or data revision. The AI assistant remains a conversation view. Insights explain server-calculated aggregates and never change financial records.
+Assumption: users want a short explanation of the financial view they have just opened, without interrupting record keeping. Each financial page shows one quiet, full-width insight panel below its heading or summary. Use existing Geist type, Surface, Hairline, Brand links, and stacked mobile controls. Keep the header compact, with a small assistant icon, a short explanation of the scope, and a secondary Reanalyse action. Waiting and generating states use one visible status line with an icon; never imply a known completion percentage. Results lead with the paragraph, followed by a quiet divided footer grouping the analysis time, record-review hint, and next actions. Use 16px padding on mobile and 20px on wider screens, with readable paragraph width and no fixed height. Generate automatically after the page data is ready; follow its period, filters, and valid analysis inputs. Show one paragraph of three or four short sentences, at most 80 words, focused on the main finding, one or two supporting figures, and one practical next action. Describe missing data in everyday language; never display raw field names, status codes, or null values in explanations. Keep the main page usable while insights are waiting or generating. Failures offer a retry. Discard results from an earlier filter, language, user, or data revision. The AI assistant remains a conversation view. Insights explain server-calculated aggregates and never change financial records.
 
 ## Implementation rule
 

@@ -7,6 +7,7 @@ import { calculateFinancialHealth, healthInputSchema, type FinancialHealthReport
 import { useRemoteData } from "@/lib/use-remote-data"
 import { clearRemoteResourceCache } from "@/lib/remote-resource-cache"
 import { PageInsights } from "./page-insights"
+import { MonthPicker } from "./month-picker"
 import { useLanguage } from "./language-provider"
 import { ErrorNotice, Field, LoadingState, PageHeading } from "./feedback"
 import { Button } from "./ui/button"
@@ -25,8 +26,7 @@ export function FinancialHealth() {
     <div className="space-y-6">
       <PageHeading title={t("financialHealth")} description={t("healthDescription")}>
         <Field id="health-month" label={t("healthPeriod")}>
-          <Input className="min-h-11" id="health-month" type="month" min="1900-01" max={getCurrentMonth()} value={month}
-            onChange={(event) => { if (event.target.value) setMonth(event.target.value) }} />
+          <MonthPicker id="health-month" min="1900-01" max={getCurrentMonth()} value={month} onChange={setMonth} />
         </Field>
         <Button variant="outline" onClick={reload} disabled={records.loading || records.refreshing}>
           <RefreshCw aria-hidden="true" className="size-4" />

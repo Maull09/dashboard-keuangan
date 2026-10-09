@@ -1,6 +1,7 @@
 "use client"
 
 import { PageInsights } from "./page-insights"
+import { MonthPicker } from "./month-picker"
 import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useLanguage } from "./language-provider"
@@ -79,13 +80,12 @@ export function FinancialCalendar() {
       <PageInsights context={{ page: "calendar", month }} ready={Boolean(records.data) && !records.loading && !records.refreshing && !records.error} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <Field id="calendar-month" label={t("period")}>
-          <Input
+          <MonthPicker
             id="calendar-month"
-            type="month"
             min="1900-01"
             max="2100-12"
             value={month}
-            onChange={(event) => changeMonth(event.target.value)}
+            onChange={changeMonth}
           />
         </Field>
         <div className="md:hidden">

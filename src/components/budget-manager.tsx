@@ -1,5 +1,7 @@
 "use client"
 
+import { MonthPicker } from "./month-picker"
+
 import { PageInsights } from "./page-insights"
 import { useState } from "react"
 import { Pencil, Plus } from "lucide-react"
@@ -204,13 +206,10 @@ export function BudgetManager() {
       >
         <div className="flex flex-wrap items-end gap-3">
           <Field id="budget-month" label={t("period")}>
-            <Input
+            <MonthPicker
               id="budget-month"
-              type="month"
               value={month}
-              onChange={(event) => {
-                if (event.target.value) setMonth(event.target.value)
-              }}
+              onChange={setMonth}
             />
           </Field>
           {add}

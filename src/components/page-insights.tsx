@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { RefreshCw } from "lucide-react"
+import { Bot, Clock3, Loader2, RefreshCw } from "lucide-react"
 import { jsonBody, requestJson } from "@/lib/client-api"
 import { clearRemoteResourceCache } from "@/lib/remote-resource-cache"
 import type { InsightContext, InsightPage, InsightStatus } from "@/lib/ai/insight-contract"
@@ -76,23 +76,40 @@ function InsightRun({ context, refresh, retry }: { context: InsightContext; refr
   const pending = !error && status?.status !== "completed"
   const result = status?.result
   const target = nextPage[context.page as InsightPage]
-  return <Card aria-busy={pending}>
-    <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div><CardTitle>{t("pageInsights")}</CardTitle><CardDescription className="mt-2">{t("pageInsightsHint")}</CardDescription></div>
-      <Button className="min-h-11 shrink-0" variant="outline" onClick={retry} disabled={pending}>
+  return <Card aria-busy={pending} className="gap-3 py-4 sm:py-5">
+    <CardHeader className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5">
+      <div className="flex min-w-0 flex-1 basis-60 items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-active">
+          <Bot aria-hidden="true" className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <CardTitle className="text-base">{t("pageInsights")}</CardTitle>
+          <CardDescription className="mt-0.5 text-xs leading-relaxed">{t("pageInsightsHint")}</CardDescription>
+        </div>
+      </div>
+      <Button className="min-h-11 shrink-0" variant="ghost" onClick={retry} disabled={pending}>
         <RefreshCw aria-hidden="true" className="size-4" />{t("insightRefresh")}
       </Button>
     </CardHeader>
-    <CardContent className="space-y-4">
-      {pending && <p role="status" className="text-sm text-muted-foreground">{t(status?.status === "active" ? "insightActive" : "insightWaiting")}</p>}
+    <CardContent className="space-y-3 px-4 sm:px-5">
+      {pending && <p role="status" className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
+        {status?.status === "active"
+          ? <Loader2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 animate-spin motion-reduce:animate-none" />
+          : <Clock3 aria-hidden="true" className="mt-0.5 size-4 shrink-0" />}
+        {t(status?.status === "active" ? "insightActive" : "insightWaiting")}
+      </p>}
       <ErrorNotice message={error} onRetry={retry} />
-      {result && <div className="space-y-4" aria-live="polite">
-        <p className="max-w-prose whitespace-pre-wrap break-words text-sm leading-relaxed">{result.text}</p>
-        <p className="text-xs text-muted-foreground">{t("insightGenerated", { time: new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(result.generatedAt)) })}</p>
-        <p className="max-w-prose text-xs text-muted-foreground">{t("insightReview")}</p>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline"><a href={"#" + target}>{t("insightNext", { page: t(target) })}</a></Button>
-          <Button asChild variant="ghost"><a href={"#ai?conversation=" + result.conversationId} onClick={clearRemoteResourceCache}>{t("insightHistory")}</a></Button>
+      {result && <div className="space-y-3" aria-live="polite">
+        <p className="max-w-prose break-words text-sm leading-7">{result.text}</p>
+        <div className="flex flex-col gap-3 border-t pt-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 space-y-1 text-xs leading-relaxed text-muted-foreground">
+            <p><time dateTime={result.generatedAt}>{t("insightGenerated", { time: new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" }).format(new Date(result.generatedAt)) })}</time></p>
+            <p>{t("insightReview")}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline"><a href={"#" + target}>{t("insightNext", { page: t(target) })}</a></Button>
+            <Button asChild variant="ghost"><a href={"#ai?conversation=" + result.conversationId} onClick={clearRemoteResourceCache}>{t("insightHistory")}</a></Button>
+          </div>
         </div>
       </div>}
     </CardContent>

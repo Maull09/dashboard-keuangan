@@ -1,6 +1,8 @@
 import type { Locale } from "./finance"
 
 const en = {
+  periodMonth: "Month",
+  periodYear: "Year",
   transactionGroup: "Transaction group",
   transactionGroupSaved: "Transaction group updated.",
   transactionGroupOptional: "Transaction group (optional)",
@@ -115,6 +117,8 @@ const en = {
 } as const
 
 const id: Record<keyof typeof en, string> = {
+  periodMonth: "Bulan",
+  periodYear: "Tahun",
   transactionGroup: "Grup transaksi",
   transactionGroupSaved: "Grup transaksi diperbarui.",
   transactionGroupOptional: "Grup transaksi (opsional)",
