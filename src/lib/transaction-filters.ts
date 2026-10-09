@@ -1,6 +1,7 @@
 import { isDate, transactionTypes, type TransactionType } from "./finance"
 import { expenseCategories, incomeCategories } from "./finance"
 import { usabilityMessages } from "./usability-messages"
+import { parseTransactionGroupName } from "./validation"
 
 export function findEnglishCategoryMatches(search: string) {
   const query = search.trim().toLowerCase()
@@ -22,6 +23,14 @@ export function parseTransactionFilters(params: URLSearchParams) {
   const account = params.get("account") ?? "all"
   const from = params.get("from") ?? ""
   const to = params.get("to") ?? ""
+  const groupName = parseTransactionGroupName(params.get("group"))
+  const ungrouped = params.get("ungrouped") ?? "false"
+  if (
+    groupName === undefined ||
+    !["true", "false"].includes(ungrouped) ||
+    (groupName && ungrouped === "true")
+  )
+    return null
   if (type !== "all" && !transactionTypes.includes(type as TransactionType))
     return null
   if (
@@ -41,5 +50,7 @@ export function parseTransactionFilters(params: URLSearchParams) {
     accountId: account === "all" ? null : Number(account),
     from,
     to,
+    groupName,
+    ungrouped: ungrouped === "true",
   }
 }

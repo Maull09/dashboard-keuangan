@@ -73,6 +73,10 @@ The dashboard is a working financial record: accounts feed balances, transaction
 
 Use concise copy that names the user task. Prefer “Update daily prices” over implementation details, and “Add budget” over generic verbs. Avoid defensive technical caveats in routine UI; present data date, error state, or incompleteness only where it changes a financial decision.
 
+Describe what a feature calculates or changes directly, in both languages. State projection inputs, allocation behaviour, and permanent deletion consequences in plain terms. Keep financial warnings specific and actionable.
+
+Transaction groups collect records for a named activity, such as a trip, across spending categories. Each transaction has one optional group. Show group spending totals and transaction counts for the full filtered period, with an action to view the group's records. Use the existing blue selection treatment, Geist typography, quiet borders, and stacked layouts on mobile; keep amounts prominent and group names able to wrap.
+
 ## Implementation rule
 
 `src/app/globals.css` owns the semantic colour tokens. Components should use those tokens and existing shared primitives rather than scattered colour values. When a lasting visual decision changes, update this document before changing the implementation.

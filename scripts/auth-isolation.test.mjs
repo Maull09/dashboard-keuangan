@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
 import pg from "pg"
 import { drizzle } from "drizzle-orm/node-postgres"
-import { eq } from "drizzle-orm"
+import { and, eq, isNotNull, isNull } from "drizzle-orm"
 import { transactions } from "../src/db/schema"
 import { readLedger, readReservations } from "../src/lib/server/ledger"
 import { readBalanceLedger, readReservedCash, accountSummaryQuery, goalSummaryQuery, debtSummaryQuery } from "../src/lib/server/financial-queries"
@@ -71,7 +71,7 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
   it("applies migrations without losing legacy amounts or watchlist notes", async () => {
     expect((await client.query("SELECT initial_balance, user_id FROM accounts WHERE id = $1", [legacyId])).rows[0]).toEqual({ initial_balance: 12345, user_id: null })
     expect((await client.query("SELECT note FROM stock_watchlist")).rows[0].note).toBe("Legacy note")
-    expect(schemaIssues(loadSnapshot("0010"), await readDatabaseSchema(client))).toEqual([])
+    expect(schemaIssues(loadSnapshot("0011"), await readDatabaseSchema(client))).toEqual([])
   })
 
   it("automatically assigns new rows and isolates reads, updates, and deletes", async () => {
@@ -141,6 +141,39 @@ describe.skipIf(!testUrl)("PostgreSQL ownership policies", () => {
     expect((await client.query("SELECT user_id, initial_balance FROM accounts WHERE id=$1", [legacyId])).rows[0]).toEqual({ user_id: userA, initial_balance: 12345 })
     expect((await assignLegacyOwner(client, "owner@example.test", true)).accounts).toBe(0)
     expect((await client.query("SELECT user_id FROM accounts WHERE id=$1", [accountB.id])).rows[0].user_id).toBe(userB)
+  })
+
+  it("groups the entire filtered history and keeps names private under RLS", async () => {
+    await asUser(userA, async () => {
+      await client.query("SAVEPOINT group_fixture")
+      try {
+        const connection = drizzle(client)
+        const accountId = (await client.query("INSERT INTO accounts(name, type) VALUES ('Group fixture', 'bank') RETURNING id")).rows[0].id
+        const targetId = (await client.query("INSERT INTO accounts(name, type) VALUES ('Group target', 'bank') RETURNING id")).rows[0].id
+        await client.query("INSERT INTO transactions(type, amount, category, group_name, date, account_id) SELECT 'expense', 100, 'Food', 'Japan trip', '2026-10-09', $1 FROM generate_series(1, 26)", [accountId])
+        await client.query("INSERT INTO transactions(type, amount, category, group_name, date, account_id) VALUES ('income', 600, 'Refund', 'Japan trip', '2026-10-09', $1), ('expense', 200, 'Food', null, '2026-10-09', $1), ('expense', 600, 'Food', 'Wedding', '2026-10-09', $1)", [accountId])
+        await client.query("INSERT INTO transactions(type, amount, category, group_name, date, account_id, destination_account_id) VALUES ('transfer', 500, 'Transfer', 'Japan trip', '2026-10-09', $1, $2)", [accountId, targetId])
+        const page = await readTransactionPage(connection, eq(transactions.accountId, accountId), 1, 2)
+        expect(page.items).toHaveLength(2)
+        expect(page).toMatchObject({ total: 30, summary: { income: 600, expense: 3400 } })
+        expect(page.groups).toEqual([
+          { groupName: 'Japan trip', count: 28, income: 600, expense: 2600 },
+          { groupName: 'Wedding', count: 1, income: 0, expense: 600 },
+          { groupName: null, count: 1, income: 0, expense: 200 },
+        ])
+        const selected = await readTransactionPage(connection, and(eq(transactions.accountId, accountId), eq(transactions.groupName, 'Japan trip')), 2, 2)
+        expect(selected).toMatchObject({ total: 28, summary: { income: 600, expense: 2600 }, groups: [page.groups[0]] })
+        expect(selected.items.every((item) => item.groupName === 'Japan trip')).toBe(true)
+        expect((await readTransactionPage(connection, and(eq(transactions.accountId, accountId), isNull(transactions.groupName)), 1, 25)).groups)
+          .toEqual([{ groupName: null, count: 1, income: 0, expense: 200 }])
+        await client.query("SELECT set_config('app.user_id', $1, true)", [userB])
+        expect((await connection.selectDistinct({ name: transactions.groupName }).from(transactions).where(isNotNull(transactions.groupName)))).toEqual([])
+        expect((await readTransactionPage(connection, undefined, 1, 25)).groups).toEqual([])
+        expect((await client.query("UPDATE transactions SET group_name='stolen' WHERE account_id=$1", [accountId])).rowCount).toBe(0)
+      } finally {
+        await client.query("ROLLBACK TO SAVEPOINT group_fixture")
+      }
+    })
   })
 
   it("keeps optimized SQL totals, pagination, prices and joins equivalent under RLS", async () => {

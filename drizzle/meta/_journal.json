@@ -78,6 +78,13 @@
       "when": 1791490041537,
       "tag": "0010_fearless_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791518111668,
+      "tag": "0011_omniscient_cobalt_man",
+      "breakpoints": true
     }
   ]
 }

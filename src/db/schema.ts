@@ -100,6 +100,7 @@ export const transactions = pgTable(
     type: transactionTypeEnum("type").notNull(),
     amount: integer("amount").notNull(),
     category: text("category").notNull(),
+    groupName: text("group_name"),
     description: text("description"),
     date: date("date").notNull(),
     accountId: integer("account_id")
@@ -117,6 +118,10 @@ export const transactions = pgTable(
       ["destination_account_id", "accounts"],
     ]),
     index("transactions_user_id_idx").on(table.userId),
+    check(
+      "transactions_valid_group_name",
+      sql`${table.groupName} is null or (${table.groupName} = btrim(${table.groupName}) and char_length(${table.groupName}) between 1 and 100)`,
+    ),
     index("transactions_user_date_id_idx").on(
       table.userId,
       desc(table.date),

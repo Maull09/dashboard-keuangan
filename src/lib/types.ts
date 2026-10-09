@@ -17,10 +17,18 @@ export type Transaction = {
   type: TransactionType
   amount: number
   category: string
+  groupName: string | null
   description: string | null
   date: string
   accountId: number
   destinationAccountId: number | null
+}
+
+export type TransactionGroupSummary = {
+  groupName: string | null
+  count: number
+  income: number
+  expense: number
 }
 
 export type Budget = {

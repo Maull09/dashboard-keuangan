@@ -12,9 +12,11 @@
 
 The read-only check validates required tables, columns, types, nullability, defaults, serial sequences, primary/foreign keys, enum values, and the presence of required named checks/indexes. It also requires the latest migration timestamp in history and checks the auth role, private-table RLS flags, and ownership policy presence. It does not compare every catalog property, check expression, index expression, policy expression, or permission.
 
-Generating migrations is not applying them. An account endpoint can succeed while the dashboard fails because `stock_trades` has not been created. This version expects 15 application tables and migration `0010_fearless_sentry`, including four-decimal numeric trade quantities/prices and private ownership policies. Migration 0005 widens only the trade price column from `numeric(14, 2)` to `numeric(16, 4)`. Migrations 0006–0007 add ownership and RLS without assigning existing rows; follow [authentication setup](authentication.md) to assign legacy records to a confirmed owner. Back up before applying migrations.
+Generating migrations is not applying them. An account endpoint can succeed while the dashboard fails because `stock_trades` has not been created. This version expects 15 application tables and migration `0011_omniscient_cobalt_man`, including optional transaction groups, four-decimal numeric trade quantities/prices, and private ownership policies. Migration 0005 widens only the trade price column from `numeric(14, 2)` to `numeric(16, 4)`. Migrations 0006–0007 add ownership and RLS without assigning existing rows; follow [authentication setup](authentication.md) to assign legacy records to a confirmed owner. Back up before applying migrations.
 
 Migrations 0009–0010 add indexes for ownership-scoped pagination, date/type filters, account references, and payment/contribution joins. They do not update financial rows or change RLS. Run the normal migration workflow before deploying the optimized queries; generating the SQL alone does not install the indexes. These transactional `CREATE INDEX` statements can block writes while building, so use a maintenance window for a large database.
+
+Migration 0011 adds nullable `transactions.group_name` with a constraint for trimmed names of 1–100 characters. Existing records remain ungrouped. Group assignment changes metadata while amounts, dates, and linked payment histories remain intact. Apply this migration through the normal workflow before deploying transaction grouping.
 
 ## Existing legacy tables with empty migration history
 

@@ -1,21 +1,21 @@
 import type { Locale } from "./finance"
 
 const en = {
-  helpInvestments: "Separate brokerage cash from stocks",
+  helpInvestments: "Track brokerage cash and stocks",
   helpInvestmentsBody:
-    "Record purchases and sales in Investments, including fees. Opening balances represent cash only. Daily prices require a configured provider; price dates and incomplete valuations stay visible.",
-  helpNetWorth: "Avoid counting assets twice",
+    "Enter brokerage cash as your opening balance, then record stock purchases and sales with their fees. Check the price date when reviewing market values.",
+  helpNetWorth: "See your net worth",
   helpNetWorthBody:
     "Net worth adds cash, valued stocks, and receivables, then subtracts unpaid debts. Money allocated to goals or sinking funds is already included in cash.",
-  helpSimulation: "Calculate planned spending safely",
+  helpSimulation: "Compare spending plans",
   helpSimulationBody:
-    "See your current cash and scheduled cash flow, then add several planned incomes and expenses to estimate your cash. The calculator never creates real transactions or schedules.",
+    "Combine current cash and scheduled cash flow with planned income and expenses to preview your future balance.",
   helpCalendar: "See upcoming financial dates",
   helpCalendarBody:
-    "Browse recurring schedules, debt deadlines, and fund targets by month. These are planned dates, not proof of payment; reminders can overlap with recurring schedules.",
+    "Browse recurring schedules, debt deadlines, and fund targets by month. Check transaction history for recorded payments.",
   helpFunds: "Reserve money for predictable expenses",
   helpFundsBody:
-    "Allocate existing cash to a fund without moving money. Release makes it available again. Spend creates one real expense; do not record that same payment again in Transactions.",
+    "Allocate cash to a fund in its source account. Release makes it available again. Spend records the payment directly in Transactions.",
   investments: "Investments",
   netWorth: "Net worth",
   calendar: "Financial calendar",
@@ -28,7 +28,7 @@ const en = {
   calendarDescription:
     "Recurring payments, income, debt deadlines, and planned fund targets in one place.",
   simulationDescription:
-    "Combine your current cash and scheduled calendar cash flow with planned incomes and expenses. Nothing is saved to your real transactions.",
+    "Preview your future balance from current cash, recurring schedules, and planned income and expenses.",
   fundsDescription:
     "Set money aside for predictable expenses such as annual insurance, vehicle tax, or a holiday.",
   totalBalance: "Cash across accounts",
@@ -36,9 +36,9 @@ const en = {
   accountBalanceDescription:
     "Opening cash and recorded cash flows. Stock holdings are valued separately.",
   balanceProgressDescription:
-    "Cash balance after transactions and stock purchases or sales; this is not investment performance.",
+    "Cash balance after recorded transactions and stock purchases or sales.",
   investmentOpeningHint:
-    "Enter available cash in this brokerage account, not the value of stocks you own. Record stock purchases separately.",
+    "Enter the cash available in your brokerage account. Record stock purchases in Investments.",
   portfolio: "Portfolio",
   watchlist: "Watchlist",
   tradeHistory: "Trade history",
@@ -49,7 +49,7 @@ const en = {
   stockSymbol: "IDX ticker",
   stockName: "Company name",
   stockSymbolHint:
-    "Four-letter IDX symbol, for example BBCA. This records a trade; it does not place an order with a broker.",
+    "Enter the four-letter IDX symbol, such as BBCA, for the stock trade you have completed.",
   brokerageAccount: "Brokerage cash account",
   lots: "Lots",
   lotsHint:
@@ -72,7 +72,7 @@ const en = {
   quotedOn: "Price date",
   unpriced: "Not valued yet",
   unpricedHint:
-    "{count} holding(s) have no market price. The portfolio total is incomplete; recorded cost is not substituted for market value.",
+    "{count} holding(s) are awaiting market prices. The portfolio total covers holdings with available prices.",
   refreshPrices: "Update daily prices",
   priceUpdateResult:
     "{updated} updated, {cached} cached, {failed} failed, {pending} pending.",
@@ -84,36 +84,36 @@ const en = {
   removeWatch: "Remove from watchlist",
   noHoldings: "Start your stock portfolio",
   noHoldingsHint:
-    "Add a brokerage cash account, then record an actual stock purchase. Do not enter holdings as an opening cash balance.",
+    "Add an account with your available brokerage cash, then record your first stock purchase.",
   noWatchlist: "What stocks are you following?",
   noWatchlistHint:
-    "Add IDX symbols to view daily prices without recording a purchase.",
+    "Add IDX symbols to follow their daily prices.",
   noTrades: "No stock trades yet.",
   tradeDeleteHint:
-    "Permanently delete this trade. Cash, cost basis, and gains will be recalculated. Removal is blocked if it would leave a sale without enough shares or insufficient cash.",
+    "Permanently delete this trade and recalculate cash, cost basis, and gains. Later trades must still have sufficient shares and cash.",
   removeWatchHint:
     "Permanently remove this watchlist entry and note. Your trades and holdings stay unchanged; you can add the ticker again.",
   corporateActionsHint:
-    "This version does not automatically apply stock splits or other corporate actions.",
+    "Holdings are calculated from recorded purchases and sales. Review your holdings after a stock split or other corporate action.",
   insufficientShares:
     "This sale exceeds the shares owned on its date. Check the account, quantity, and earlier trades.",
   insufficientCash:
     "This action would leave insufficient cash. Check opening cash and transactions, or record the funding transfer first.",
   insufficientAvailableCash:
-    "Not enough unallocated cash. Money already assigned to goals or sinking funds is reserved.",
+    "This amount exceeds your unallocated cash. Review the money reserved for goals and sinking funds.",
   fundBalanceExceeded: "The amount exceeds the money allocated to this fund.",
   fundTargetExceeded:
     "The allocation exceeds the target, or the target is below the existing allocation.",
   linkedFundTransaction:
-    "This expense belongs to a sinking fund and cannot be changed independently of its fund history.",
+    "This expense is linked to a sinking fund. Manage its payment through the fund history.",
   marketDataUnavailable:
-    "Yahoo Finance could not be reached or returned unreadable data. Your saved prices were kept. Try again later; this is a market-data error, not a database connection error.",
+    "Daily prices are temporarily unavailable from Yahoo Finance. Your saved prices remain available. Try again later.",
   priceAccessRequired:
-    "Yahoo Finance temporarily rejected access. Saved prices were kept. Wait and retry; this integration does not require an API key.",
+    "Yahoo Finance has temporarily restricted access. Your saved prices remain available. Wait a moment, then try again.",
   pricesRateLimited:
     "The market-data limit was reached. Existing prices were kept; wait for your provider quota to reset, then retry.",
   invalidMarketPrice:
-    "Yahoo Finance returned no valid completed daily IDR close for this IDX ticker. Check its .JK listing and price date; saved prices were kept.",
+    "A daily closing price is pending for this stock. Check the ticker and price date, then try again. Your saved prices remain available.",
   knownNetWorth: "Known subtotal",
   cashAssets: "Cash assets",
   stockAssets: "Valued stocks",
@@ -121,9 +121,9 @@ const en = {
   debtLiabilities: "Outstanding debts",
   reservedCash: "Allocated cash",
   netWorthRule:
-    "Allocations to goals and funds are already part of cash, not additional assets.",
+    "Cash includes the money allocated to goals and sinking funds.",
   incompleteNetWorth:
-    "Net worth is incomplete because some stock holdings have no price.",
+    "This subtotal covers cash, receivables, debts, and stocks with available prices. Some holdings are awaiting prices.",
   viewNetWorth: "View net worth",
   assetsAndLiabilities: "Assets and liabilities",
   accountBreakdown: "Cash accounts",
@@ -131,7 +131,7 @@ const en = {
   noObligations: "No outstanding obligations.",
   noCalendarEvents: "No scheduled events this month",
   calendarHint:
-    "Planned dates, not posted transactions. Debt deadlines and fund targets are reminders and may overlap with a recurring payment.",
+    "The calendar shows planned dates. Match debt and fund reminders with recurring schedules when reviewing upcoming payments.",
   agenda: "Agenda",
   recurring: "Recurring schedule",
   debtDue: "Debt due",
@@ -147,9 +147,9 @@ const en = {
   calculateExpenses: "Calculate projection",
   calculating: "Calculating...",
   simulationHint:
-    "The baseline includes active recurring schedules. Unscheduled spending, debt deadlines, and future investment changes are not automatically included.",
+    "The starting projection uses active recurring schedules. Add other planned income and spending to see their effect.",
   calculatorHint:
-    "Active recurring income and expenses from your financial calendar are included from today to the selected date. Debt deadlines and fund targets remain reminders only, so they are excluded to avoid double-counting.",
+    "Active recurring income and expenses are calculated from today through the selected date. Debt deadlines and fund targets are calendar reminders. Match additional plans with the schedules already included.",
   currentCashHint:
     "This is your recorded cash across accounts and the starting point for the projection.",
   addedIncome: "Added income",
@@ -172,12 +172,12 @@ const en = {
   scheduledIncome: "Scheduled income",
   scheduledExpenses: "Scheduled expenses",
   projectedCash: "Projected cash",
-  baseline: "Without extra plans",
+  baseline: "Recurring schedules",
   scenario: "With extra plans",
   scenarioDifference: "Change in balance",
   plannedExpenseCount: "{count} planned expense(s) added.",
   plannedIncomeCount: "{count} planned income(s) added.",
-  simulationOnly: "Preview only. No transactions or schedules were created.",
+  simulationOnly: "Balance projection calculated.",
   simulationStale:
     "Your input or financial data changed. Run the comparison again.",
   negativeScenario:
@@ -191,7 +191,7 @@ const en = {
   fundAllocation: "Allocated",
   suggestedMonthlySaving: "Suggested allocation this month",
   fundHint:
-    "Allocating or releasing money does not move cash. Spend records an actual expense in this account.",
+    "Allocations reserve cash in this account. Release makes it available again, and Spend records an expense.",
   allocate: "Allocate",
   release: "Release allocation",
   spend: "Spend from fund",
@@ -207,32 +207,32 @@ const en = {
     "Create a fund with a target date and source account, then allocate money as you save.",
   noFundHistory: "No allocations or spending yet.",
   fundDeleteHint:
-    "Only funds without history can be deleted. Release unused allocations to keep the history of an existing fund.",
+    "An empty fund with no history can be deleted permanently. Release unused allocations to make the money available again.",
   availableInAccount: "Unallocated in this account: {amount}",
   fundSpendHint:
-    "This creates an expense today. Do not record the same payment again in Transactions.",
+    "This records today's expense in Transactions and updates the fund balance.",
   fundReleaseHint:
-    "This makes allocated money available again without recording income.",
+    "Release the allocation to make this cash available for other uses in the same account.",
   fundAllocateHint:
-    "This reserves existing cash for this purpose without creating an expense.",
+    "Reserve existing cash in this account for the fund.",
 }
 
 const id: Record<keyof typeof en, string> = {
-  helpInvestments: "Pisahkan kas sekuritas dari saham",
+  helpInvestments: "Pantau kas sekuritas dan saham",
   helpInvestmentsBody:
-    "Catat beli dan jual di Investasi, termasuk biayanya. Saldo awal hanya mewakili kas. Harga harian membutuhkan penyedia terkonfigurasi; tanggal harga dan penilaian yang belum lengkap tetap ditampilkan.",
-  helpNetWorth: "Hindari menghitung aset dua kali",
+    "Masukkan kas sekuritas sebagai saldo awal, lalu catat pembelian dan penjualan saham beserta biayanya. Periksa tanggal harga saat meninjau nilai pasar.",
+  helpNetWorth: "Lihat kekayaan bersih Anda",
   helpNetWorthBody:
     "Kekayaan bersih menjumlahkan kas, saham yang sudah dinilai, dan piutang, lalu mengurangi sisa utang. Alokasi tujuan dan sinking funds sudah termasuk kas.",
-  helpSimulation: "Hitung rencana pengeluaran dengan aman",
+  helpSimulation: "Bandingkan rencana pengeluaran",
   helpSimulationBody:
-    "Lihat kas saat ini dan arus kas terjadwal, lalu tambahkan beberapa rencana pemasukan dan pengeluaran untuk memperkirakan kas. Kalkulator tidak membuat transaksi atau jadwal asli.",
+    "Gabungkan kas saat ini dan arus kas terjadwal dengan rencana pemasukan dan pengeluaran untuk melihat proyeksi saldo.",
   helpCalendar: "Lihat tanggal keuangan mendatang",
   helpCalendarBody:
-    "Telusuri jadwal rutin, jatuh tempo utang, dan target dana per bulan. Ini tanggal rencana, bukan bukti pembayaran; pengingat bisa beririsan dengan jadwal rutin.",
+    "Telusuri jadwal rutin, jatuh tempo utang, dan target dana per bulan. Lihat riwayat transaksi untuk pembayaran yang sudah dicatat.",
   helpFunds: "Cadangkan uang untuk kebutuhan terencana",
   helpFundsBody:
-    "Alokasikan kas yang sudah ada ke dana tanpa memindahkan uang. Pelepasan membuatnya tersedia lagi. Belanja membuat satu pengeluaran nyata; jangan catat pembayaran yang sama lagi di Transaksi.",
+    "Alokasikan kas ke dana di akun sumbernya. Lepas alokasi agar kas tersedia lagi. Belanja langsung mencatat pembayaran di Transaksi.",
   investments: "Investasi",
   netWorth: "Kekayaan bersih",
   calendar: "Kalender keuangan",
@@ -245,7 +245,7 @@ const id: Record<keyof typeof en, string> = {
   calendarDescription:
     "Pembayaran rutin, pemasukan, jatuh tempo utang, dan target dana dalam satu tempat.",
   simulationDescription:
-    "Gabungkan kas saat ini dan arus kas kalender terjadwal dengan rencana pemasukan dan pengeluaran. Transaksi asli tidak berubah.",
+    "Lihat proyeksi saldo dari kas saat ini, jadwal rutin, dan rencana pemasukan serta pengeluaran.",
   fundsDescription:
     "Sisihkan uang untuk kebutuhan terencana seperti premi tahunan, pajak kendaraan, atau liburan.",
   totalBalance: "Kas seluruh akun",
@@ -253,9 +253,9 @@ const id: Record<keyof typeof en, string> = {
   accountBalanceDescription:
     "Saldo kas awal dan arus kas tercatat. Kepemilikan saham dinilai terpisah.",
   balanceProgressDescription:
-    "Saldo kas setelah transaksi dan beli/jual saham; bukan kinerja investasi.",
+    "Perubahan saldo kas dari transaksi tercatat serta pembelian dan penjualan saham.",
   investmentOpeningHint:
-    "Masukkan kas tersedia di akun sekuritas, bukan nilai saham yang dimiliki. Catat pembelian saham secara terpisah.",
+    "Masukkan kas yang tersedia di akun sekuritas. Catat pembelian saham di Investasi.",
   portfolio: "Portofolio",
   watchlist: "Watchlist",
   tradeHistory: "Riwayat saham",
@@ -266,7 +266,7 @@ const id: Record<keyof typeof en, string> = {
   stockSymbol: "Kode saham BEI",
   stockName: "Nama perusahaan",
   stockSymbolHint:
-    "Kode empat huruf BEI, misalnya BBCA. Ini mencatat transaksi, bukan memasang order ke sekuritas.",
+    "Masukkan kode empat huruf BEI, misalnya BBCA, untuk transaksi saham yang sudah dilakukan.",
   brokerageAccount: "Akun kas sekuritas",
   lots: "Lot",
   lotsHint:
@@ -289,7 +289,7 @@ const id: Record<keyof typeof en, string> = {
   quotedOn: "Tanggal harga",
   unpriced: "Belum dinilai",
   unpricedHint:
-    "{count} kepemilikan belum memiliki harga pasar. Total portofolio belum lengkap; modal tidak dipakai sebagai pengganti nilai pasar.",
+    "{count} kepemilikan menunggu harga pasar. Total portofolio mencakup saham dengan harga tersedia.",
   refreshPrices: "Perbarui harga harian",
   priceUpdateResult:
     "{updated} diperbarui, {cached} tersimpan, {failed} gagal, {pending} tertunda.",
@@ -301,37 +301,37 @@ const id: Record<keyof typeof en, string> = {
   removeWatch: "Hapus dari watchlist",
   noHoldings: "Mulai portofolio saham Anda",
   noHoldingsHint:
-    "Tambahkan akun kas sekuritas, lalu catat pembelian saham yang benar-benar terjadi. Jangan masukkan kepemilikan sebagai saldo kas awal.",
+    "Tambahkan akun dengan kas sekuritas yang tersedia, lalu catat pembelian saham pertama Anda.",
   noWatchlist: "Saham apa yang Anda pantau?",
   noWatchlistHint:
-    "Tambahkan kode BEI untuk melihat harga harian tanpa mencatat pembelian.",
+    "Tambahkan kode saham BEI untuk memantau harga harian.",
   noTrades: "Belum ada transaksi saham.",
   tradeDeleteHint:
-    "Hapus transaksi saham ini secara permanen. Kas, modal, dan hasil dihitung ulang. Penghapusan ditolak bila membuat penjualan kekurangan saham atau kas tidak cukup.",
+    "Hapus transaksi saham secara permanen dan hitung ulang kas, modal, serta hasilnya. Transaksi berikutnya tetap membutuhkan saham dan kas yang cukup.",
   removeWatchHint:
     "Hapus entri watchlist dan catatan ini secara permanen. Transaksi dan kepemilikan saham tetap tersimpan; kode saham bisa ditambahkan lagi.",
   corporateActionsHint:
-    "Versi ini belum menerapkan stock split atau aksi korporasi lain secara otomatis.",
+    "Kepemilikan dihitung dari pembelian dan penjualan tercatat. Periksa kepemilikan setelah stock split atau aksi korporasi lain.",
   insufficientShares:
     "Penjualan melebihi saham yang dimiliki pada tanggalnya. Periksa akun, jumlah, dan transaksi sebelumnya.",
   insufficientCash:
     "Kas tidak cukup untuk tindakan ini. Periksa saldo awal dan transaksi, atau catat transfer pendanaan terlebih dahulu.",
   insufficientAvailableCash:
-    "Kas belum dialokasikan tidak cukup. Uang yang sudah dialokasikan untuk tujuan atau sinking funds dicadangkan.",
+    "Nominal melebihi kas yang tersedia untuk dialokasikan. Periksa dana yang dicadangkan untuk tujuan dan sinking funds.",
   fundBalanceExceeded:
     "Nominal melebihi uang yang dialokasikan untuk dana ini.",
   fundTargetExceeded:
     "Alokasi melebihi target, atau target lebih kecil daripada alokasi yang sudah ada.",
   linkedFundTransaction:
-    "Pengeluaran ini terkait sinking fund dan tidak dapat diubah terpisah dari riwayat dananya.",
+    "Pengeluaran ini terhubung ke sinking fund. Kelola pembayarannya melalui riwayat dana.",
   marketDataUnavailable:
-    "Yahoo Finance tidak dapat dihubungi atau mengirim data yang tidak terbaca. Harga tersimpan tetap dipertahankan. Coba lagi nanti; ini kesalahan layanan harga, bukan koneksi database.",
+    "Harga harian dari Yahoo Finance sedang bermasalah. Harga tersimpan tetap tersedia. Coba lagi nanti.",
   priceAccessRequired:
-    "Yahoo Finance menolak akses sementara. Harga tersimpan tetap dipertahankan. Tunggu lalu coba lagi; integrasi ini tidak memerlukan API key.",
+    "Yahoo Finance membatasi akses sementara. Harga tersimpan tetap tersedia. Tunggu sebentar, lalu coba lagi.",
   pricesRateLimited:
     "Batas data pasar tercapai. Harga sebelumnya tetap disimpan; tunggu kuota penyedia pulih, lalu coba lagi.",
   invalidMarketPrice:
-    "Yahoo Finance tidak mengirim harga penutupan harian IDR yang valid untuk kode BEI ini. Periksa listing .JK dan tanggal harganya; harga tersimpan tetap dipertahankan.",
+    "Harga penutupan harian saham ini belum tersedia. Periksa kode saham dan tanggal harga, lalu coba lagi. Harga tersimpan tetap tersedia.",
   knownNetWorth: "Subtotal yang diketahui",
   cashAssets: "Aset kas",
   stockAssets: "Saham yang sudah dinilai",
@@ -339,9 +339,9 @@ const id: Record<keyof typeof en, string> = {
   debtLiabilities: "Sisa utang",
   reservedCash: "Kas dialokasikan",
   netWorthRule:
-    "Alokasi tujuan dan dana sudah termasuk dalam kas, bukan aset tambahan.",
+    "Kas mencakup uang yang dialokasikan untuk tujuan dan sinking funds.",
   incompleteNetWorth:
-    "Kekayaan bersih belum lengkap karena sebagian saham belum memiliki harga.",
+    "Subtotal ini mencakup kas, piutang, utang, dan saham dengan harga tersedia. Sebagian kepemilikan masih menunggu harga.",
   viewNetWorth: "Lihat kekayaan bersih",
   assetsAndLiabilities: "Aset dan kewajiban",
   accountBreakdown: "Akun kas",
@@ -349,7 +349,7 @@ const id: Record<keyof typeof en, string> = {
   noObligations: "Tidak ada kewajiban tersisa.",
   noCalendarEvents: "Tidak ada jadwal bulan ini",
   calendarHint:
-    "Tanggal rencana, bukan transaksi tercatat. Jatuh tempo utang dan target dana adalah pengingat dan bisa beririsan dengan pembayaran rutin.",
+    "Kalender menampilkan tanggal rencana. Cocokkan pengingat utang dan dana dengan jadwal rutin saat meninjau pembayaran mendatang.",
   agenda: "Agenda",
   recurring: "Jadwal rutin",
   debtDue: "Utang jatuh tempo",
@@ -365,9 +365,9 @@ const id: Record<keyof typeof en, string> = {
   calculateExpenses: "Hitung proyeksi",
   calculating: "Menghitung...",
   simulationHint:
-    "Dasar perhitungan memakai jadwal rutin aktif. Belanja di luar jadwal, jatuh tempo utang, dan perubahan investasi mendatang tidak otomatis termasuk.",
+    "Proyeksi awal memakai jadwal rutin aktif. Tambahkan rencana pemasukan dan belanja lainnya untuk melihat dampaknya.",
   calculatorHint:
-    "Pemasukan dan pengeluaran rutin aktif dari kalender keuangan dihitung dari hari ini sampai tanggal pilihan. Jatuh tempo utang dan target dana tetap menjadi pengingat, jadi tidak dihitung agar tidak terhitung dua kali.",
+    "Pemasukan dan pengeluaran rutin aktif dihitung dari hari ini sampai tanggal pilihan. Jatuh tempo utang dan target dana menjadi pengingat di kalender. Cocokkan rencana tambahan dengan jadwal yang sudah dihitung.",
   currentCashHint:
     "Ini adalah kas tercatat dari seluruh akun dan menjadi titik awal proyeksi.",
   addedIncome: "Pemasukan tambahan",
@@ -390,13 +390,13 @@ const id: Record<keyof typeof en, string> = {
   scheduledIncome: "Pemasukan terjadwal",
   scheduledExpenses: "Pengeluaran terjadwal",
   projectedCash: "Kas proyeksi",
-  baseline: "Tanpa rencana tambahan",
+  baseline: "Jadwal rutin",
   scenario: "Dengan rencana tambahan",
   scenarioDifference: "Perubahan saldo",
   plannedExpenseCount: "{count} rencana pengeluaran ditambahkan.",
   plannedIncomeCount: "{count} rencana pemasukan ditambahkan.",
   simulationOnly:
-    "Hanya pratinjau. Tidak ada transaksi atau jadwal yang dibuat.",
+    "Proyeksi saldo selesai dihitung.",
   simulationStale:
     "Input atau data keuangan berubah. Jalankan perbandingan lagi.",
   negativeScenario:
@@ -410,7 +410,7 @@ const id: Record<keyof typeof en, string> = {
   fundAllocation: "Dialokasikan",
   suggestedMonthlySaving: "Saran alokasi bulan ini",
   fundHint:
-    "Alokasi atau pelepasan tidak memindahkan kas. Belanja mencatat pengeluaran nyata dari akun ini.",
+    "Alokasi mencadangkan kas di akun ini. Lepas alokasi membuatnya tersedia lagi, dan Belanja mencatat pengeluaran.",
   allocate: "Alokasikan",
   release: "Lepas alokasi",
   spend: "Belanja dari dana",
@@ -426,14 +426,14 @@ const id: Record<keyof typeof en, string> = {
     "Buat dana dengan tanggal target dan akun sumber, lalu alokasikan uang saat menabung.",
   noFundHistory: "Belum ada alokasi atau belanja.",
   fundDeleteHint:
-    "Hanya dana tanpa riwayat yang bisa dihapus. Lepaskan alokasi yang tidak terpakai untuk tetap menjaga riwayat dana.",
+    "Dana kosong yang belum memiliki riwayat bisa dihapus permanen. Lepaskan sisa alokasi agar uang tersedia kembali.",
   availableInAccount: "Belum dialokasikan di akun ini: {amount}",
   fundSpendHint:
-    "Ini membuat pengeluaran hari ini. Jangan catat pembayaran yang sama lagi di Transaksi.",
+    "Pembayaran ini langsung dicatat sebagai pengeluaran hari ini di Transaksi dan memperbarui saldo dana.",
   fundReleaseHint:
-    "Uang yang dialokasikan kembali tersedia tanpa mencatat pemasukan.",
+    "Lepas alokasi agar kas bisa digunakan untuk kebutuhan lain di akun yang sama.",
   fundAllocateHint:
-    "Ini mencadangkan kas yang sudah ada untuk kebutuhan ini tanpa membuat pengeluaran.",
+    "Cadangkan kas yang tersedia di akun ini untuk dana tersebut.",
 }
 
 export const planningMessages: Record<Locale, Record<string, string>> = {

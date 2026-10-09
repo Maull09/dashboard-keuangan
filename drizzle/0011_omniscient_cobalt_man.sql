@@ -1,0 +1,2 @@
+ALTER TABLE "transactions" ADD COLUMN "group_name" text;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_valid_group_name" CHECK ("transactions"."group_name" is null or ("transactions"."group_name" = btrim("transactions"."group_name") and char_length("transactions"."group_name") between 1 and 100));
