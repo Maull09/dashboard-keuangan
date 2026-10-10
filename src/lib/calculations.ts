@@ -1,5 +1,5 @@
 import { getNextMonthStart, type Locale } from "./finance"
-import { usabilityMessages } from "./usability-messages"
+import { messages } from "./i18n"
 
 export type LedgerTransaction = {
   type: "income" | "expense" | "transfer"
@@ -76,7 +76,7 @@ export function getCategoryInsight(
     ((currentAmount - previousAmount) / previousAmount) * 100,
   )
   if (locale === "en")
-    return `${usabilityMessages.en[category] ?? category} spending ${change > 0 ? "increased" : "decreased"} ${Math.abs(change)}% compared with last month.`
+    return `${messages.en[category] ?? category} spending ${change > 0 ? "increased" : "decreased"} ${Math.abs(change)}% compared with last month.`
   const direction = change > 0 ? "naik" : "turun"
   return `Pengeluaran ${category} ${direction} ${Math.abs(change)}% dibanding bulan lalu.`
 }

@@ -2,12 +2,12 @@
 import { act, useState } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { interfaceMessages } from "@/lib/interface-messages"
+import { messages } from "@/lib/i18n"
 
 const language = vi.hoisted(() => ({ locale: "id" as "id" | "en" }))
 vi.mock("@/components/language-provider", () => ({ useLanguage: () => ({
   locale: language.locale,
-  t: (key: keyof typeof interfaceMessages.en) => interfaceMessages[language.locale][key],
+  t: (key: keyof typeof messages.en) => messages[language.locale][key],
 }) }))
 import { MonthPicker } from "@/components/month-picker"
 
