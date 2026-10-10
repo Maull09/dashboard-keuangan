@@ -2,14 +2,14 @@
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { insightMessages } from "@/lib/ai/insight-messages"
+import { messages } from "@/lib/i18n"
 
 const mocks = vi.hoisted(() => ({ request: vi.fn(), user: { id: "alice" } as { id: string } | null, locale: "en" as "en" | "id" }))
 vi.mock("@/lib/client-api", async (original) => ({ ...await original<object>(), requestJson: mocks.request }))
 vi.mock("@/components/auth-provider", () => ({ useAuth: () => ({ user: mocks.user }) }))
 vi.mock("@/components/language-provider", () => ({ useLanguage: () => ({ locale: mocks.locale,
   t: (key: string, values?: Record<string, string>) => {
-    let text = (insightMessages[mocks.locale] as Record<string, string>)[key] ?? key
+    let text = (messages[mocks.locale] as Record<string, string>)[key] ?? key
     for (const [name, value] of Object.entries(values ?? {})) text = text.replace("{" + name + "}", value)
     return text
   },
@@ -100,7 +100,7 @@ describe("automatic page insights", () => {
   it("announces active analysis and keeps reanalysis disabled until completion", async () => {
     mocks.request.mockResolvedValueOnce({ jobId: "job", status: "active" }).mockResolvedValueOnce(completed)
     await mount(); await advance(600)
-    expect(container.querySelector('[role="status"]')?.textContent).toContain(insightMessages.en.insightActive)
+    expect(container.querySelector('[role="status"]')?.textContent).toContain(messages.en.insightActive)
     expect(container.querySelector("button")?.disabled).toBe(true)
     await advance(3000)
     expect(container.querySelector('[role="status"]')).toBeNull()

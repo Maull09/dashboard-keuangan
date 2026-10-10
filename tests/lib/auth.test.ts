@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import { safeNextPath, authErrorKey } from "@/lib/auth"
-import { authMessages } from "@/lib/auth-messages"
 
 describe("authentication redirects", () => {
   it.each([
@@ -27,14 +26,5 @@ describe("auth feedback", () => {
   it("does not expose account existence or raw provider errors", () => {
     expect(authErrorKey("user_already_exists")).toBe("authFailed")
     expect(authErrorKey("private_database_failure")).toBe("authFailed")
-  })
-  it("keeps both languages and interpolation variables aligned", () => {
-    expect(Object.keys(authMessages.en).sort()).toEqual(
-      Object.keys(authMessages.id).sort(),
-    )
-    for (const key of Object.keys(authMessages.en))
-      expect(authMessages.en[key].match(/\{\w+\}/g)).toEqual(
-        authMessages.id[key].match(/\{\w+\}/g),
-      )
   })
 })

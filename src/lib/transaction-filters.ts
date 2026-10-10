@@ -1,6 +1,6 @@
 import { isDate, transactionTypes, type TransactionType } from "./finance"
 import { expenseCategories, incomeCategories } from "./finance"
-import { usabilityMessages } from "./usability-messages"
+import { messages } from "./i18n"
 import { parseTransactionGroupName } from "./validation"
 
 export function findEnglishCategoryMatches(search: string) {
@@ -14,7 +14,7 @@ export function findEnglishCategoryMatches(search: string) {
     ]),
   ]
   return categories.filter((category) =>
-    usabilityMessages.en[category].toLowerCase().includes(query),
+    messages.en[category].toLowerCase().includes(query),
   )
 }
 
