@@ -15,6 +15,11 @@
 /backups/
 /.playwright-mcp/
 
+# local video exports and capture workspaces
+# Product screenshots for README remain tracked in docs/images/product/.
+/brag-output*/
+/.hyperframes/
+
 # next.js
 /.next/
 /out/
