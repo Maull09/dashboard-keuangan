@@ -6,9 +6,9 @@ Finance Tracker is a personal-finance web app for recording, understanding, and 
 
 ## 60-second demo
 
-[![Watch the 60-second Finance Tracker demo showing the original dashboard](docs/media/finance-tracker-demo.jpg)](docs/media/finance-tracker-demo.mp4)
+[![Animated 60-second Finance Tracker demo showing interactions in the original interface](docs/media/finance-tracker-demo.gif)](docs/media/finance-tracker-demo.mp4)
 
-[Watch or download the MP4](docs/media/finance-tracker-demo.mp4?raw=true) (60 seconds, 1080p, English).
+The GIF loops through the full demo without sound. [Open or download the GIF](docs/media/finance-tracker-demo.gif?raw=true), or [watch the MP4 with audio](docs/media/finance-tracker-demo.mp4?raw=true) (60 seconds, 1080p, English).
 
 Made with Brag using recordings of the original interface. The video follows actual clicks and form entries across Dashboard, Transactions, Budget, Financial goals, Investments, AI assistant, AI insights, and Net worth.
 
@@ -198,7 +198,7 @@ scripts/          Migration runner, schema checks, and insight worker
 tests/            Unit, component, API, and optional integration tests
 docs/             Focused setup and development documentation
 docs/images/      Product screenshots
-docs/media/       Demo video and thumbnail
+docs/media/       MP4 demo and animated GIF
 ```
 
 ## Current scope and limitations
